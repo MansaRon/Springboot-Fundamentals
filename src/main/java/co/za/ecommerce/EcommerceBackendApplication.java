@@ -1,4 +1,4 @@
-package co.za.ecommerce.ecommerce;
+package co.za.ecommerce;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package co.za.ecommerce.ecommerce;
+package co.za.ecommerce;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
