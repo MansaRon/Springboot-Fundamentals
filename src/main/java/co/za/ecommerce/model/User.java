@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Arrays;
@@ -51,21 +52,15 @@ public class User extends Entity {
      * User password used mostly for Counter users
      */
     @JsonIgnore
-    @NonNull
-    private byte[] password;
+    private byte @NonNull [] password;
 
     @JsonIgnore
-    @NonNull
-    private byte[] salt;
-
-    /**
-     * Counters ID
-     */
-    private Set<String> assignedCounter;
+    private byte @NonNull [] salt;
 
     /**
      * User roles assigned to
      */
+    @DBRef
     private Set<String> roles;
 
     public enum Status {
