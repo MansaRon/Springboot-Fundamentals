@@ -17,7 +17,7 @@ import java.util.Set;
 @Setter
 @SuperBuilder
 @NoArgsConstructor
-@Document(collection = "users")
+@Document(collection = "ecommerce.users")
 public class User extends Entity {
 
     /**
@@ -44,11 +44,6 @@ public class User extends Entity {
     private Status status;
 
     /**
-     * User code.
-     */
-    private String code;
-
-    /**
      * User password used mostly for Counter users
      */
     @JsonIgnore
@@ -64,7 +59,7 @@ public class User extends Entity {
     private Set<String> roles;
 
     public enum Status {
-        ACTIVE,SUSPENDED,AWAITING_CONFIRMATION
+        ACTIVE, SUSPENDED, AWAITING_CONFIRMATION
     }
 
     public void addRoles(String... newRoles) {
