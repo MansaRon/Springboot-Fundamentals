@@ -1,4 +1,4 @@
-package co.za.ecommerce.business;
+package co.za.ecommerce.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,9 +13,10 @@ import java.time.Instant;
 @ToString
 @SuperBuilder
 @NoArgsConstructor
-public abstract class GlobalApiResponse {
+public class GlobalApiErrorResponse {
     private String status;
     private Integer statusCode;
     private String message;
     private Instant timestamp;
+    private String path;
 }
