@@ -1,5 +1,6 @@
 package co.za.ecommerce.dto;
 
+import co.za.ecommerce.dto.base.DTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,7 +14,7 @@ import java.time.Instant;
 @ToString
 @SuperBuilder
 @NoArgsConstructor
-public abstract class GlobalApiResponse {
+public abstract class GlobalApiResponse extends DTO {
     private String status;
     private Integer statusCode;
     private String message;

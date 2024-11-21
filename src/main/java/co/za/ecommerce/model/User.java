@@ -1,6 +1,9 @@
 package co.za.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -24,11 +27,13 @@ public class User extends Entity {
      * User full name.
      */
     @NonNull
+    @Pattern(regexp = "^[a-zA-Z]*$", message = "First Name must not contain numbers or special characters")
     private String name;
 
     /**
      * User email address.
      */
+    @Email
     @NonNull
     private String email;
 
@@ -36,6 +41,8 @@ public class User extends Entity {
      * User phone number.
      */
     @NonNull
+    @Size(min = 10, max = 10, message = "Mobile number must be exactly 10 digits long")
+    @Pattern(regexp = "^\\d{10}$", message = "Mobile number must contain only numbers")
     private String phone;
 
     /**
@@ -47,6 +54,7 @@ public class User extends Entity {
      * User password used mostly for Counter users
      */
     @JsonIgnore
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
     private byte @NonNull [] password;
 
     @JsonIgnore
