@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateUserDTO extends EntityDTO {
+public class UserCreateDTO extends EntityDTO {
 
     /**
      * User full name.
