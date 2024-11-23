@@ -55,7 +55,7 @@ public class User extends Entity {
      */
     @JsonIgnore
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
-    private byte @NonNull [] password;
+    private char @NonNull [] password;
 
     @JsonIgnore
     private byte @NonNull [] salt;
