@@ -40,7 +40,7 @@ public class UserCreateDTO extends EntityDTO {
      * User password.
      */
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
-    private char[] pwd;
+    private String pwd;
 
     /**
      * User roles

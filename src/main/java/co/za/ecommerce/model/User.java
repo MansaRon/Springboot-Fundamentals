@@ -53,9 +53,10 @@ public class User extends Entity {
     /**
      * User password used mostly for Counter users
      */
+    @NonNull
     @JsonIgnore
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
-    private char @NonNull [] password;
+    private String  password;
 
     @JsonIgnore
     private byte @NonNull [] salt;
