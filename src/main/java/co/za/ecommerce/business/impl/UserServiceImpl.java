@@ -7,11 +7,13 @@ import co.za.ecommerce.exception.ClientException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -25,6 +27,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
+        log.info("============= Checking existing user ===============");
         if (userRepository.existsByEmail(userCreateDTO.getEmail())) {
             throw new ClientException(HttpStatus.BAD_REQUEST, "Email already exists.");
         }
@@ -33,6 +36,7 @@ public class UserServiceImpl implements UserService {
             throw new ClientException(HttpStatus.BAD_REQUEST, "Phone number already exists.");
         }
 
+        log.info("============= Creating a user ===============");
         User user = objectMapper.mapObject().map(userCreateDTO, User.class);
         user.addRoles("ROLE_USER");
         user = User.builder()
@@ -43,6 +47,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(userCreateDTO.getPwd()))
                 .build();
 
+        log.info("============= Saving user ===============");
         userRepository.save(user);
         return user;
     }
