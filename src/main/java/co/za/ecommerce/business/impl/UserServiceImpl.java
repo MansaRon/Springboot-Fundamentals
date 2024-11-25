@@ -5,13 +5,17 @@ import co.za.ecommerce.dto.user.UserCreateDTO;
 import co.za.ecommerce.dto.user.UserDTO;
 import co.za.ecommerce.exception.ClientException;
 import co.za.ecommerce.mapper.ObjectMapper;
+import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
+//import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -23,7 +27,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private PasswordEncoder passwordEncoder;
+    //private PasswordEncoder passwordEncoder;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -37,16 +41,18 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("============= Creating a user ===============");
-        User user = objectMapper.mapObject().map(userCreateDTO, User.class);
-        user.addRoles("ROLE_USER");
-        user = User.builder()
+
+        User user = User.builder()
                 .name(userCreateDTO.getName())
                 .email(userCreateDTO.getEmail())
                 .phone(userCreateDTO.getPhone())
-                .status(User.Status.AWAITING_CONFIRMATION)
-                .password(passwordEncoder.encode(userCreateDTO.getPwd()))
+                .status(AccountStatus.AWAITING_CONFIRMATION)
+                .password(userCreateDTO.getPwd())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
+        user.addRoles("ROLE_USER");
         log.info("============= Saving user ===============");
         userRepository.save(user);
         return user;

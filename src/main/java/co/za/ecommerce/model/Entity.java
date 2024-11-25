@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
@@ -19,21 +20,20 @@ public class Entity extends Persistable {
     /**
      * Unique identifier, optimized for database queries and referencing.
      */
-    @BsonId
-    @NonNull
+    @Id
     private ObjectId id;
 
     /**
      * Human readable unique number for the instance
      */
-    @NonNull
-    private String reference;
+//    @NonNull
+//    private String reference;
 
     /**
      * Short description defining the instance.
      */
-    @NonNull
-    private String description;
+//    @NonNull
+//    private String description;
 
     /**
      * Timestamp when the record was created in the database.
@@ -46,5 +46,17 @@ public class Entity extends Persistable {
      */
     @NonNull
     private LocalDateTime updatedAt;
+
+    public String hexId() {
+        return id != null ? id.toHexString() : null;
+    }
+
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
 
 }

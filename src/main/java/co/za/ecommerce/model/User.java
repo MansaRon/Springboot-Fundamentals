@@ -48,28 +48,19 @@ public class User extends Entity {
     /**
      * User status
      */
-    private Status status;
+    private AccountStatus status;
 
     /**
      * User password used mostly for Counter users
      */
     @NonNull
-    @JsonIgnore
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
     private String password;
-
-    @JsonIgnore
-    private byte @NonNull [] salt;
 
     /**
      * User roles assigned to
      */
-    @DBRef
     private Set<String> roles;
-
-    public enum Status {
-        ACTIVE, SUSPENDED, AWAITING_CONFIRMATION
-    }
 
     public void addRoles(String... newRoles) {
         if (roles == null) roles = new HashSet<>();
