@@ -48,8 +48,6 @@ public class UserServiceImpl implements UserService {
                 .phone(userCreateDTO.getPhone())
                 .status(AccountStatus.AWAITING_CONFIRMATION)
                 .password(userCreateDTO.getPwd())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         user.addRoles("ROLE_USER");

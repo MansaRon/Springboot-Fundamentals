@@ -7,7 +7,9 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -38,13 +40,13 @@ public class Entity extends Persistable {
     /**
      * Timestamp when the record was created in the database.
      */
-    @NonNull
+    @CreatedDate
     private LocalDateTime createdAt;
 
     /**
      * Timestamp when the record was last updated in the database.
      */
-    @NonNull
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     public String hexId() {
