@@ -19,26 +19,29 @@ public class UserCreateDTO extends EntityDTO {
     /**
      * User full name.
      */
-    //@NotBlank
+    //@NonNull
+    //@Pattern(regexp = "^[a-zA-Z]*$", message = "First Name must not contain numbers or special characters")
     private String name;
 
     /**
      * User email address.
      */
-    //@NotBlank
     //@Email
+    //@NonNull
     private String email;
 
     /**
      * User phone number.
      */
-    //@NotBlank
+    //@NonNull
+    //@Pattern(regexp = "^\\\\d{10}$")
     //@Size(min = 10, max = 10, message = "Mobile number must be exactly 10 digits long")
     private String phone;
 
     /**
      * User password.
      */
+    //@NonNull
     //@Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
     private String pwd;
 
