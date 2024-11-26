@@ -20,7 +20,7 @@ import java.util.Set;
 @Setter
 @SuperBuilder
 @NoArgsConstructor
-@Document(collection = "ecommerce.users")
+@Document(collection = "users")
 public class User extends Entity {
 
     /**
