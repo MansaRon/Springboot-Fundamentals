@@ -7,4 +7,6 @@ import co.za.ecommerce.model.User;
 public interface UserService {
     User createUser(UserCreateDTO userCreateDTO);
     UserDTO loginUser(String email, String password);
+    UserDTO activateUser(String email, String otp);
+
 }
