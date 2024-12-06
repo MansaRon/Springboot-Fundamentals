@@ -2,6 +2,7 @@ package co.za.ecommerce.api;
 
 import co.za.ecommerce.business.UserService;
 import co.za.ecommerce.dto.api.UserCreateDTOApiResource;
+import co.za.ecommerce.dto.api.UserDTOApiResource;
 import co.za.ecommerce.dto.user.UserCreateDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,24 @@ public class RegistrationApi extends API {
                                 UserCreateDTO.class)
                         ).message("User registered")
                         .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PostMapping("/confirm/{phoneNum}/{OTP}")
+    public ResponseEntity<UserDTOApiResource> confirmUser(
+            @PathVariable String phoneNum,
+            @PathVariable String OTP) {
+        log.trace("public ResponseEntity<UserDTOApiResource> confirmUser(\n" +
+                "            @PathVariable String phoneNum,\n" +
+                "            @PathVariable String OTP)");
+        return ResponseEntity.ok(
+                UserDTOApiResource.builder()
+                        .timestamp(Instant.now())
+                        .data(userService.activateUser(phoneNum, OTP))
+                        .message("User activated")
+                        .status(String.valueOf(HttpStatus.CREATED))
                         .statusCode(HttpStatus.OK.value())
                         .build()
         );

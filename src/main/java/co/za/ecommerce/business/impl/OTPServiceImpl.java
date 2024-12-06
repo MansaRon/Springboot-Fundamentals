@@ -21,15 +21,17 @@ public class OTPServiceImpl implements OTPService {
     private OTPRepository otpRepository;
 
     @Override
-    public String generateOTP(String id) {
+    public String generateOTP(String phoneNumber) {
         String otp = String.valueOf(new Random().nextInt(900000) + 100000); // Generate 6-digit OTP
         LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5); // 5-minute validity
 
-        OtpStore otpStore = new OtpStore();
-        otpStore.setId(id);
-        otpStore.setOtp(otp);
-        otpStore.setExpiryTime(expiryTime);
-        otpStore.setRetryAttempts(0);
+        OtpStore otpStore = OtpStore
+                .builder()
+                .phoneNumber(phoneNumber)
+                .otp(otp)
+                .expiryTime(expiryTime)
+                .retryAttempts(0)
+                .build();
 
         otpRepository.save(otpStore);
 
@@ -37,13 +39,15 @@ public class OTPServiceImpl implements OTPService {
     }
 
     @Override
-    public boolean validateOTP(String id, String otp) {
+    public boolean validateOTP(String phoneNumber, String otp) {
 
-        OtpStore otpStore = otpRepository.findById(id)
-                .orElseThrow(() -> new OTPException(HttpStatus.BAD_REQUEST, "OTP not found"));
+        OtpStore otpStore = otpRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() ->
+                        new OTPException(HttpStatus.BAD_REQUEST, "OTP not found")
+                );
 
         if (otpStore.isExpired()) {
-            otpRepository.deleteById(id); // Cleanup expired OTP
+            otpRepository.deleteById(phoneNumber); // Cleanup expired OTP
             throw new OTPException(HttpStatus.BAD_REQUEST, "OTP has expired");
         }
 
@@ -52,14 +56,14 @@ public class OTPServiceImpl implements OTPService {
             otpRepository.save(otpStore);
 
             if (otpStore.getRetryAttempts() >= 3) { // Limit retries
-                otpRepository.deleteById(id);
+                otpRepository.deleteById(phoneNumber);
                 throw new OTPException(HttpStatus.BAD_REQUEST, "Too many failed attempts. OTP invalidated.");
             }
 
             throw new OTPException(HttpStatus.BAD_REQUEST, "Invalid OTP");
         }
 
-        otpRepository.deleteById(id); // Cleanup OTP after successful validation
+        otpRepository.deleteById(phoneNumber); // Cleanup OTP after successful validation
         return true;
     }
 

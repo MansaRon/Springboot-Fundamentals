@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface OTPRepository extends MongoRepository<OtpStore, String> {
-    Optional<OtpStore> findById(String id);
+    Optional<OtpStore> findByPhoneNumber(String id);
     void deleteById(String id);
 }

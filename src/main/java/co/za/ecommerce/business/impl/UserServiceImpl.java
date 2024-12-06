@@ -55,9 +55,14 @@ public class UserServiceImpl implements UserService {
                 .password(userCreateDTO.getPwd())
                 .build();
 
+
         user.addRoles("ROLE_USER");
         log.info("============= Saving user ===============");
         userRepository.save(user);
+
+        log.info("============= Generate OTP ===============");
+        String optGenerated = otpService.generateOTP(user.getPhone());
+        log.info("============= OTP {} ===============", optGenerated);
         return user;
     }
 
@@ -67,9 +72,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO activateUser(String email, String otp) {
+    public UserDTO activateUser(String phoneNumber, String otp) {
         log.info("============= Checking if user exists ===============");
-        User existingUser = userRepository.findByEmail(email)
+        User existingUser = userRepository.findByPhone(phoneNumber)
                 .orElseThrow(() -> new ClientException(
                         HttpStatus.NOT_FOUND,
                         "User not found.")
@@ -81,7 +86,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // Verify the OTP
-        if (!otpService.validateOTP(email, otp)) { // otpService is a mockable service for OTP management
+        if (!otpService.validateOTP(phoneNumber, otp)) { // otpService is a mockable service for OTP management
             throw new ClientException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP.");
         }
 
