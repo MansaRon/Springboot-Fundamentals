@@ -31,6 +31,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler({OTPException.class})
+    public ResponseEntity<GlobalApiErrorResponse> handleOTPException(
+            final OTPException otpException, final HttpServletRequest httpStatus) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(
+                        GlobalApiErrorResponse.builder()
+                                .path(otpException.getMessage())
+                                .status(HttpStatus.BAD_REQUEST.toString())
+                                .statusCode(HttpStatus.BAD_REQUEST.value())
+                                .path(getPath(httpStatus))
+                                .message(otpException.getMessage())
+                                .timestamp(Instant.now())
+                                .build()
+                );
+    }
+
 
     private String getPath(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
