@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 //import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -32,7 +33,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private OTPService otpService;
 
-    //private PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -52,7 +53,7 @@ public class UserServiceImpl implements UserService {
                 .email(userCreateDTO.getEmail())
                 .phone(userCreateDTO.getPhone())
                 .status(AccountStatus.AWAITING_CONFIRMATION)
-                .password(userCreateDTO.getPwd())
+                .password(passwordEncoder.encode(userCreateDTO.getPwd()))
                 .build();
 
 

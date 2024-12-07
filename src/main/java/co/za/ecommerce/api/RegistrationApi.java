@@ -49,8 +49,8 @@ public class RegistrationApi extends API {
 
     @PostMapping("/confirm/{phoneNum}/{OTP}")
     public ResponseEntity<UserDTOApiResource> confirmUser(
-            @PathVariable String phoneNum,
-            @PathVariable String OTP) {
+            @PathVariable @Valid String phoneNum,
+            @PathVariable @Valid String OTP) {
         log.trace("public ResponseEntity<UserDTOApiResource> confirmUser(\n" +
                 "            @PathVariable String phoneNum,\n" +
                 "            @PathVariable String OTP)");
