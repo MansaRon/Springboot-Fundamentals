@@ -1,5 +1,6 @@
 package co.za.ecommerce.filter;
 
+import co.za.ecommerce.security.CustomUserDetailsService;
 import co.za.ecommerce.security.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,7 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
@@ -40,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         userEmail = jwtTokenProvider.extractUsername(jwt);
 
         if (userEmail.isEmpty() && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(userEmail);
             if (jwtTokenProvider.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken token =
                         new UsernamePasswordAuthenticationToken(
