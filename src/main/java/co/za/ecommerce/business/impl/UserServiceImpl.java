@@ -2,6 +2,7 @@ package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.OTPService;
 import co.za.ecommerce.business.UserService;
+import co.za.ecommerce.dto.user.LoginDTO;
 import co.za.ecommerce.dto.user.UserCreateDTO;
 import co.za.ecommerce.dto.user.UserDTO;
 import co.za.ecommerce.exception.ClientException;
@@ -9,11 +10,15 @@ import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.UserRepository;
+import co.za.ecommerce.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-//import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -33,7 +38,14 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private OTPService otpService;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -68,8 +80,40 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO loginUser(String email, String password) {
-        return null;
+    public UserDTO loginUser(LoginDTO loginDTO) {
+        log.info("============= Authenticating user ===============");
+        Authentication authentication = authenticationManager
+                .authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                loginDTO.getEmail(), loginDTO.getPassword()
+                        )
+                );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        log.info("============= Retrieve user ===============");
+        User user = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new ClientException(HttpStatus.BAD_REQUEST, "Email not found."));
+
+        log.info("============= Check user status ===============");
+        if (user.getStatus() == AccountStatus.AWAITING_CONFIRMATION) {
+            throw new ClientException(HttpStatus.BAD_REQUEST, "User status is not active.");
+        }
+
+        log.info("============= Check matching passwords ===============");
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            throw new ClientException(HttpStatus.BAD_REQUEST, "Incorrect password.");
+        }
+
+        log.info("============= Assign session token and login ===============");
+        return UserDTO
+                .builder()
+                .name(user.getName())
+                .email(user.getEmail())
+                .status(user.getStatus().name())
+                .phone(user.getPhone())
+                .role(user.getRoles())
+                .accessToken(jwtTokenProvider.generateToken(authentication))
+                .build();
     }
 
     @Override
