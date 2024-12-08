@@ -39,9 +39,6 @@ public class UserServiceImpl implements UserService {
     private OTPService otpService;
 
     @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -81,15 +78,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO loginUser(LoginDTO loginDTO) {
-        log.info("============= Authenticating user ===============");
-        Authentication authentication = authenticationManager
-                .authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                loginDTO.getEmail(), loginDTO.getPassword()
-                        )
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
         log.info("============= Retrieve user ===============");
         User user = userRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new ClientException(HttpStatus.BAD_REQUEST, "Email not found."));
@@ -112,7 +100,7 @@ public class UserServiceImpl implements UserService {
                 .status(user.getStatus().name())
                 .phone(user.getPhone())
                 .role(user.getRoles())
-                .accessToken(jwtTokenProvider.generateToken(authentication))
+                .accessToken(jwtTokenProvider.generateToken(user.getEmail()))
                 .build();
     }
 

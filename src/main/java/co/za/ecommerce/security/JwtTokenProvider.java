@@ -23,14 +23,12 @@ public class JwtTokenProvider {
     @Value("${app.jwt-secret}")
     private String secretKey;
 
-    public String generateToken(Authentication authentication) {
-        return generateToken(new HashMap<>(), authentication);
+    public String generateToken(String username) {
+        return generateToken(new HashMap<>(), username);
     }
 
     private String generateToken(Map<String, Object> extraClaims,
-                                 Authentication authentication) {
-        String username = authentication.getName();
-
+                                 String username) {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
@@ -60,7 +58,7 @@ public class JwtTokenProvider {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
