@@ -61,7 +61,7 @@ public class UserApi extends API {
         return ResponseEntity.ok(
                 UserDTOApiResource.builder()
                         .timestamp(Instant.now())
-                        .data(userService.activateUser(phoneNum, OTP))
+                        .data(userService.activateUserOTP(phoneNum, OTP))
                         .message("User activated")
                         .status(String.valueOf(HttpStatus.CREATED))
                         .statusCode(HttpStatus.CREATED.value())

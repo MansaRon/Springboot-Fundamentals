@@ -105,7 +105,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO activateUser(String phoneNumber, String otp) {
+    public UserDTO activateUserOTP(String phoneNumber, String otp) {
         log.info("============= Checking if user exists ===============");
         User existingUser = userRepository.findByPhone(phoneNumber)
                 .orElseThrow(() -> new ClientException(
