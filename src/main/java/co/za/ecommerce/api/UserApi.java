@@ -44,8 +44,8 @@ public class UserApi extends API {
                                 .map(userService.createUser(registrationDTO),
                                 UserCreateDTO.class)
                         ).message("User registered")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
+                        .status(String.valueOf(HttpStatus.CREATED))
+                        .statusCode(HttpStatus.CREATED.value())
                         .build()
         );
     }
@@ -63,8 +63,8 @@ public class UserApi extends API {
                         .timestamp(Instant.now())
                         .data(userService.activateUserOTP(phoneNum, OTP))
                         .message("User activated")
-                        .status(String.valueOf(HttpStatus.CREATED))
-                        .statusCode(HttpStatus.CREATED.value())
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
                         .build()
         );
     }

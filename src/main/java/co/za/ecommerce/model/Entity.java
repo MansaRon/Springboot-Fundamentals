@@ -11,6 +11,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -41,13 +42,13 @@ public class Entity extends Persistable {
      * Timestamp when the record was created in the database.
      */
     @CreatedDate
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt;
 
     /**
      * Timestamp when the record was last updated in the database.
      */
     @LastModifiedDate
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant updatedAt;
 
     public String hexId() {
         return id != null ? id.toHexString() : null;

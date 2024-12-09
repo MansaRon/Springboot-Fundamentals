@@ -44,9 +44,6 @@ class UserServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private JwtTokenProvider jwtTokenProvider;
-
     @InjectMocks
     private UserServiceImpl userService;
 
