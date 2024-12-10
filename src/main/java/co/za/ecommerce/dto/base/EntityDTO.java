@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -14,5 +15,5 @@ import java.time.LocalDateTime;
 public abstract class EntityDTO extends DTO {
     private String id;
 
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

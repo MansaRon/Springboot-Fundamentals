@@ -1,5 +1,6 @@
 package co.za.ecommerce.dto.user;
 
+import co.za.ecommerce.dto.base.EntityDTO;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -8,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginDTO {
+public class LoginDTO extends EntityDTO {
 
     @NotBlank
     private String email;

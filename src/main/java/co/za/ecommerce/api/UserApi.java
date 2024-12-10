@@ -1,9 +1,12 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.business.UserService;
+import co.za.ecommerce.dto.GlobalApiResponse;
+import co.za.ecommerce.dto.api.ResetPwdDTOApiResource;
 import co.za.ecommerce.dto.api.UserCreateDTOApiResource;
 import co.za.ecommerce.dto.api.UserDTOApiResource;
 import co.za.ecommerce.dto.user.LoginDTO;
+import co.za.ecommerce.dto.user.UpdatePasswordDTO;
 import co.za.ecommerce.dto.user.UserCreateDTO;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
@@ -81,6 +84,24 @@ public class UserApi extends API {
                         .timestamp(Instant.now())
                         .data(userService.loginUser(loginDTO))
                         .message("User logged in")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
+    @PostMapping("/update-password")
+    public ResponseEntity<ResetPwdDTOApiResource> updatePassword(
+            @RequestBody
+            @Valid
+            UpdatePasswordDTO updatePasswordDTO) {
+        log.info("public ResponseEntity<ResetPwdDTOApiResource> updatePassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO)");
+        return ResponseEntity.ok(
+                ResetPwdDTOApiResource.builder()
+                        .timestamp(Instant.now())
+                        .data(userService.updatePassword(updatePasswordDTO))
+                        .message("Password Reset")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

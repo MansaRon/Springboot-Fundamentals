@@ -2,9 +2,7 @@ package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.OTPService;
 import co.za.ecommerce.business.UserService;
-import co.za.ecommerce.dto.user.LoginDTO;
-import co.za.ecommerce.dto.user.UserCreateDTO;
-import co.za.ecommerce.dto.user.UserDTO;
+import co.za.ecommerce.dto.user.*;
 import co.za.ecommerce.exception.ClientException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.AccountStatus;
@@ -133,5 +131,32 @@ public class UserServiceImpl implements UserService {
 
         log.info("============= User confirmation successful ===============");
         return objectMapper.mapObject().map(existingUser, UserDTO.class);
+    }
+
+    @Override
+    public ResetPwdDTO updatePassword(UpdatePasswordDTO updatePasswordDTO) {
+        log.info("============= Checking if user exists ===============");
+        User existingUser = userRepository.findByEmail(updatePasswordDTO.getEmail())
+                .orElseThrow(() -> new ClientException(HttpStatus.NOT_FOUND, "Account does not exist."));
+
+        log.info("============= Check if active user or awaiting confirmation ===============");
+        if (existingUser.getStatus().equals(AccountStatus.AWAITING_CONFIRMATION)) {
+            throw new ClientException(HttpStatus.BAD_REQUEST, "Activate user before resetting password.");
+        }
+
+        log.info("============= Check if current password match ===============");
+        if (!passwordEncoder.matches(updatePasswordDTO.getCurrentPassword(), existingUser.getPassword())) {
+            throw new ClientException(HttpStatus.BAD_REQUEST, "Current password matches old password.");
+        }
+
+        log.info("============= Save new password ===============");
+        existingUser.setPassword(passwordEncoder.encode(updatePasswordDTO.getNewPassword()));
+
+        log.info("============= Save user ===============");
+        userRepository.save(existingUser);
+        return ResetPwdDTO.builder()
+                .username(existingUser.getEmail())
+                .pwdReset(true)
+                .build();
     }
 }
