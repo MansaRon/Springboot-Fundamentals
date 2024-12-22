@@ -7,6 +7,7 @@ import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
+import org.bson.types.ObjectId;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 import static co.za.ecommerce.utils.DateUtil.now;
 
@@ -78,5 +80,26 @@ public class ProductServiceImpl implements ProductService {
                 .totalPages(getProducts.getTotalPages())
                 .last(getProducts.isLast())
                 .build();
+    }
+
+    @Override
+    public ProductDTO getProduct(String id) {
+        // Validate the ID format
+        if (id == null || !id.matches("^[a-fA-F0-9]{24}$")) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Invalid ID format. ID must be a 24-character hexadecimal string.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        Product findProduct = productRepository.findById(new ObjectId(id))
+                .orElseThrow(() ->
+                        new ProductException(
+                                HttpStatus.BAD_REQUEST.toString(),
+                                "Product with ID " + id + " doesn't exist.",
+                                HttpStatus.BAD_REQUEST.value()
+                        ));
+        return objectMapper.mapObject().map(findProduct, ProductDTO.class);
     }
 }

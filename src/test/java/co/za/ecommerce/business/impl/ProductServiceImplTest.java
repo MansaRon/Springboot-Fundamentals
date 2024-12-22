@@ -1,9 +1,11 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.dto.product.ProductDTO;
+import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.factories.DTOFactory;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.modelmapper.ModelMapper;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,5 +70,18 @@ class ProductServiceImplTest {
     @Test
     void addProduct() {
         when(productRepository.save(ArgumentMatchers.any(Product.class))).thenReturn(createProduct);
+    }
+
+    @Test
+    void getProduct() {
+        String validID = "67683885e7419802624dd4c4";
+
+        when(productRepository.findById(new ObjectId(validID)))
+                .thenReturn(Optional.empty());
+
+        ProductException exception = assertThrows(ProductException.class,
+                () -> productService.getProduct(validID));
+
+        assertTrue(exception.getMessage().contains("Product with ID 67683885e7419802624dd4c4 doesn't exist"));
     }
 }

@@ -38,7 +38,7 @@ public class ProductApi extends API {
     }
 
     @PermitAll
-    @GetMapping("")
+    @GetMapping
     public ResponseEntity<ProductDTOAllApiResource> getAllProducts(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -50,6 +50,21 @@ public class ProductApi extends API {
                         .timestamp(now())
                         .data(productService.getAllPosts(pageNumber, pageSize, sortBy, sortOrder))
                         .message("All Products retrieved")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id) {
+        log.trace("public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id)");
+        return ResponseEntity.ok(
+                ProductDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.getProduct(id))
+                        .message("Product Retrieved")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()
