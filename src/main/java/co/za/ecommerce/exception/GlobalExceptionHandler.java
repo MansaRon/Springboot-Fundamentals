@@ -33,7 +33,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({OTPException.class})
     public ResponseEntity<GlobalApiErrorResponse> handleOTPException(
-            final OTPException otpException, final HttpServletRequest httpStatus) {
+            final OTPException otpException,
+            final HttpServletRequest httpStatus) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(
@@ -45,6 +46,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                 .message(otpException.getMessage())
                                 .timestamp(Instant.now())
                                 .build()
+                );
+    }
+
+    @ExceptionHandler({ProductException.class})
+    public ResponseEntity<GlobalApiErrorResponse> handleProductException(
+            final ProductException productException,
+            final HttpServletRequest httpStatus) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpStatus))
+                        .status(productException.getCode())
+                        .statusCode(productException.getStatus())
+                        .message(productException.getMessage())
+                        .timestamp(Instant.now())
+                        .build()
                 );
     }
 
