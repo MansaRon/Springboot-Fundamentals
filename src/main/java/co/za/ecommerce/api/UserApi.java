@@ -24,8 +24,6 @@ import java.time.Instant;
 @RequestMapping("api/v1/auth")
 public class UserApi extends API {
 
-    private final UserService userService;
-
     @GetMapping("/hello")
     public String helloWorld()
     {

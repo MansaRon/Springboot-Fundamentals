@@ -15,5 +15,7 @@ import java.time.LocalDateTime;
 public abstract class EntityDTO extends DTO {
     private String id;
 
-    private Instant createdAt;
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }

@@ -42,13 +42,13 @@ public class Entity extends Persistable {
      * Timestamp when the record was created in the database.
      */
     @CreatedDate
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     /**
      * Timestamp when the record was last updated in the database.
      */
     @LastModifiedDate
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     public String hexId() {
         return id != null ? id.toHexString() : null;

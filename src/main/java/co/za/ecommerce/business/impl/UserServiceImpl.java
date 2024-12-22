@@ -56,7 +56,7 @@ public class UserServiceImpl implements UserService {
         log.info("============= Creating a user ===============");
 
         User user = User.builder()
-                .createdAt(Instant.now())
+                //.createdAt(Instant.now())
                 .name(userCreateDTO.getName())
                 .email(userCreateDTO.getEmail())
                 .phone(userCreateDTO.getPhone())
@@ -124,7 +124,7 @@ public class UserServiceImpl implements UserService {
 
         // Update the user status to ACTIVE
         existingUser.setStatus(AccountStatus.ACTIVE);
-        existingUser.setUpdatedAt(Instant.now());
+        //existingUser.setUpdatedAt(Instant.now());
 
         // Save the updated user
         userRepository.save(existingUser);
