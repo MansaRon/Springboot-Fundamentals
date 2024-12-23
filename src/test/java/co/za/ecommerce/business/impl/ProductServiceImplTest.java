@@ -19,6 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.Optional;
 
@@ -52,7 +56,7 @@ class ProductServiceImplTest {
                 .price(15.00)
                 .rate("4.5")
                 .title("Product Title")
-                .quantity("15")
+                .quantity(15)
                 .build();
 
         // Initialize the Product
@@ -63,7 +67,7 @@ class ProductServiceImplTest {
                 .category("category")
                 .rate("4.5")
                 .title("Product Title")
-                .quantity("10")
+                .quantity(10)
                 .build();
     }
 
@@ -83,5 +87,14 @@ class ProductServiceImplTest {
                 () -> productService.getProduct(validID));
 
         assertTrue(exception.getMessage().contains("Product with ID 67683885e7419802624dd4c4 doesn't exist"));
+    }
+
+    @Test
+    void getProductByCategory() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("title").ascending());
+        Page<Product> products = productRepository.findByCategoryIgnoreCase("testcat", pageable);
+
+        assertFalse(products.isEmpty(), "Expected products to be returned.");
+        products.forEach(product -> assertEquals("testcat", product.getCategory()));
     }
 }

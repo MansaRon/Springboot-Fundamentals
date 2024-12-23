@@ -27,7 +27,7 @@ public final class DTOFactory {
                 .price(15.00)
                 .rate("4.5")
                 .title("Product Title")
-                .quantity("15")
+                .quantity(15)
                 .build();
     }
 }

@@ -72,19 +72,20 @@ public class ProductApi extends API {
     }
 
     @PermitAll
-    @GetMapping("/{keyword}")
-    public ResponseEntity<ProductDTOAllApiResource> getProductsByKeyword(
-            @PathVariable String keyword,
+    @GetMapping("/get/{category}")
+    public ResponseEntity<ProductDTOAllApiResource> getProductsByCategory(
+            @PathVariable String category,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY, required = false) String sortBy,
             @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder
     ) {
+        log.trace("public ResponseEntity<ProductDTOAllApiResource> getProductsByCategory(@PathVariable String category)");
         return ResponseEntity.ok(
                 ProductDTOAllApiResource.builder()
                         .timestamp(now())
-                        .data(productService.searchPostsByKeyword(keyword, pageNumber, pageSize, sortBy, sortOrder))
-                        .message("Product with keyword " + keyword + " retrieved.")
+                        .data(productService.getProductByCategory(category, pageNumber, pageSize, sortBy, sortOrder))
+                        .message("List of products with keyword " + category + ".")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

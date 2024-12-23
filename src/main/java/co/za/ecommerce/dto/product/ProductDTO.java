@@ -32,5 +32,5 @@ public class ProductDTO extends EntityDTO {
     private String title;
 
     @NotNull
-    private String quantity;
+    private int quantity;
 }

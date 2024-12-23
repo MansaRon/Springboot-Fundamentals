@@ -2,6 +2,7 @@ package co.za.ecommerce.model;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -56,5 +57,6 @@ public class Product extends Entity {
      * Number of items of product available.
      */
     @NotNull
-    private String quantity;
+    @Size(min = 1, max = 20)
+    private int quantity;
 }

@@ -7,6 +7,7 @@ import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static co.za.ecommerce.utils.DateUtil.now;
 
+@Slf4j
 @Service
 public class ProductServiceImpl implements ProductService {
 
@@ -102,74 +104,67 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public GetAllProductsDTO searchPostsByKeyword(String keyword,
-                                                  int pageNo,
-                                                  int pageSize,
-                                                  String sortBy,
-                                                  String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
-                    Sort.by(sortBy).ascending() :
-                    Sort.by(sortBy).descending();
-
-        // create pageable instance
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<Product> getProducts = productRepository.findByProductKeyWord(keyword, pageable);
-
-        //get content for page object
-        List<Product> listOfProducts = getProducts.getContent().stream().toList();
-
-        if (listOfProducts.isEmpty()) {
-            throw new ProductException(HttpStatus.BAD_REQUEST.toString(), "No products with keyword " + keyword + " were found.", HttpStatus.BAD_REQUEST.value());
-        }
-
-        List<ProductDTO> productDTOs =
-                listOfProducts
-                        .stream()
-                        .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
-                        .toList();
-
-        return GetAllProductsDTO.builder()
-                .products(productDTOs)
-                .pageNo(getProducts.getTotalPages())
-                .totalElements(getProducts.getTotalElements())
-                .totalPages(getProducts.getTotalPages())
-                .last(getProducts.isLast())
-                .build();
-    }
-
-    @Override
     public GetAllProductsDTO getProductByCategory(String category,
                                                  int pageNo,
                                                  int pageSize,
                                                  String sortBy,
                                                  String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
-                Sort.by(sortBy).ascending() :
-                Sort.by(sortBy).descending();
+        try {
+            log.info("Searching for products in category: {}", category);
+            Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                    Sort.by(sortBy).ascending() :
+                    Sort.by(sortBy).descending();
 
-        // create pageable instance
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<Product> getProducts = productRepository.findByCategoryIgnoreCase(category, pageable);
+            // Create pageable instance
+            Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        //get content for page object
-        List<Product> listOfProducts = getProducts.getContent().stream().toList();
+            // Attempt to retrieve products by category
+            Page<Product> getProducts = productRepository.findByCategoryIgnoreCase(category, pageable);
 
-        if (listOfProducts.isEmpty()) {
-            throw new ProductException(HttpStatus.BAD_REQUEST.toString(), "No products with category " + category + " were found.", HttpStatus.BAD_REQUEST.value());
+            log.info("Found {} products for category '{}'", getProducts.getNumberOfElements(), category);
+
+            // Get content for the page object
+            List<Product> listOfProducts = getProducts.getContent();
+
+            // Handle empty product list
+            if (listOfProducts.isEmpty()) {
+                throw new ProductException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "No products with category '" + category + "' were found.",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            // Map the products to DTOs
+            List<ProductDTO> productDTOs = listOfProducts
+                    .stream()
+                    .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
+                    .toList();
+
+            // Build and return the response DTO
+            return GetAllProductsDTO.builder()
+                    .products(productDTOs)
+                    .pageNo(getProducts.getNumber())
+                    .totalElements(getProducts.getTotalElements())
+                    .totalPages(getProducts.getTotalPages())
+                    .last(getProducts.isLast())
+                    .build();
+
+        } catch (org.springframework.data.mapping.PropertyReferenceException e) {
+            // Catch property reference errors and rethrow as custom exceptions
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Invalid property reference in query: " + e.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        } catch (Exception e) {
+            // Handle unexpected exceptions gracefully
+            throw new ProductException(
+                    HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                    "An unexpected error occurred while retrieving products: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
 
-        List<ProductDTO> productDTOs =
-                listOfProducts
-                        .stream()
-                        .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
-                        .toList();
-
-        return GetAllProductsDTO.builder()
-                .products(productDTOs)
-                .pageNo(getProducts.getTotalPages())
-                .totalElements(getProducts.getTotalElements())
-                .totalPages(getProducts.getTotalPages())
-                .last(getProducts.isLast())
-                .build();
     }
 }
