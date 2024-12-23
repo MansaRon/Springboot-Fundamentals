@@ -110,24 +110,19 @@ public class ProductServiceImpl implements ProductService {
                                                  String sortBy,
                                                  String sortDir) {
         try {
-            log.info("Searching for products in category: {}", category);
+            log.info("Fetching products for category '{}' with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
+                    category, pageNo, pageSize, sortBy, sortDir);
+
             Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                     Sort.by(sortBy).ascending() :
                     Sort.by(sortBy).descending();
-
-            // Create pageable instance
             Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
             // Attempt to retrieve products by category
             Page<Product> getProducts = productRepository.findByCategoryIgnoreCase(category, pageable);
 
-            log.info("Found {} products for category '{}'", getProducts.getNumberOfElements(), category);
-
-            // Get content for the page object
-            List<Product> listOfProducts = getProducts.getContent();
-
             // Handle empty product list
-            if (listOfProducts.isEmpty()) {
+            if (getProducts.isEmpty()) {
                 throw new ProductException(
                         HttpStatus.BAD_REQUEST.toString(),
                         "No products with category '" + category + "' were found.",
@@ -136,7 +131,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             // Map the products to DTOs
-            List<ProductDTO> productDTOs = listOfProducts
+            List<ProductDTO> productDTOs = getProducts.getContent()
                     .stream()
                     .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
                     .toList();

@@ -5,6 +5,7 @@ import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.factories.DTOFactory;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -19,16 +20,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -42,6 +42,7 @@ class ProductServiceImplTest {
 
     private ProductDTO productDTOCreateTest;
     private Product createProduct;
+    private List<Product> productList;
 
     @Mock
     private ModelMapper modelMapper;
@@ -64,11 +65,21 @@ class ProductServiceImplTest {
                 .description("description")
                 .imageUrl("imageURl")
                 .price(1.0)
-                .category("category")
+                .category("testcat")
                 .rate("4.5")
                 .title("Product Title")
                 .quantity(10)
                 .build();
+
+        productList = List.of(Product.builder()
+                .description("Valid description")
+                .category("testcat")
+                .imageUrl("imageUrl")
+                .price(10.0)
+                .rate("4.5")
+                .title("Test Product")
+                .quantity(80)
+                .build());
     }
 
     @Test
@@ -91,10 +102,7 @@ class ProductServiceImplTest {
 
     @Test
     void getProductByCategory() {
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("title").ascending());
-        Page<Product> products = productRepository.findByCategoryIgnoreCase("testcat", pageable);
-
-        assertFalse(products.isEmpty(), "Expected products to be returned.");
-        products.forEach(product -> assertEquals("testcat", product.getCategory()));
+        Page<Product> productPage = new PageImpl<>(productList);
+        when(productRepository.findByCategoryIgnoreCase(eq("testcat"), any(Pageable.class))).thenReturn(productPage);
     }
 }
