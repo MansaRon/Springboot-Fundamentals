@@ -3,6 +3,7 @@ package co.za.ecommerce.api;
 import co.za.ecommerce.config.AppConstants;
 import co.za.ecommerce.dto.api.ProductDTOAllApiResource;
 import co.za.ecommerce.dto.api.ProductDTOApiResource;
+import co.za.ecommerce.dto.api.ProductDTOListApiResource;
 import co.za.ecommerce.dto.product.ProductDTO;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static java.time.Instant.now;
 
@@ -88,6 +91,22 @@ public class ProductApi extends API {
                         .message("List of products with keyword " + category + ".")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
+    @PostMapping("/list")
+    public ResponseEntity<ProductDTOListApiResource> createListProduct(
+            @Valid @RequestBody List<ProductDTO> productDTO) {
+        log.trace("public ResponseEntity<ProductDTOListApiResource> createListProduct(@Valid @RequestBody ProductDTO productDTO)");
+        return ResponseEntity.ok(
+                ProductDTOListApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.addMultipleProducts(productDTO))
+                        .message("Multiple Products Added")
+                        .status(String.valueOf(HttpStatus.CREATED))
+                        .statusCode(HttpStatus.CREATED.value())
                         .build()
         );
     }

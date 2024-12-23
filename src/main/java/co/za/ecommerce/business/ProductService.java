@@ -16,4 +16,5 @@ public interface ProductService {
     // rating
     // title
     // quantity
+    List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList);
 }

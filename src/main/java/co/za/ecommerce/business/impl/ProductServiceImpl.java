@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static co.za.ecommerce.utils.DateUtil.now;
 
@@ -161,5 +162,39 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
+    }
+
+    @Override
+    public List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList) {
+        // Check if the input list is null or empty
+        if (productDTOList == null || productDTOList.isEmpty()) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "The product list cannot be empty or null.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        List<Product> productsToSave = productDTOList.stream()
+                .map(productDTO -> Product.builder()
+                        .category(productDTO.getCategory())
+                        .createdAt(now())
+                        .updatedAt(now())
+                        .description(productDTO.getDescription())
+                        .imageUrl(productDTO.getImageUrl())
+                        .price(productDTO.getPrice())
+                        .rate(productDTO.getRate())
+                        .title(productDTO.getTitle())
+                        .quantity(productDTO.getQuantity())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Save all products at once
+        List<Product> savedProducts = productRepository.saveAll(productsToSave);
+
+        // Map saved products to DTOs
+        return savedProducts.stream()
+                .map(product -> objectMapper.mapObject().map(product, ProductDTO.class))
+                .collect(Collectors.toList());
     }
 }
