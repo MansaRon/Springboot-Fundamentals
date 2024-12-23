@@ -8,7 +8,6 @@ import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
 import org.bson.types.ObjectId;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 import static co.za.ecommerce.utils.DateUtil.now;
 
@@ -101,5 +99,77 @@ public class ProductServiceImpl implements ProductService {
                                 HttpStatus.BAD_REQUEST.value()
                         ));
         return objectMapper.mapObject().map(findProduct, ProductDTO.class);
+    }
+
+    @Override
+    public GetAllProductsDTO searchPostsByKeyword(String keyword,
+                                                  int pageNo,
+                                                  int pageSize,
+                                                  String sortBy,
+                                                  String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                    Sort.by(sortBy).ascending() :
+                    Sort.by(sortBy).descending();
+
+        // create pageable instance
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<Product> getProducts = productRepository.findByProductKeyWord(keyword, pageable);
+
+        //get content for page object
+        List<Product> listOfProducts = getProducts.getContent().stream().toList();
+
+        if (listOfProducts.isEmpty()) {
+            throw new ProductException(HttpStatus.BAD_REQUEST.toString(), "No products with keyword " + keyword + " were found.", HttpStatus.BAD_REQUEST.value());
+        }
+
+        List<ProductDTO> productDTOs =
+                listOfProducts
+                        .stream()
+                        .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
+                        .toList();
+
+        return GetAllProductsDTO.builder()
+                .products(productDTOs)
+                .pageNo(getProducts.getTotalPages())
+                .totalElements(getProducts.getTotalElements())
+                .totalPages(getProducts.getTotalPages())
+                .last(getProducts.isLast())
+                .build();
+    }
+
+    @Override
+    public GetAllProductsDTO getProductByCategory(String category,
+                                                 int pageNo,
+                                                 int pageSize,
+                                                 String sortBy,
+                                                 String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                Sort.by(sortBy).ascending() :
+                Sort.by(sortBy).descending();
+
+        // create pageable instance
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<Product> getProducts = productRepository.findByCategoryIgnoreCase(category, pageable);
+
+        //get content for page object
+        List<Product> listOfProducts = getProducts.getContent().stream().toList();
+
+        if (listOfProducts.isEmpty()) {
+            throw new ProductException(HttpStatus.BAD_REQUEST.toString(), "No products with category " + category + " were found.", HttpStatus.BAD_REQUEST.value());
+        }
+
+        List<ProductDTO> productDTOs =
+                listOfProducts
+                        .stream()
+                        .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
+                        .toList();
+
+        return GetAllProductsDTO.builder()
+                .products(productDTOs)
+                .pageNo(getProducts.getTotalPages())
+                .totalElements(getProducts.getTotalElements())
+                .totalPages(getProducts.getTotalPages())
+                .last(getProducts.isLast())
+                .build();
     }
 }

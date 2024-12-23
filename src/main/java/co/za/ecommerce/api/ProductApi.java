@@ -70,4 +70,24 @@ public class ProductApi extends API {
                         .build()
         );
     }
+
+    @PermitAll
+    @GetMapping("/{keyword}")
+    public ResponseEntity<ProductDTOAllApiResource> getProductsByKeyword(
+            @PathVariable String keyword,
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder
+    ) {
+        return ResponseEntity.ok(
+                ProductDTOAllApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.searchPostsByKeyword(keyword, pageNumber, pageSize, sortBy, sortOrder))
+                        .message("Product with keyword " + keyword + " retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
 }
