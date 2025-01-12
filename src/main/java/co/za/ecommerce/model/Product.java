@@ -10,6 +10,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
+
 @Getter
 @Setter
 @SuperBuilder
@@ -59,4 +61,9 @@ public class Product extends Entity {
     @NotNull
     @Size(min = 1, max = 20)
     private int quantity;
+
+    /**
+     * Associated images for the product.
+     */
+    private List<Image> images;
 }

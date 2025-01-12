@@ -4,6 +4,7 @@ import co.za.ecommerce.business.ProductService;
 import co.za.ecommerce.dto.product.GetAllProductsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.exception.ProductException;
+import co.za.ecommerce.exception.ResourceNotFoundException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
@@ -165,6 +166,57 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public GetAllProductsDTO getProductByTitle(String title,
+                                               int pageNo,
+                                               int pageSize,
+                                               String sortBy,
+                                               String sortDir) {
+        try {
+            log.info("Fetching products for title '{}' with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
+                    title, pageNo, pageSize, sortBy, sortDir);
+
+            Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                    Sort.by(sortBy).ascending() :
+                    Sort.by(sortBy).descending();
+            Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+            // Attempt to retrieve products by category
+            Page<Product> getProducts = productRepository.findByTitleIgnoreCase(title, pageable);
+
+            // Handle empty product list
+            if (getProducts.isEmpty()) {
+                throw new ProductException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "No products with title '" + title + "' were found.",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            // Map the products to DTOs
+            List<ProductDTO> productDTOs = getProducts.getContent()
+                    .stream()
+                    .map(mapProduct -> objectMapper.mapObject().map(mapProduct, ProductDTO.class))
+                    .toList();
+
+            // Build and return the response DTO
+            return GetAllProductsDTO.builder()
+                    .products(productDTOs)
+                    .pageNo(getProducts.getNumber())
+                    .totalElements(getProducts.getTotalElements())
+                    .totalPages(getProducts.getTotalPages())
+                    .last(getProducts.isLast())
+                    .build();
+        } catch (org.springframework.data.mapping.PropertyReferenceException e) {
+            // Catch property reference errors and rethrow as custom exceptions
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Invalid property reference in query: " + e.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+    }
+
+    @Override
     public List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList) {
         // Check if the input list is null or empty
         if (productDTOList == null || productDTOList.isEmpty()) {
@@ -196,5 +248,67 @@ public class ProductServiceImpl implements ProductService {
         return savedProducts.stream()
                 .map(product -> objectMapper.mapObject().map(product, ProductDTO.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ProductDTO updateProduct(String id, ProductDTO productDTO) {
+        if (id == null || !id.matches("^[a-fA-F0-9]{24}$")) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Invalid ID format. ID must be a 24-character hexadecimal string.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        Product productDB = productRepository.findById(new ObjectId(id))
+                .orElseThrow(() -> new ProductException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "Product with id '" + id + "' not found.",
+                        HttpStatus.BAD_REQUEST.value()));
+
+        productDB.setTitle(productDTO.getTitle());
+        productDB.setRate(productDTO.getRate());
+        productDB.setDescription(productDTO.getDescription());
+        productDB.setPrice(productDTO.getPrice());
+        productDB.setQuantity(productDTO.getQuantity());
+        productDB.setUpdatedAt(now());
+        productDB.setCategory(productDTO.getCategory());
+        productDB.setUpdatedAt(productDTO.getUpdatedAt());
+
+        Product saveProduct = productRepository.save(productDB);
+
+        return objectMapper.mapObject().map(saveProduct, ProductDTO.class);
+    }
+
+    @Override
+    public String deleteProduct(String id) {
+        if (id == null || !id.matches("^[a-fA-F0-9]{24}$")) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Invalid ID format. ID must be a 24-character hexadecimal string.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        Product product = productRepository.findById(new ObjectId(id))
+                .orElseThrow(() -> new ProductException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "Product with id '" + id + "' not found.",
+                        HttpStatus.BAD_REQUEST.value()));
+        productRepository.delete(product);
+        return "Item with ID " + id + " was deleted.";
+    }
+
+    @Override
+    public String deleteAllProducts() {
+        List<Product> findAllProducts = productRepository.findAll();
+        if (findAllProducts.isEmpty()) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "No Products to delete",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+        productRepository.deleteAll(findAllProducts);
+        return "All products were deleted.";
     }
 }

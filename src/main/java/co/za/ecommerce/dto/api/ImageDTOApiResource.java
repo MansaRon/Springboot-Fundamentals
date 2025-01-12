@@ -1,7 +1,7 @@
 package co.za.ecommerce.dto.api;
 
 import co.za.ecommerce.dto.GlobalApiResponse;
-import co.za.ecommerce.dto.product.ProductDTO;
+import co.za.ecommerce.dto.image.ImageDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @ToString
 @SuperBuilder
 @NoArgsConstructor
-public class ProductDTOApiResource extends GlobalApiResponse {
-    private ProductDTO data;
-    private String delete;
+public class ImageDTOApiResource extends GlobalApiResponse {
+    private String data;
+    private ImageDTO download;
 }

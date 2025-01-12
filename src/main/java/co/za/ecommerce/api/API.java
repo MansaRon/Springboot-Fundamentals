@@ -1,5 +1,6 @@
 package co.za.ecommerce.api;
 
+import co.za.ecommerce.business.ImageService;
 import co.za.ecommerce.business.ProductService;
 import co.za.ecommerce.business.UserService;
 import co.za.ecommerce.mapper.ObjectMapper;
@@ -17,4 +18,7 @@ public abstract class API {
 
     @Autowired
     protected ProductService productService;
+
+    @Autowired
+    protected ImageService imageService;
 }

@@ -61,7 +61,8 @@ public class ProductApi extends API {
 
     @PermitAll
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id) {
+    public ResponseEntity<ProductDTOApiResource> getProduct(
+            @PathVariable String id) {
         log.trace("public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id)");
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
@@ -75,7 +76,7 @@ public class ProductApi extends API {
     }
 
     @PermitAll
-    @GetMapping("/get/{category}")
+    @GetMapping("/category/{category}")
     public ResponseEntity<ProductDTOAllApiResource> getProductsByCategory(
             @PathVariable String category,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
@@ -96,6 +97,27 @@ public class ProductApi extends API {
     }
 
     @PermitAll
+    @GetMapping("/title/{title}")
+    public ResponseEntity<ProductDTOAllApiResource> getProductsByTitle(
+            @PathVariable String title,
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder
+    ) {
+        log.trace("public ResponseEntity<ProductDTOAllApiResource> getProductsByTitle(@PathVariable String title)");
+        return ResponseEntity.ok(
+                ProductDTOAllApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.getProductByTitle(title, pageNumber, pageSize, sortBy, sortOrder))
+                        .message("List of products with keyword " + title + ".")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
     @PostMapping("/list")
     public ResponseEntity<ProductDTOListApiResource> createListProduct(
             @Valid @RequestBody List<ProductDTO> productDTO) {
@@ -107,6 +129,54 @@ public class ProductApi extends API {
                         .message("Multiple Products Added")
                         .status(String.valueOf(HttpStatus.CREATED))
                         .statusCode(HttpStatus.CREATED.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
+    @PatchMapping("/product/{productId}")
+    public ResponseEntity<ProductDTOApiResource> updateProduct(
+            @PathVariable String productId,
+            @Valid @RequestBody ProductDTO productDTO) {
+        log.trace("public ResponseEntity<ProductDTOApiResource> updateProduct(@Valid @RequestBody ProductDTO productDTO)");
+        return ResponseEntity.ok(
+                ProductDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.updateProduct(productId, productDTO))
+                        .message("Product Updated.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
+    @DeleteMapping("/product/{productId}")
+    public ResponseEntity<ProductDTOApiResource> deleteProduct(
+            @PathVariable String productId) {
+        log.trace("public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId)");
+        return ResponseEntity.ok(
+                ProductDTOApiResource.builder()
+                        .timestamp(now())
+                        .delete(productService.deleteProduct(productId))
+                        .message("Product Deleted.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PermitAll
+    @DeleteMapping("/product")
+    public ResponseEntity<ProductDTOApiResource> deleteAllProduct() {
+        log.trace("public ResponseEntity<ProductDTOApiResource> deleteAllProduct()");
+        return ResponseEntity.ok(
+                ProductDTOApiResource.builder()
+                        .timestamp(now())
+                        .delete(productService.deleteAllProducts())
+                        .message("All products deleted.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
                         .build()
         );
     }

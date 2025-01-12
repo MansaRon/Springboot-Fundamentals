@@ -1,0 +1,18 @@
+AddProduct (Done)
+AddMultipleProduct (Done)
+GetProduct (Done)
+GetProducts (Done)
+GetBy
+    GetByCategory (Done)
+    GetByTitle (Done)
+    GetByPrice
+    GetByDescription
+    GetByRating
+UpdateProduct
+     UpdateProductImage
+     UpdateProductCategory
+     UpdateProductDescription
+     UpdateProductTitle
+     UpdateProductPrice
+DeleteProduct
+DeleteAllProducts

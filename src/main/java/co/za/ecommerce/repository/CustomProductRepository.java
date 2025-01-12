@@ -7,4 +7,5 @@ import org.springframework.data.mongodb.repository.Query;
 
 public interface CustomProductRepository {
     Page<Product> findByCategoryIgnoreCase(String category, Pageable pageable);
+    Page<Product> findByTitleIgnoreCase(String title, Pageable pageable);
 }

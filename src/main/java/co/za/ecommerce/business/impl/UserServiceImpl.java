@@ -9,6 +9,7 @@ import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     @Autowired

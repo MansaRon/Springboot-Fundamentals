@@ -12,9 +12,9 @@ public interface ProductService {
     // category
     GetAllProductsDTO getProductByCategory(String category, int pageNo, int pageSize, String sortBy, String sortDir);
     // description
-    // price
-    // rating
-    // title
-    // quantity
+    GetAllProductsDTO getProductByTitle(String title, int pageNo, int pageSize, String sortBy, String sortDir);
     List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList);
+    ProductDTO updateProduct(String id, ProductDTO productDTO);
+    String deleteProduct(String id);
+    String deleteAllProducts();
 }
