@@ -6,7 +6,9 @@ import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.exception.ResourceNotFoundException;
 import co.za.ecommerce.mapper.ObjectMapper;
+import co.za.ecommerce.model.Image;
 import co.za.ecommerce.model.Product;
+import co.za.ecommerce.repository.ImageRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -17,7 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,6 +37,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private ImageRepository imageRepository;
 
     @Override
     public ProductDTO addProduct(ProductDTO productDTO) {

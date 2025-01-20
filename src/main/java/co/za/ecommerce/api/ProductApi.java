@@ -10,9 +10,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 import static java.time.Instant.now;
@@ -25,9 +28,9 @@ public class ProductApi extends API {
 
     // To change soon to only admin, permitAll for testing only
     @PermitAll
-    @PostMapping("/product")
+    @PostMapping(value = "/product")
     public ResponseEntity<ProductDTOApiResource> createProduct(
-            @Valid @RequestBody ProductDTO productDTO) {
+            @RequestPart("product") @Valid ProductDTO productDTO) {
         log.trace("public ResponseEntity<ProductDTOApiResource> product(@Valid @RequestBody ProductDTO productDTO)");
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()

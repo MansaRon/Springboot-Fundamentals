@@ -44,7 +44,7 @@ public class Image extends Entity {
     /**
      * Product associated with the product.
      */
-    @DBRef
-    @NotNull
-    private Product product;
+//    @DBRef
+//    @NotNull
+//    private Product product;
 }

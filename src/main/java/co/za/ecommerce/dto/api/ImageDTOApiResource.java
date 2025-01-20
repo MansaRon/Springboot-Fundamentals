@@ -14,6 +14,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 public class ImageDTOApiResource extends GlobalApiResponse {
-    private String data;
-    private ImageDTO download;
+    private ImageDTO data;
+    private byte[] download;
 }

@@ -6,6 +6,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Getter
 @Setter
 @SuperBuilder
@@ -33,4 +35,6 @@ public class ProductDTO extends EntityDTO {
 
     @NotNull
     private int quantity;
+
+    private List<String> images;
 }

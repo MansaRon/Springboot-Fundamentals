@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -65,5 +66,6 @@ public class Product extends Entity {
     /**
      * Associated images for the product.
      */
+    @DBRef
     private List<Image> images;
 }

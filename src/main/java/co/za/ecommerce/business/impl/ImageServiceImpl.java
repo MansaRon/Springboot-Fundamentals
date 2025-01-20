@@ -4,12 +4,16 @@ import co.za.ecommerce.business.ImageService;
 import co.za.ecommerce.dto.image.ImageDTO;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Image;
+import co.za.ecommerce.repository.ImageRepository;
+import co.za.ecommerce.utils.ImageUtil;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ContextedRuntimeException;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
@@ -18,42 +22,45 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.zip.DataFormatException;
+
+import static co.za.ecommerce.utils.DateUtil.now;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageServiceImpl implements ImageService {
 
-    private GridFsTemplate gridFsTemplate;
-    private GridFsOperations gridFsOperations;
-    private ObjectMapper objectMapper;
+    private final ImageRepository imageRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
-    public String addFile(MultipartFile file) throws IOException {
-        DBObject dbObject = new BasicDBObject();
-        dbObject.put("fileSize", file.getSize());
-
-        Object fileID = gridFsTemplate.store(
-                file.getInputStream(),
-                file.getOriginalFilename(),
-                file.getContentType(),
-                dbObject
-        );
-        return fileID.toString();
+    public ImageDTO uploadFile(MultipartFile file) throws IOException {
+        var imageSave = Image.builder()
+                .createdAt(now())
+                .updatedAt(now())
+                .fileName(file.getOriginalFilename())
+                .fileType(file.getContentType())
+                .fileSize(String.valueOf(file.getSize()))
+                .file(ImageUtil.compressImage(file.getBytes()))
+                .build();
+        imageRepository.save(imageSave);
+        return objectMapper.mapObject().map(imageSave, ImageDTO.class);
     }
 
     @Override
-    public ImageDTO downloadFile(String id) throws IOException {
-        GridFSFile gridFSFile = gridFsTemplate.findOne(new Query(Criteria.where("_id").is(id)));
-        Image image = new Image();
-        if (gridFSFile != null && gridFSFile.getMetadata() != null) {
-            image.setFileName(gridFSFile.getFilename());
-            image.setFileType(gridFSFile.getMetadata().get("_contentType").toString());
-            image.setFileSize(gridFSFile.getMetadata().get("fileSize").toString());
-            image.setFile(IOUtils.toByteArray(
-                    gridFsOperations.getResource(gridFSFile).getInputStream())
-            );
-        }
-        return objectMapper.mapObject().map(image, ImageDTO.class);
+    public byte[] downloadFile(String fileId) {
+        Optional<Image> dbImage = imageRepository.findById(new ObjectId(fileId));
+        return dbImage.map(image -> {
+            try {
+                return ImageUtil.decompressImage(image.getFile());
+            } catch (DataFormatException | IOException exception) {
+                throw new ContextedRuntimeException
+                        ("Error downloading an image", exception)
+                        .addContextValue("Image ID", fileId)
+                        .addContextValue("Image name", image.getFileName());
+            }
+        }).orElse(null);
     }
 }
