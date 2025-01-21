@@ -42,9 +42,8 @@ public class ProductServiceImpl implements ProductService {
     private ImageRepository imageRepository;
 
     @Override
-    public ProductDTO addProduct(ProductDTO productDTO) {
-        Product saveProduct = Product.builder()
-                .category(productDTO.getCategory())
+    public ProductDTO addProduct(ProductDTO productDTO, List<MultipartFile> imageFiles) throws IOException {
+        Product product = Product.builder()
                 .createdAt(now())
                 .updatedAt(now())
                 .category(productDTO.getCategory())
@@ -55,8 +54,27 @@ public class ProductServiceImpl implements ProductService {
                 .title(productDTO.getTitle())
                 .quantity(productDTO.getQuantity())
                 .build();
-        productRepository.save(saveProduct);
-        return objectMapper.mapObject().map(saveProduct, ProductDTO.class);
+        Product savedProduct = productRepository.save(product);
+
+        List<Image> multipleImages = new ArrayList<>();
+        for (MultipartFile imageFile : imageFiles) {
+            Image image = Image.builder()
+                    .createdAt(now())
+                    .updatedAt(now())
+                    .fileName(imageFile.getName())
+                    .fileSize(String.valueOf(imageFile.getSize()))
+                    .fileType(imageFile.getContentType())
+                    .file(imageFile.getBytes())
+                    .product(savedProduct)
+                    .build();
+            Image savedImage = imageRepository.save(image);
+            multipleImages.add(savedImage);
+        }
+
+        savedProduct.setImages(multipleImages);
+        productRepository.save(savedProduct);
+
+        return objectMapper.mapObject().map(savedProduct, ProductDTO.class);
     }
 
     @Override

@@ -28,14 +28,18 @@ public class ProductApi extends API {
 
     // To change soon to only admin, permitAll for testing only
     @PermitAll
-    @PostMapping(value = "/product")
+    @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> createProduct(
-            @RequestPart("product") @Valid ProductDTO productDTO) {
+            @RequestPart("product") @Valid String productJson,
+            @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
         log.trace("public ResponseEntity<ProductDTOApiResource> product(@Valid @RequestBody ProductDTO productDTO)");
+        log.info("Received {} images", imageFiles.size());
+        ProductDTO productDTO = jsonMapper.readValue(productJson, ProductDTO.class);
+        log.info("Received product: {}", productDTO);
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
                         .timestamp(now())
-                        .data(productService.addProduct(productDTO))
+                        .data(productService.addProduct(productDTO, imageFiles))
                         .message("Product Added")
                         .status(String.valueOf(HttpStatus.CREATED))
                         .statusCode(HttpStatus.CREATED.value())

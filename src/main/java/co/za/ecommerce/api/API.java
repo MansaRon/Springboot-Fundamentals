@@ -21,4 +21,7 @@ public abstract class API {
 
     @Autowired
     protected ImageService imageService;
+
+    @Autowired
+    protected com.fasterxml.jackson.databind.ObjectMapper jsonMapper;
 }
