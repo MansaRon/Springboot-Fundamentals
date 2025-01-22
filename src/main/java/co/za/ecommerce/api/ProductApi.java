@@ -127,12 +127,13 @@ public class ProductApi extends API {
     @PermitAll
     @PostMapping("/list")
     public ResponseEntity<ProductDTOListApiResource> createListProduct(
-            @Valid @RequestBody List<ProductDTO> productDTO) {
+            @Valid @RequestBody List<ProductDTO> productDTO,
+            @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
         log.trace("public ResponseEntity<ProductDTOListApiResource> createListProduct(@Valid @RequestBody ProductDTO productDTO)");
         return ResponseEntity.ok(
                 ProductDTOListApiResource.builder()
                         .timestamp(now())
-                        .data(productService.addMultipleProducts(productDTO))
+                        .data(productService.addMultipleProducts(productDTO, imageFiles))
                         .message("Multiple Products Added")
                         .status(String.valueOf(HttpStatus.CREATED))
                         .statusCode(HttpStatus.CREATED.value())
@@ -144,12 +145,13 @@ public class ProductApi extends API {
     @PatchMapping("/product/{productId}")
     public ResponseEntity<ProductDTOApiResource> updateProduct(
             @PathVariable String productId,
-            @Valid @RequestBody ProductDTO productDTO) {
+            @Valid @RequestBody ProductDTO productDTO,
+            @RequestPart("images") List<MultipartFile> imageFiles) throws IOException {
         log.trace("public ResponseEntity<ProductDTOApiResource> updateProduct(@Valid @RequestBody ProductDTO productDTO)");
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
                         .timestamp(now())
-                        .data(productService.updateProduct(productId, productDTO))
+                        .data(productService.updateProduct(productId, productDTO, imageFiles))
                         .message("Product Updated.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())

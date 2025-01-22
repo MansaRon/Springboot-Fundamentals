@@ -10,6 +10,7 @@ import co.za.ecommerce.model.Image;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ImageRepository;
 import co.za.ecommerce.repository.ProductRepository;
+import co.za.ecommerce.utils.ImageUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +65,7 @@ public class ProductServiceImpl implements ProductService {
                     .fileName(imageFile.getName())
                     .fileSize(String.valueOf(imageFile.getSize()))
                     .fileType(imageFile.getContentType())
-                    .file(imageFile.getBytes())
+                    .file(ImageUtil.compressImage(imageFile.getBytes()))
                     .product(savedProduct)
                     .build();
             Image savedImage = imageRepository.save(image);
@@ -243,8 +244,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList) {
-        // Check if the input list is null or empty
+    public List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList, List<MultipartFile> imageFiles) throws IOException {
+        // Validate the input list
         if (productDTOList == null || productDTOList.isEmpty()) {
             throw new ProductException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -253,6 +254,15 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
+        if (imageFiles == null || imageFiles.isEmpty()) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "The image list cannot be empty or null.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        // Map DTOs to Product entities
         List<Product> productsToSave = productDTOList.stream()
                 .map(productDTO -> Product.builder()
                         .category(productDTO.getCategory())
@@ -267,8 +277,37 @@ public class ProductServiceImpl implements ProductService {
                         .build())
                 .collect(Collectors.toList());
 
-        // Save all products at once
+        // Save all products
         List<Product> savedProducts = productRepository.saveAll(productsToSave);
+
+        // Map images to products
+        if (imageFiles.size() != savedProducts.size()) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Number of images must match the number of products.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        List<Image> imagesToSave = new ArrayList<>();
+        for (int i = 0; i < savedProducts.size(); i++) {
+            MultipartFile imageFile = imageFiles.get(i);
+            Product savedProduct = savedProducts.get(i);
+
+            Image image = Image.builder()
+                    .createdAt(now())
+                    .updatedAt(now())
+                    .fileName(imageFile.getOriginalFilename())
+                    .fileSize(String.valueOf(imageFile.getSize()))
+                    .fileType(imageFile.getContentType())
+                    .file(ImageUtil.compressImage(imageFile.getBytes()))
+                    .product(savedProduct)
+                    .build();
+            imagesToSave.add(image);
+        }
+
+        // Save all images
+        imageRepository.saveAll(imagesToSave);
 
         // Map saved products to DTOs
         return savedProducts.stream()
@@ -277,7 +316,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDTO updateProduct(String id, ProductDTO productDTO) {
+    public ProductDTO updateProduct(String id, ProductDTO productDTO, List<MultipartFile> imageFiles) throws IOException {
+        // Validate the ID
         if (id == null || !id.matches("^[a-fA-F0-9]{24}$")) {
             throw new ProductException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -286,12 +326,14 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
+        // Find the existing product
         Product productDB = productRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ProductException(
                         HttpStatus.BAD_REQUEST.toString(),
                         "Product with id '" + id + "' not found.",
                         HttpStatus.BAD_REQUEST.value()));
 
+        // Update product fields
         productDB.setTitle(productDTO.getTitle());
         productDB.setRate(productDTO.getRate());
         productDB.setDescription(productDTO.getDescription());
@@ -299,10 +341,30 @@ public class ProductServiceImpl implements ProductService {
         productDB.setQuantity(productDTO.getQuantity());
         productDB.setUpdatedAt(now());
         productDB.setCategory(productDTO.getCategory());
-        productDB.setUpdatedAt(productDTO.getUpdatedAt());
 
+        // Update images if new ones are uploaded
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            List<Image> updatedImages = new ArrayList<>();
+            for (MultipartFile imageFile : imageFiles) {
+                Image image = Image.builder()
+                        .fileName(imageFile.getOriginalFilename())
+                        .fileSize(String.valueOf(imageFile.getSize()))
+                        .fileType(imageFile.getContentType())
+                        .file(ImageUtil.compressImage(imageFile.getBytes()))
+                        .createdAt(now())
+                        .updatedAt(now())
+                        .product(productDB)
+                        .build();
+                Image savedImage = imageRepository.save(image);
+                updatedImages.add(savedImage);
+            }
+            productDB.setImages(updatedImages);
+        }
+
+        // Save the updated product
         Product saveProduct = productRepository.save(productDB);
 
+        // Return the updated product as DTO
         return objectMapper.mapObject().map(saveProduct, ProductDTO.class);
     }
 

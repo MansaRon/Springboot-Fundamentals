@@ -17,8 +17,8 @@ public interface ProductService {
     GetAllProductsDTO getProductByCategory(String category, int pageNo, int pageSize, String sortBy, String sortDir);
     // description
     GetAllProductsDTO getProductByTitle(String title, int pageNo, int pageSize, String sortBy, String sortDir);
-    List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList);
-    ProductDTO updateProduct(String id, ProductDTO productDTO);
+    List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList, List<MultipartFile> imageFiles) throws IOException;
+    ProductDTO updateProduct(String id, ProductDTO productDTO, List<MultipartFile> imageFiles) throws IOException;
     String deleteProduct(String id);
     String deleteAllProducts();
 }
