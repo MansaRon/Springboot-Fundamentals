@@ -7,6 +7,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -17,6 +18,6 @@ public class GlobalApiErrorResponse {
     private String status;
     private Integer statusCode;
     private String message;
-    private Instant timestamp;
+    private LocalDateTime timestamp;
     private String path;
 }

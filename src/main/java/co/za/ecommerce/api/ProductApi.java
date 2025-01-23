@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,15 +28,14 @@ import static java.time.Instant.now;
 public class ProductApi extends API {
 
     // To change soon to only admin, permitAll for testing only
+    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
+    // @Secured({"USER"})
     @PermitAll
     @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> createProduct(
             @RequestPart("product") @Valid String productJson,
             @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
-        log.trace("public ResponseEntity<ProductDTOApiResource> product(@Valid @RequestBody ProductDTO productDTO)");
-        log.info("Received {} images", imageFiles.size());
         ProductDTO productDTO = jsonMapper.readValue(productJson, ProductDTO.class);
-        log.info("Received product: {}", productDTO);
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
                         .timestamp(now())
@@ -141,6 +141,8 @@ public class ProductApi extends API {
         );
     }
 
+    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
+    // @Secured({"USER"})
     @PermitAll
     @PatchMapping("/product/{productId}")
     public ResponseEntity<ProductDTOApiResource> updateProduct(
@@ -159,6 +161,8 @@ public class ProductApi extends API {
         );
     }
 
+    // @PreAuthorize("hasRole('ADMIN')")
+    // @Secured({"ADMIN"})
     @PermitAll
     @DeleteMapping("/product/{productId}")
     public ResponseEntity<ProductDTOApiResource> deleteProduct(
@@ -175,6 +179,8 @@ public class ProductApi extends API {
         );
     }
 
+    // @PreAuthorize("hasRole('ADMIN')")
+    // @Secured({"ADMIN"})
     @PermitAll
     @DeleteMapping("/product")
     public ResponseEntity<ProductDTOApiResource> deleteAllProduct() {
