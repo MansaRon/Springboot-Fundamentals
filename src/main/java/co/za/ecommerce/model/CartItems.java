@@ -15,5 +15,23 @@ public class CartItems {
     @DBRef
     private Product product;
 
-    private int quantity;
+    /**
+     * Number of items inside cart.
+     */
+    private Integer quantity;
+
+    /**
+     * Discount of the cart items.
+     */
+    private double discount;
+
+    /**
+     * Tax of the cart items.
+     */
+    private double tax;
+
+    /**
+     * Price of the product.
+     */
+    private double productPrice;
 }

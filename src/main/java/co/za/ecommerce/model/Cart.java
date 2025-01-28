@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -29,19 +28,9 @@ public class Cart extends Entity {
     private List<CartItems> cartItems;
 
     /**
-     * Discount of the cart items.
-     */
-    private double discount;
-
-    /**
-     * Tax of the cart items.
-     */
-    private double tax;
-
-    /**
      * Total price of all items in the cart.
      */
-    private double totalPrice;
+    private double totalPrice = 0.0;
 
     public void updateTotal() {
         this.totalPrice = cartItems

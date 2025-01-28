@@ -5,16 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Slf4j
-public class ProductException extends RuntimeException {
+public class CartException extends RuntimeException {
     private final String code;
     private final Integer status;
 
-    public ProductException(String code, String message, Integer status) {
+    public CartException(String code, String message, Integer status) {
         super(message);
         log.error(String.format("Message: %s, Status: %s", message, status));
         this.code = code;
         this.status = status;
     }
 }
-
-
