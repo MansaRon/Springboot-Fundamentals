@@ -1,9 +1,6 @@
 package co.za.ecommerce.api;
 
-import co.za.ecommerce.business.ImageService;
-import co.za.ecommerce.business.ProductService;
-import co.za.ecommerce.business.UserService;
-import co.za.ecommerce.business.WishlistService;
+import co.za.ecommerce.business.*;
 import co.za.ecommerce.mapper.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,4 +25,7 @@ public abstract class API {
 
     @Autowired
     protected WishlistService wishlistService;
+
+    @Autowired
+    protected CartService cartService;
 }

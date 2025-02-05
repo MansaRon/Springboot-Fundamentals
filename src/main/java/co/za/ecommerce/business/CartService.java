@@ -7,7 +7,7 @@ import org.bson.types.ObjectId;
 import java.util.List;
 
 public interface CartService {
-    CartDTO addProductToCart(ObjectId cartId, ObjectId productId, int quantity);
+    CartDTO addProductToCart(ObjectId userId, ObjectId productId, int quantity);
     List<Cart> getAllCarts();
     CartDTO getCart(ObjectId userId, ObjectId cartId);
     CartDTO updateProductInCart(ObjectId cartId, ObjectId productId);
