@@ -81,6 +81,54 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler({CartException.class})
+    public ResponseEntity<GlobalApiErrorResponse> handleCartException(
+            final CartException cartException,
+            final HttpServletRequest httpStatus
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpStatus))
+                        .status(cartException.getCode())
+                        .statusCode(cartException.getStatus())
+                        .message(cartException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
+    @ExceptionHandler({ResourceNotFoundException.class})
+    public ResponseEntity<GlobalApiErrorResponse> resourceNotFoundExceptionException(
+            final ResourceNotFoundException resourceNotFoundException,
+            final HttpServletRequest httpStatus
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpStatus))
+                        .status(resourceNotFoundException.getCode())
+                        .statusCode(resourceNotFoundException.getStatus())
+                        .message(resourceNotFoundException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
+    @ExceptionHandler({UserNotFoundException.class})
+    public ResponseEntity<GlobalApiErrorResponse> userNotFoundExceptionException(
+            final UserNotFoundException userNotFoundException,
+            final HttpServletRequest httpStatus
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpStatus))
+                        .status(userNotFoundException.getCode())
+                        .statusCode(userNotFoundException.getStatus())
+                        .message(userNotFoundException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
     private String getPath(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         return (path != null) ? path : "/UNKNOWN_PATH";

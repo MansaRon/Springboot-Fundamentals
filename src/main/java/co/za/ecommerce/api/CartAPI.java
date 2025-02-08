@@ -5,6 +5,7 @@ import co.za.ecommerce.dto.api.ProductDTOApiResource;
 import co.za.ecommerce.dto.product.ProductDTO;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -29,16 +30,73 @@ public class CartAPI extends API {
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
     @PermitAll
-    @PostMapping
+    @PostMapping("/{userId}/add-item")
     public ResponseEntity<CartDTOApiResource> addProductToCart(
-            @RequestParam ObjectId userId,
-            @RequestParam ObjectId productId,
+            @PathVariable ObjectId userId,
+            @PathVariable ObjectId productId,
             @RequestParam int quantity) {
         return ResponseEntity.ok(
                 CartDTOApiResource.builder()
                         .timestamp(now())
                         .data(cartService.addProductToCart(userId, productId, quantity))
                         .message("Product Added To Cart")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // To change soon to only admin, permitAll for testing only
+    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
+    // @Secured({"USER"})
+    @PermitAll
+    @GetMapping("/{userId}")
+    public ResponseEntity<CartDTOApiResource> getUserCartWithItems(
+            @PathVariable ObjectId userId) {
+        return ResponseEntity.ok(
+                CartDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(cartService.getUserCartWithItems(userId))
+                        .message("Cart with user items {}" + userId + " retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // To change soon to only admin, permitAll for testing only
+    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
+    // @Secured({"USER"})
+    @PermitAll
+    @PatchMapping("/{userId}/update-item/{productId}")
+    public ResponseEntity<CartDTOApiResource> updateProductInCart(
+            @PathVariable ObjectId userId,
+            @PathVariable ObjectId productId,
+            @RequestParam int newQuantity) {
+        return ResponseEntity.ok(
+                CartDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(cartService.updateProductInCart(userId, productId, newQuantity))
+                        .message("Cart with user items {}" + userId + " updated.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // To change soon to only admin, permitAll for testing only
+    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
+    // @Secured({"USER"})
+    @PermitAll
+    @DeleteMapping("/{userId}/delete-item/{productId}")
+    public ResponseEntity<CartDTOApiResource> deleteProductInCart(
+            @PathVariable ObjectId userId,
+            @PathVariable ObjectId productId) {
+        return ResponseEntity.ok(
+                CartDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(cartService.deleteProductFromCart(userId, productId))
+                        .message("Cart with user items {}" + userId + " deleted.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

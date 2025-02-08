@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
+import java.util.Optional;
+
 public class CustomCartRepositoryImpl implements CustomCartRepository {
 
     private final MongoTemplate mongoTemplate;
@@ -16,9 +18,9 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
     }
 
     @Override
-    public Cart findByUserId(ObjectId userId) {
+    public Optional<Cart> findByUserId(ObjectId userId) {
         Query query = new Query();
         query.addCriteria(Criteria.where("user._id").is(userId));
-        return mongoTemplate.findOne(query, Cart.class);
+        return Optional.ofNullable(mongoTemplate.findOne(query, Cart.class));
     }
 }
