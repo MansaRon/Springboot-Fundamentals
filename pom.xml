@@ -115,8 +115,13 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.15.0</version>
 		</dependency>
+        <dependency>
+            <groupId>co.za.ecommerce</groupId>
+            <artifactId>ecommerce</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>
