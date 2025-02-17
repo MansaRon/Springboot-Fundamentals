@@ -30,7 +30,7 @@ public class CartAPI extends API {
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
     @PermitAll
-    @PostMapping("/{userId}/add-item")
+    @PostMapping("/{userId}/add-item/{productId}")
     public ResponseEntity<CartDTOApiResource> addProductToCart(
             @PathVariable ObjectId userId,
             @PathVariable ObjectId productId,
