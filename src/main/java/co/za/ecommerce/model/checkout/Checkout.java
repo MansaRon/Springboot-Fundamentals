@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -91,12 +92,12 @@ public class Checkout extends Entity {
      * The shipping method (e.g., Standard, Express).
      */
     @NotNull
-    private String shippingMethod;
+    private DeliverMethod shippingMethod;
 
     /**
      * The estimated delivery date.
      */
-    private LocalDate estimatedDeliveryDate;
+    private LocalDateTime estimatedDeliveryDate;
 
     /**
      * The current checkout status (e.g., PENDING, COMPLETED, FAILED).

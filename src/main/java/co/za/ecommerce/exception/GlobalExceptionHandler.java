@@ -129,6 +129,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler({CheckoutException.class})
+    public ResponseEntity<GlobalApiErrorResponse> checkoutException(
+            final CheckoutException checkoutException,
+            final HttpServletRequest httpServletRequest
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpServletRequest))
+                        .status(checkoutException.getCode())
+                        .statusCode(checkoutException.getStatus())
+                        .message(checkoutException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
     private String getPath(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         return (path != null) ? path : "/UNKNOWN_PATH";
