@@ -145,6 +145,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler({ValidationException.class})
+    public ResponseEntity<GlobalApiErrorResponse> validationException(
+            final ValidationException validationException,
+            final HttpServletRequest httpServletRequest
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpServletRequest))
+                        .status(validationException.getCode())
+                        .statusCode(validationException.getStatus())
+                        .message(validationException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
     private String getPath(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         return (path != null) ? path : "/UNKNOWN_PATH";
