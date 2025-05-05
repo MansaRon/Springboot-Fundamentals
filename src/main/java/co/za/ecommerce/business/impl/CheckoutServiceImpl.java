@@ -421,7 +421,6 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .amount(checkout.getTotalAmount())
                 .currency("USD")
                 .description("Order payment for user: " + checkout.getUser().getId())
-                .billingAddress(checkout.getBillingAddress())
                 .build();
 
         // Process payment using payment processor
