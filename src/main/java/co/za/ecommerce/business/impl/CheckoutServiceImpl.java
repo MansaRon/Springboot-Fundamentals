@@ -1,6 +1,7 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.CheckoutService;
+import co.za.ecommerce.business.PaymentProcessor;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.PaymentDTO;
@@ -41,6 +42,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CheckoutRepository checkoutRepository;
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
+    // private final PaymentProcessor paymentProcessor;
 
     @Override
     public CheckoutDTO initiateCheckout(ObjectId userId) {
@@ -348,11 +350,11 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     private void validateAddress(Address address) {
         if (address == null ||
-                StringUtils.hasText(address.getStreetAddress()) ||
-                StringUtils.hasText(address.getCity()) ||
-                StringUtils.hasText(address.getState()) ||
-                StringUtils.hasText(address.getPostalCode()) ||
-                StringUtils.hasText(address.getCountry())) {
+                !StringUtils.hasText(address.getStreetAddress()) ||
+                !StringUtils.hasText(address.getCity()) ||
+                !StringUtils.hasText(address.getState()) ||
+                !StringUtils.hasText(address.getPostalCode()) ||
+                !StringUtils.hasText(address.getCountry())) {
 
             throw new ValidationException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -402,23 +404,25 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     private OrderItems cartItemToOrderItem(CartItems cartItem) {
-        OrderItems orderItem = new OrderItems();
-        // orderItem.setProduct(cartItem.getProduct());
-        orderItem.setQuantity(cartItem.getQuantity());
-        // orderItem.setUnitPrice(cartItem.getProduct().getPrice());
-        orderItem.setTotalPrice(cartItem.getProductPrice());
-        // orderItem.setDiscount(cartItem.getDiscount());
-        // orderItem.setTax(cartItem.getTax());
-        return orderItem;
+        return OrderItems.builder()
+                .product(cartItem.getProduct())
+                .quantity(cartItem.getQuantity())
+                .unitPrice(cartItem.getProduct().getPrice())
+                .totalPrice(cartItem.getProduct().getPrice() * cartItem.getQuantity())
+                .discount(0.0) // Can be enhanced with product-specific discounts
+                .tax(cartItem.getProduct().getPrice() * cartItem.getQuantity() * 0.08) // Using standard tax rate
+                .build();
     }
 
     private PaymentResultsDTO processPayment(Checkout checkout) {
         // Create payment details from checkout information
-        PaymentDTO paymentDetails = new PaymentDTO();
-        paymentDetails.setPaymentMethod(checkout.getPaymentMethod());
-
-        // Additional payment details would be populated from
-        // the request in a real implementation
+        PaymentDTO paymentDetails = PaymentDTO.builder()
+                .paymentMethod(checkout.getPaymentMethod().name())
+                .amount(checkout.getTotalAmount())
+                .currency("USD")
+                .description("Order payment for user: " + checkout.getUser().getId())
+                .billingAddress(checkout.getBillingAddress())
+                .build();
 
         // Process payment using payment processor
         return paymentProcessor.processPayment(
