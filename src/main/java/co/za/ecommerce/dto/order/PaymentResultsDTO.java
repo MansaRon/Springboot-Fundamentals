@@ -1,5 +1,7 @@
 package co.za.ecommerce.dto.order;
 
+import java.time.LocalDateTime;
+
 import co.za.ecommerce.dto.base.EntityDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +20,7 @@ public class PaymentResultsDTO extends EntityDTO {
     private String authorizationCode;
     private String responseCode;
     private String responseMessage;
-    private String timestamp;
+    private LocalDateTime timestamp;
     private PaymentStatus status;
     private double processedAmount;
     private String receiptNumber;

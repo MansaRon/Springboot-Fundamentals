@@ -1,7 +1,7 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.CheckoutService;
-import co.za.ecommerce.business.PaymentProcessor;
+import co.za.ecommerce.business.PaymentService;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.PaymentDTO;
@@ -42,7 +42,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CheckoutRepository checkoutRepository;
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
-    // private final PaymentProcessor paymentProcessor;
+    private final PaymentService paymentProcessor;
 
     @Override
     public CheckoutDTO initiateCheckout(ObjectId userId) {
