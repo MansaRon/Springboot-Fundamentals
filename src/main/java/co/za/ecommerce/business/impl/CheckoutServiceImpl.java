@@ -13,6 +13,7 @@ import co.za.ecommerce.exception.ValidationException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Cart;
 import co.za.ecommerce.model.CartItems;
+import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.CheckoutStatus;
 import co.za.ecommerce.model.checkout.DeliverMethod;
@@ -21,6 +22,7 @@ import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.OrderRepository;
+import co.za.ecommerce.repository.ProductRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -43,6 +45,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
     private final PaymentService paymentProcessor;
+    private final ProductRepository productRepository;
 
     @Override
     public CheckoutDTO initiateCheckout(ObjectId userId) {
@@ -212,9 +215,6 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public OrderDTO confirmCheckout(ObjectId checkoutId) {
-//        Finalizes checkout, creating an order.
-//        Converts checkout into an order and processes payment.
-//        Marks checkout as COMPLETED or CANCELLED based on payment success.
         Checkout checkout = checkoutRepository.findById(checkoutId)
                 .orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
@@ -251,6 +251,9 @@ public class CheckoutServiceImpl implements CheckoutService {
             );
         }
 
+        // Validate inventory before proceeding
+        validateInventory(checkout.getItems());
+
         double discount = calculateDiscount(checkout);
         double tax = calculateTax(checkout);
         checkout.setDiscount(discount);
@@ -266,7 +269,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
 
         try {
-            // TODO
+            // Process payment
             PaymentResultsDTO paymentResultsDTO = processPayment(checkout);
 
             if (!paymentResultsDTO.isSuccess()) {
@@ -281,17 +284,26 @@ public class CheckoutServiceImpl implements CheckoutService {
                         HttpStatus.PAYMENT_REQUIRED.value());
             }
 
+            // Create and save order
             Order order = createOrderFromCheckout(checkout, paymentResultsDTO.getTransactionId());
             Order savedOrder = orderRepository.save(order);
 
+            // Update checkout status
             checkout.setStatus(CheckoutStatus.COMPLETED);
             checkout.setUpdatedAt(now());
-            checkoutRepository.save((checkout));
+            checkoutRepository.save(checkout);
 
+            // Clear cart
             Cart cart = checkout.getCart();
             cart.getCartItems().clear();
             cart.updateTotal();
             cartRepository.save(cart);
+
+            // Update inventory
+            updateInventory(checkout.getItems());
+
+            // Send notifications
+            sendOrderNotifications(savedOrder);
 
             return objectMapper.mapObject().map(savedOrder, OrderDTO.class);
         } catch (PaymentException e) {
@@ -459,6 +471,33 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         // TODO: Apply coupon-based or user-specific discounts
         return discount;
+    }
+
+    private void validateInventory(List<CartItems> items) {
+        for (CartItems item : items) {
+            if (item.getProduct().getQuantity() < item.getQuantity()) {
+                throw new CheckoutException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "Insufficient inventory for product: " + item.getProduct().getTitle(),
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+        }
+    }
+
+    private void updateInventory(List<CartItems> items) {
+        for (CartItems item : items) {
+            Product product = item.getProduct();
+            product.setQuantity(product.getQuantity() - item.getQuantity());
+            productRepository.save(product);
+        }
+    }
+
+    private void sendOrderNotifications(Order order) {
+        // TODO: Implement email notification service
+        // Send order confirmation to customer
+        // Send order notification to admin/merchant
+        log.info("Order notifications would be sent for order: {}", order.getId());
     }
 
 }
