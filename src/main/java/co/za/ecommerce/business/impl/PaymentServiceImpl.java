@@ -4,6 +4,7 @@ import co.za.ecommerce.business.PaymentService;
 import co.za.ecommerce.dto.order.PaymentDTO;
 import co.za.ecommerce.dto.order.PaymentResultsDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.bson.types.ObjectId;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     @Override
