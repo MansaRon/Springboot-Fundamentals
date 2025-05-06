@@ -28,4 +28,7 @@ public abstract class API {
 
     @Autowired
     protected CartService cartService;
+
+    @Autowired
+    protected CheckoutService checkoutService;
 }

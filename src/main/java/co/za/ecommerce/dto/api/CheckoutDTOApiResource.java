@@ -8,6 +8,8 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
@@ -15,4 +17,5 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class CheckoutDTOApiResource extends GlobalApiResponse {
     private CheckoutDTO data;
+    private List<CheckoutDTO> dataList;
 }

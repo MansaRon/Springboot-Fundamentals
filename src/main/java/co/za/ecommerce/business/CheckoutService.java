@@ -14,5 +14,5 @@ public interface CheckoutService {
     CheckoutDTO updateCheckout(ObjectId checkoutId, CheckoutDTO checkoutDTO);
     OrderDTO confirmCheckout(ObjectId checkoutId);
     void cancelCheckout(ObjectId checkoutId);
-    void deleteCheckoutByUserId(ObjectId userId);
+    CheckoutDTO deleteCheckoutByUserId(ObjectId userId);
 }

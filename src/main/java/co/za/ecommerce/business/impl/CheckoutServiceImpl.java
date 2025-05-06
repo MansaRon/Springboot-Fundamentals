@@ -309,11 +309,11 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    public void cancelCheckout(ObjectId checkoutId) {
+    public void cancelCheckout(ObjectId cartId) {
         // Cancels a checkout session if the user decides not to proceed.
         // Removes the checkout entry or marks it as CANCELLED.
         // Cancels a checkout session if the user decides not to proceed.
-        Checkout checkout = checkoutRepository.findById(checkoutId).orElseThrow(() -> new CheckoutException(
+        Checkout checkout = checkoutRepository.findById(cartId).orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Checkout not found.",
                         HttpStatus.NOT_FOUND.value()));
@@ -332,7 +332,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    public void deleteCheckoutByUserId(ObjectId userId) {
+    public CheckoutDTO deleteCheckoutByUserId(ObjectId userId) {
         // Deletes all checkouts for a specific user (e.g., account deletion).
         // Cleans up stale checkouts linked to a user.
         // Deletes all pending checkouts for a specific user
@@ -346,6 +346,10 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (!pendingCheckouts.isEmpty()) {
             checkoutRepository.deleteAll(pendingCheckouts);
         }
+
+        // Return the last deleted checkout or null if none were deleted
+        return pendingCheckouts.isEmpty() ? null : 
+            objectMapper.mapObject().map(pendingCheckouts.get(pendingCheckouts.size() - 1), CheckoutDTO.class);
     }
 
     private void validateAddress(Address address) {

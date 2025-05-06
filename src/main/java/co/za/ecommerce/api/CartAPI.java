@@ -1,22 +1,13 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.api.CartDTOApiResource;
-import co.za.ecommerce.dto.api.ProductDTOApiResource;
-import co.za.ecommerce.dto.product.ProductDTO;
 import jakarta.annotation.security.PermitAll;
-import jakarta.validation.Valid;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
 
 import static java.time.Instant.now;
 
