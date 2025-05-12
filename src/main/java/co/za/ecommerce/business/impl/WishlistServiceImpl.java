@@ -30,9 +30,9 @@ public class WishlistServiceImpl implements WishlistService {
         Wishlist wishlist = Wishlist.builder()
                 .createdAt(now())
                 .updatedAt(now())
-                .productID(wishlistDTO.getProductID())
+                .productId(wishlistDTO.getProductID())
                 .product(objectMapper.mapObject().map(wishlistDTO.getProductDTO(), Product.class))
-                .userID(wishlistDTO.getUserID())
+                .userId(wishlistDTO.getUserID())
                 .build();
         Wishlist saveWishlist = wishListRepository.save(wishlist);
         return objectMapper.mapObject().map(saveWishlist, WishlistDTO.class);

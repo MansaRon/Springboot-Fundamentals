@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface WishlistCustomRepository {
     List<Wishlist> findAllByUserIdOrderByCreatedAtDesc(ObjectId id);
-    Optional<Wishlist> findByUserIdAndProductId(ObjectId userId, ObjectId productId);
+    Optional<Wishlist> findByUserIdAndProductId(ObjectId userID, ObjectId productId);
 }

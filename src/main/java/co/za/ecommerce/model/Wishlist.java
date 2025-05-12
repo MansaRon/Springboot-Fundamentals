@@ -20,13 +20,13 @@ public class Wishlist extends Entity {
      * User ID for the wishlist item associated with user.
      */
     @NotNull
-    private ObjectId userID;
+    private ObjectId userId;
 
     /**
      * Product ID for the wishlist item associated with user.
      */
     @NotNull
-    private ObjectId productID;
+    private ObjectId productId;
 
     /**
      * Associated product.
