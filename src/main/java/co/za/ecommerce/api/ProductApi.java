@@ -5,6 +5,7 @@ import co.za.ecommerce.dto.api.ProductDTOAllApiResource;
 import co.za.ecommerce.dto.api.ProductDTOApiResource;
 import co.za.ecommerce.dto.api.ProductDTOListApiResource;
 import co.za.ecommerce.dto.product.ProductDTO;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -125,11 +126,12 @@ public class ProductApi extends API {
     }
 
     @PermitAll
-    @PostMapping("/list")
+    @PostMapping(value = "/list", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOListApiResource> createListProduct(
-            @Valid @RequestBody List<ProductDTO> productDTO,
+            @RequestPart("product") @Valid String productJson,
             @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
-        log.trace("public ResponseEntity<ProductDTOListApiResource> createListProduct(@Valid @RequestBody ProductDTO productDTO)");
+        log.trace("public ResponseEntity<ProductDTOListApiResource> createListProduct(@RequestPart(product) @Valid String productJson, @RequestPart(images) @Valid List<MultipartFile> imageFiles) throws IOException");
+        List<ProductDTO> productDTO = jsonMapper.readValue(productJson, new TypeReference<>() {});
         return ResponseEntity.ok(
                 ProductDTOListApiResource.builder()
                         .timestamp(now())
@@ -144,12 +146,13 @@ public class ProductApi extends API {
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
     @PermitAll
-    @PatchMapping("/product/{productId}")
+    @PatchMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> updateProduct(
             @PathVariable String productId,
-            @Valid @RequestBody ProductDTO productDTO,
-            @RequestPart("images") List<MultipartFile> imageFiles) throws IOException {
-        log.trace("public ResponseEntity<ProductDTOApiResource> updateProduct(@Valid @RequestBody ProductDTO productDTO)");
+            @RequestPart("product") @Valid String productJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) throws IOException {
+        log.trace("public ResponseEntity<ProductDTOApiResource> updateProduct(@PathVariable String productId, @RequestPart product)");
+        ProductDTO productDTO = jsonMapper.readValue(productJson, ProductDTO.class);
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
                         .timestamp(now())

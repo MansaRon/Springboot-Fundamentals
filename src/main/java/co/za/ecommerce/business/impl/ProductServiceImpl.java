@@ -245,7 +245,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductDTO> addMultipleProducts(List<ProductDTO> productDTOList, List<MultipartFile> imageFiles) throws IOException {
-        // Validate the input list
         if (productDTOList == null || productDTOList.isEmpty()) {
             throw new ProductException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -262,7 +261,6 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
-        // Map DTOs to Product entities
         List<Product> productsToSave = productDTOList.stream()
                 .map(productDTO -> Product.builder()
                         .category(productDTO.getCategory())
@@ -277,10 +275,8 @@ public class ProductServiceImpl implements ProductService {
                         .build())
                 .collect(Collectors.toList());
 
-        // Save all products
         List<Product> savedProducts = productRepository.saveAll(productsToSave);
 
-        // Map images to products
         if (imageFiles.size() != savedProducts.size()) {
             throw new ProductException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -306,10 +302,15 @@ public class ProductServiceImpl implements ProductService {
             imagesToSave.add(image);
         }
 
-        // Save all images
-        imageRepository.saveAll(imagesToSave);
+        List<Image> savedImages = imageRepository.saveAll(imagesToSave);
 
-        // Map saved products to DTOs
+        for (int i = 0; i < savedProducts.size(); i++) {
+            Product product = savedProducts.get(i);
+            Image image = savedImages.get(i);
+            product.setImages(List.of(image));
+            productRepository.save(product);
+        }
+
         return savedProducts.stream()
                 .map(product -> objectMapper.mapObject().map(product, ProductDTO.class))
                 .collect(Collectors.toList());
@@ -317,7 +318,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO updateProduct(String id, ProductDTO productDTO, List<MultipartFile> imageFiles) throws IOException {
-        // Validate the ID
         if (id == null || !id.matches("^[a-fA-F0-9]{24}$")) {
             throw new ProductException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -326,14 +326,12 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
-        // Find the existing product
         Product productDB = productRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ProductException(
                         HttpStatus.BAD_REQUEST.toString(),
                         "Product with id '" + id + "' not found.",
                         HttpStatus.BAD_REQUEST.value()));
 
-        // Update product fields
         productDB.setTitle(productDTO.getTitle());
         productDB.setRate(productDTO.getRate());
         productDB.setDescription(productDTO.getDescription());
@@ -341,9 +339,13 @@ public class ProductServiceImpl implements ProductService {
         productDB.setQuantity(productDTO.getQuantity());
         productDB.setUpdatedAt(now());
         productDB.setCategory(productDTO.getCategory());
+        productDB.setImageUrl(productDTO.getImageUrl());
 
-        // Update images if new ones are uploaded
         if (imageFiles != null && !imageFiles.isEmpty()) {
+            if (productDB.getImages() != null && !productDB.getImages().isEmpty()) {
+                imageRepository.deleteAll(productDB.getImages());
+            }
+
             List<Image> updatedImages = new ArrayList<>();
             for (MultipartFile imageFile : imageFiles) {
                 Image image = Image.builder()
@@ -361,11 +363,9 @@ public class ProductServiceImpl implements ProductService {
             productDB.setImages(updatedImages);
         }
 
-        // Save the updated product
-        Product saveProduct = productRepository.save(productDB);
+        Product savedProduct = productRepository.save(productDB);
 
-        // Return the updated product as DTO
-        return objectMapper.mapObject().map(saveProduct, ProductDTO.class);
+        return objectMapper.mapObject().map(savedProduct, ProductDTO.class);
     }
 
     @Override
@@ -383,6 +383,11 @@ public class ProductServiceImpl implements ProductService {
                         HttpStatus.BAD_REQUEST.toString(),
                         "Product with id '" + id + "' not found.",
                         HttpStatus.BAD_REQUEST.value()));
+
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            imageRepository.deleteAll(product.getImages());
+        }
+
         productRepository.delete(product);
         return "Item with ID " + id + " was deleted.";
     }
@@ -396,7 +401,14 @@ public class ProductServiceImpl implements ProductService {
                     "No Products to delete",
                     HttpStatus.BAD_REQUEST.value());
         }
+
+        for (Product product : findAllProducts) {
+            if (product.getImages() != null && !product.getImages().isEmpty()) {
+                imageRepository.deleteAll(product.getImages());
+            }
+        }
+
         productRepository.deleteAll(findAllProducts);
-        return "All products were deleted.";
+        return "All products and their associated images were deleted.";
     }
 }
