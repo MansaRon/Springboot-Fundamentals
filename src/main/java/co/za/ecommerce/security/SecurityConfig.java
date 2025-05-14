@@ -56,9 +56,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/v1/auth/**")
                         .permitAll()
-                        .requestMatchers("api/v1/products/**")
+                        .requestMatchers("/api/v1/products/**")
                         .permitAll()
-                        .requestMatchers("api/v1/image/**")
+                        .requestMatchers("/api/v1/image/**")
+                        .permitAll()
+                        .requestMatchers("/api/v1/cart/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated())
