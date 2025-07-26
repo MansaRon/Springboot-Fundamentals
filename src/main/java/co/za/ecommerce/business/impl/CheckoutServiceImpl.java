@@ -10,6 +10,7 @@ import co.za.ecommerce.exception.CartException;
 import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.exception.ValidationException;
+import co.za.ecommerce.mapper.CheckoutMapper;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Cart;
 import co.za.ecommerce.model.CartItems;
@@ -105,7 +106,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         Checkout savedCheckout = checkoutRepository.save(checkout);
 
         // Convert to DTO
-        return objectMapper.mapObject().map(savedCheckout, CheckoutDTO.class);
+        return CheckoutMapper.toDTO(savedCheckout);
     }
 
     @Override
@@ -119,7 +120,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         // Fetches the latest checkout in progress for the user.
         // Eg) User logs in and wants to resume their checkout
-        return objectMapper.mapObject().map(retrieveCheckout, CheckoutDTO.class);
+        return CheckoutMapper.toDTO(retrieveCheckout);
     }
 
     @Override

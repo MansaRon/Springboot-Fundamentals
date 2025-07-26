@@ -37,7 +37,7 @@ public class WishlistApi extends API {
 
     //@Secured({"USER"})
     //@PreAuthorize("hasRole('ADMIN')")
-    // To refactor to have pagination
+    // TODO to refactor to have pagination
     @PermitAll
     @GetMapping()
     public ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID) {

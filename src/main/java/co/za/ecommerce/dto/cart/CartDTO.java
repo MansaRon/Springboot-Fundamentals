@@ -17,13 +17,5 @@ import java.util.List;
 @AllArgsConstructor
 public class CartDTO extends EntityDTO {
     private List<CartItemsDTO> cartItems;
-
     private double totalPrice = 0.0;
-
-    public void updateTotal() {
-        this.totalPrice = cartItems
-                .stream()
-                .mapToDouble(item -> item.getProductDTO().getPrice() * item.getQuantity())
-                .sum();
-    }
 }

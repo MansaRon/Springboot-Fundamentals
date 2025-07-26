@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddressDTO extends EntityDTO {
+public class AddressDTO {
     private String streetAddress;
     private String city;
     private String state;

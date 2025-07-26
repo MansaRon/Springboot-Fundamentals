@@ -72,7 +72,6 @@ public class Checkout extends Entity {
     /**
      * The selected payment method (e.g., Credit Card, PayPal, etc.).
      */
-    @DBRef
     @NotNull
     private PaymentMethod paymentMethod;
 

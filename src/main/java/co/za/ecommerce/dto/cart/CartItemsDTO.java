@@ -14,8 +14,7 @@ import org.bson.types.ObjectId;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartItemsDTO extends EntityDTO {
-    private ObjectId cartItemId;
+public class CartItemsDTO {
     private ProductDTO productDTO;
     private Integer quantity;
     private double discount;
