@@ -1,5 +1,6 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.ProductAPI;
 import co.za.ecommerce.config.AppConstants;
 import co.za.ecommerce.dto.api.ProductDTOAllApiResource;
 import co.za.ecommerce.dto.api.ProductDTOApiResource;
@@ -25,11 +26,12 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/products")
-public class ProductApIImpl extends API {
+public class ProductApIImpl extends API implements ProductAPI {
 
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
+    @Override
     @PermitAll
     @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> createProduct(
@@ -47,6 +49,7 @@ public class ProductApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @GetMapping
     public ResponseEntity<ProductDTOAllApiResource> getAllProducts(
@@ -66,6 +69,7 @@ public class ProductApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTOApiResource> getProduct(
@@ -82,6 +86,7 @@ public class ProductApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @GetMapping("/category/{category}")
     public ResponseEntity<ProductDTOAllApiResource> getProductsByCategory(
@@ -103,6 +108,7 @@ public class ProductApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @GetMapping("/title/{title}")
     public ResponseEntity<ProductDTOAllApiResource> getProductsByTitle(
@@ -124,6 +130,7 @@ public class ProductApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @PostMapping(value = "/list", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOListApiResource> createListProduct(
@@ -144,6 +151,7 @@ public class ProductApIImpl extends API {
 
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
+    @Override
     @PermitAll
     @PatchMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> updateProduct(
@@ -165,6 +173,7 @@ public class ProductApIImpl extends API {
 
     // @PreAuthorize("hasRole('ADMIN')")
     // @Secured({"ADMIN"})
+    @Override
     @PermitAll
     @DeleteMapping("/product/{productId}")
     public ResponseEntity<ProductDTOApiResource> deleteProduct(
@@ -183,6 +192,7 @@ public class ProductApIImpl extends API {
 
     // @PreAuthorize("hasRole('ADMIN')")
     // @Secured({"ADMIN"})
+    @Override
     @PermitAll
     @DeleteMapping("/product")
     public ResponseEntity<ProductDTOApiResource> deleteAllProduct() {
