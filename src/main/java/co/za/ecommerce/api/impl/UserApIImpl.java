@@ -1,5 +1,6 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.UserAPI;
 import co.za.ecommerce.dto.api.ResetPwdDTOApiResource;
 import co.za.ecommerce.dto.api.UserCreateDTOApiResource;
 import co.za.ecommerce.dto.api.UserDTOApiResource;
@@ -20,7 +21,7 @@ import java.time.Instant;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/auth")
-public class UserApIImpl extends API {
+public class UserApIImpl extends API implements UserAPI {
 
     @GetMapping("/hello")
     public String helloWorld()
@@ -28,6 +29,7 @@ public class UserApIImpl extends API {
         return "Hello World";
     }
 
+    @Override
     @PermitAll
     @PostMapping("/register")
     public ResponseEntity<UserCreateDTOApiResource> register(
@@ -49,6 +51,7 @@ public class UserApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @PostMapping("/confirm/{phoneNum}/{OTP}")
     public ResponseEntity<UserDTOApiResource> confirmUser(
@@ -68,6 +71,7 @@ public class UserApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @PostMapping("/login")
     public ResponseEntity<UserDTOApiResource> login(
@@ -86,6 +90,7 @@ public class UserApIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @PostMapping("/update-password")
     public ResponseEntity<ResetPwdDTOApiResource> updatePassword(

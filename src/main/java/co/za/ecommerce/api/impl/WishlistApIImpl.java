@@ -1,5 +1,6 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.WishlistAPI;
 import co.za.ecommerce.dto.api.WishlistDTOApiResource;
 import co.za.ecommerce.dto.wishlist.WishlistDTO;
 import jakarta.annotation.security.PermitAll;
@@ -15,11 +16,12 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/wishlist")
-public class WishlistApIImpl extends API {
+public class WishlistApIImpl extends API implements WishlistAPI {
 
     //Security alternatives
     //@Secured({"USER"})
     //@PreAuthorize("hasRole('ADMIN')")
+    @Override
     @PermitAll
     @PostMapping()
     public ResponseEntity<WishlistDTOApiResource> addWishlist(@RequestBody WishlistDTO wishlistDTO) {
@@ -38,6 +40,7 @@ public class WishlistApIImpl extends API {
     //@Secured({"USER"})
     //@PreAuthorize("hasRole('ADMIN')")
     // TODO to refactor to have pagination
+    @Override
     @PermitAll
     @GetMapping()
     public ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID) {
@@ -55,6 +58,7 @@ public class WishlistApIImpl extends API {
 
     //@Secured({"USER"})
     //@PreAuthorize("hasRole('ADMIN')")
+    @Override
     @PermitAll
     @DeleteMapping("/{userID}")
     public ResponseEntity<WishlistDTOApiResource> deleteWishlist(@PathVariable String userID, @RequestBody WishlistDTO wishlistDTO) {
