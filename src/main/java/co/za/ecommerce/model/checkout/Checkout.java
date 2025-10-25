@@ -11,10 +11,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +24,9 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @Document(collection = "checkout")
+@CompoundIndexes({
+        @CompoundIndex(name = "unique_cart_idx", def = "{'cart': 1}", unique = true)
+})
 public class Checkout extends Entity {
 
     /**

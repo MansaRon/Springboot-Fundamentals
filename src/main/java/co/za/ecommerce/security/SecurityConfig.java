@@ -54,16 +54,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/api/v1/auth/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/products/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/image/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/cart/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/checkout/**")
-                        .permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/api/v1/products/**",
+                                "/api/v1/image/**",
+                                "/api/v1/cart/**",
+                                "/api/v1/checkout/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .anyRequest()
                         .authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

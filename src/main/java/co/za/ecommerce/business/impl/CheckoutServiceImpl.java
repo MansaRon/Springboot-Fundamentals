@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,16 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final PaymentService paymentProcessor;
     private final ProductRepository productRepository;
 
+    /**
+     * If a value is present, returns the value, otherwise throws
+     * {@code NoSuchElementException}.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @return the non-{@code null} value described by this {@code Optional}
+     * @throws NoSuchElementException if no value is present
+     */
     @Override
     public CheckoutDTO initiateCheckout(ObjectId userId) {
         // Creates a checkout entry when a user proceeds to checkout.
@@ -64,6 +75,12 @@ public class CheckoutServiceImpl implements CheckoutService {
                     HttpStatus.BAD_REQUEST.toString(),
                     "Cart is empty. Cannot proceed to checkout.",
                     HttpStatus.BAD_REQUEST.value());
+        }
+
+        // Check if checkout already exists for this cart
+        Optional<Checkout> existingCheckout = checkoutRepository.findByCartId(cart.getId());
+        if (existingCheckout.isPresent()) {
+            return CheckoutMapper.toDTO(existingCheckout.get());
         }
 
         // Calculates total price, discounts, taxes, and shipping costs.
@@ -134,7 +151,7 @@ public class CheckoutServiceImpl implements CheckoutService {
                         "No checkout found for this cart.",
                         HttpStatus.NOT_FOUND.value()));
 
-        return objectMapper.mapObject().map(checkout, CheckoutDTO.class);
+        return CheckoutMapper.toDTO(checkout);
     }
 
     @Override
@@ -160,58 +177,33 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         return checkoutRepository.findAllByStatus(checkoutStatus)
                 .stream()
-                .map(checkout -> objectMapper.mapObject().map(checkout, CheckoutDTO.class))
+                .map(CheckoutMapper::toDTO)
                 .toList();
     }
 
     @Override
     public CheckoutDTO updateCheckout(ObjectId userId, CheckoutDTO checkoutDTO) {
-        Checkout checkout = checkoutRepository.findFirstByUserId(userId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.NOT_FOUND.toString(),
-                        "No active checkout found for user.",
-                        HttpStatus.NOT_FOUND.value()));
+        Checkout checkout = findActiveCheckoutByUserId(userId);
 
-        if (CheckoutStatus.PENDING.equals(checkout.getStatus())) {
-            if (checkoutDTO.getPaymentMethod() != null) {
-                checkout.setPaymentMethod(checkoutDTO.getPaymentMethod());
-            }
-            // Update shipping address if provided
-            if (checkoutDTO.getShippingAddress() != null) {
-                checkout.setShippingAddress(objectMapper.mapObject()
-                        .map(checkoutDTO.getShippingAddress(), Address.class)
-                );
-            }
-
-            // Update billing address if provided
-            if (checkoutDTO.getBillingAddress() != null) {
-                checkout.setBillingAddress(objectMapper.mapObject()
-                        .map(checkoutDTO.getBillingAddress(), Address.class)
-                );
-            }
-
-            // Update shipping method if provided
-            if (checkoutDTO.getShippingMethod() != null) {
-                checkout.setShippingMethod(checkoutDTO.getShippingMethod());
-            }
-
-            // Update cart items if provided
-            if (checkoutDTO.getItems() != null && !checkoutDTO.getItems().isEmpty()) {
-                List<CartItems> updatedCartItems = checkoutDTO.getItems().stream()
-                        .map(item -> objectMapper.mapObject().map(item, CartItems.class))
-                        .collect(Collectors.toList());
-                checkout.setItems(updatedCartItems);
-            }
-
-            Checkout savedCheckout = checkoutRepository.save(checkout);
-            return objectMapper.mapObject().map(savedCheckout, CheckoutDTO.class);
-        } else {
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
                     "Checkout cannot be updated as it is already " + checkout.getStatus().name().toLowerCase() + ".",
                     HttpStatus.BAD_REQUEST.value()
             );
         }
+
+        validateCheckoutReferences(checkout);
+
+        updatePaymentMethod(checkout, checkoutDTO);
+        updateShippingAddress(checkout, checkoutDTO);
+        updateBillingAddress(checkout, checkoutDTO);
+        updateShippingMethod(checkout, checkoutDTO);
+        updateCartItems(checkout, checkoutDTO);
+        recalculateTotals(checkout);
+
+        Checkout savedCheckout = checkoutRepository.save(checkout);
+        return CheckoutMapper.toDTO(savedCheckout);
     }
 
     @Override
@@ -501,4 +493,97 @@ public class CheckoutServiceImpl implements CheckoutService {
         log.info("Order notifications would be sent for order: {}", order.getId());
     }
 
+    private Checkout findActiveCheckoutByUserId(ObjectId userId) {
+        return checkoutRepository.findFirstByUserId(userId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "No active checkout found for user.",
+                        HttpStatus.NOT_FOUND.value()));
+    }
+
+    private void validateCheckoutReferences(Checkout checkout) {
+        if (checkout.getUser() == null || checkout.getUser().getId() == null) {
+            throw new IllegalStateException("Checkout user reference is null or has no ID");
+        }
+        if (checkout.getCart() == null || checkout.getCart().getId() == null) {
+            throw new IllegalStateException("Checkout cart reference is null or has no ID");
+        }
+        if (checkout.getItems() != null) {
+            checkout.getItems().forEach(item -> {
+                if (item.getProduct() == null || item.getProduct().getId() == null) {
+                    throw new IllegalStateException("CartItem product reference is null or has no ID");
+                }
+            });
+        }
+    }
+
+    private void updatePaymentMethod(Checkout checkout, CheckoutDTO dto) {
+        if (dto.getPaymentMethod() != null) {
+            checkout.setPaymentMethod(dto.getPaymentMethod());
+        }
+    }
+
+    private void updateShippingAddress(Checkout checkout, CheckoutDTO dto) {
+        if (dto.getShippingAddress() != null) {
+            checkout.setShippingAddress(
+                    objectMapper.mapObject().map(dto.getShippingAddress(), Address.class)
+            );
+        }
+    }
+
+    private void updateBillingAddress(Checkout checkout, CheckoutDTO dto) {
+        if (dto.getBillingAddress() != null) {
+            checkout.setBillingAddress(
+                    objectMapper.mapObject().map(dto.getBillingAddress(), Address.class)
+            );
+        }
+    }
+
+    private void updateShippingMethod(Checkout checkout, CheckoutDTO dto) {
+        if (dto.getShippingMethod() != null) {
+            checkout.setShippingMethod(dto.getShippingMethod());
+        }
+    }
+
+    private void updateCartItems(Checkout checkout, CheckoutDTO checkoutDTO) {
+        if (checkoutDTO.getItems() != null && !checkoutDTO.getItems().isEmpty()) {
+            List<CartItems> updatedCartItems = checkoutDTO.getItems().stream()
+                    .map(dto -> {
+                        CartItems entity = new CartItems();
+
+                        if (dto.getProductDTO() == null) {
+                            throw new IllegalArgumentException("ProductDTO cannot be null");
+                        }
+
+                        Product product = null;
+                        if (dto.getProductDTO().getId() != null) {
+                            product = productRepository.findById(new ObjectId(dto.getProductDTO().getId()))
+                                    .orElseThrow(() -> new IllegalArgumentException(
+                                            "Product not found with ID: " + dto.getProductDTO().getId()
+                                    ));
+                        }
+                        entity.setProduct(product);
+                        entity.setQuantity(dto.getQuantity());
+                        entity.setDiscount(dto.getDiscount());
+                        entity.setTax(dto.getTax());
+                        entity.setProductPrice(dto.getProductPrice());
+
+                        return entity;
+                    }).collect(Collectors.toList());
+
+            checkout.setItems(updatedCartItems);
+        }
+    }
+
+    private void recalculateTotals(Checkout checkout) {
+        double subTotal = checkout.getItems().stream().mapToDouble(CartItems::getProductPrice).sum();
+        double discount = checkout.getDiscount();
+        double tax = subTotal * 0.10;
+        double totalAmount = (subTotal - discount) + tax;
+
+        checkout.setSubtotal(subTotal);
+        checkout.setDiscount(discount);
+        checkout.setTax(tax);
+        checkout.setTotalAmount(totalAmount);
+    }
 }

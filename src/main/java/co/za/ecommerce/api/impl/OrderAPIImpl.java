@@ -1,4 +1,4 @@
-package co.za.ecommerce.api;
+package co.za.ecommerce.api.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/cart")
-public class OrderAPI extends API {
+public class OrderAPIImpl extends API {
 }

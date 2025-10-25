@@ -1,4 +1,4 @@
-package co.za.ecommerce.api;
+package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.config.AppConstants;
 import co.za.ecommerce.dto.api.ProductDTOAllApiResource;
@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,7 +25,7 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/products")
-public class ProductApi extends API {
+public class ProductApIImpl extends API {
 
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")

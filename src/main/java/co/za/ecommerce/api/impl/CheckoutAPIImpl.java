@@ -1,9 +1,8 @@
-package co.za.ecommerce.api;
+package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
-import co.za.ecommerce.dto.product.ProductDTO;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +12,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+
 import static java.time.Instant.now;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/checkout")
-public class CheckoutAPI extends API {
+public class CheckoutAPIImpl extends API {
 
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
@@ -43,7 +44,7 @@ public class CheckoutAPI extends API {
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
     @PermitAll
-    @PostMapping("/{userId}/retrieve-checkout")
+    @PostMapping("/{userId}/current")
     public ResponseEntity<CheckoutDTOApiResource> getCheckoutByUserId(
             @PathVariable ObjectId userId) {
         return ResponseEntity.ok(
@@ -105,7 +106,8 @@ public class CheckoutAPI extends API {
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
                         .data(checkoutService.updateCheckout(userId, checkoutDTO))
-                        .message("Checkout updated.")
+                        .dataList(new ArrayList<>())
+                        .message("Checkout items updated.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

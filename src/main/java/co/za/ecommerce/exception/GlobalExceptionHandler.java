@@ -2,10 +2,14 @@ package co.za.ecommerce.exception;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -156,6 +160,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         .status(validationException.getCode())
                         .statusCode(validationException.getStatus())
                         .message(validationException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<GlobalApiErrorResponse> nullPointerException(final NullPointerException npe, final HttpServletRequest httpServletRequest) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpServletRequest))
+                        .status(npe.getMessage())
+                        .statusCode(npe.getStatus())
+                        .message("Null pointer exception occurred")
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
+    @ExceptionHandler(ArrayIndexOutOfBoundsException.class)
+    public ResponseEntity<GlobalApiErrorResponse> arrayIndexOutOfBoundsException(final ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException, final HttpServletRequest httpServletRequest) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpServletRequest))
+                        .status(arrayIndexOutOfBoundsException.getMessage())
+                        .statusCode(arrayIndexOutOfBoundsException.getStatus())
+                        .message("Array out of bounds has occurred")
                         .timestamp(now())
                         .build()
                 );

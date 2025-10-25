@@ -1,4 +1,4 @@
-package co.za.ecommerce.api;
+package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.dto.api.ImageDTOApiResource;
 import jakarta.annotation.security.PermitAll;
@@ -19,7 +19,7 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/image")
-public class ImageAPI extends API {
+public class ImageAPIImpl extends API {
 
     @PermitAll
     @PostMapping("/upload")

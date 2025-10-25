@@ -14,7 +14,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetAllProductsDTO extends EntityDTO {
+public class GetAllProductsDTO {
     private List<ProductDTO> products;
     private int pageNo;
     private int pageSize;

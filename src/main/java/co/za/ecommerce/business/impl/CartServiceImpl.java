@@ -31,7 +31,6 @@ public class CartServiceImpl implements CartService {
 
     private CartRepository cartRepository;
     private ProductRepository productRepository;
-    private ObjectMapper objectMapper;
     private UserRepository userRepository;
 
     @Override

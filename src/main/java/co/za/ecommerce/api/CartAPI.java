@@ -1,96 +1,74 @@
 package co.za.ecommerce.api;
 
+import co.za.ecommerce.dto.GlobalApiErrorResponse;
 import co.za.ecommerce.dto.api.CartDTOApiResource;
-import jakarta.annotation.security.PermitAll;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.bson.types.ObjectId;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import static java.time.Instant.now;
+/**
+ * @author Thendo
+ * @date 2025/10/11
+ */
+public interface CartAPI {
 
-@Slf4j
-@RestController
-@RequiredArgsConstructor
-@RequestMapping("api/v1/cart")
-public class CartAPI extends API {
-
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
-    @PermitAll
-    @PostMapping("/{userId}/add-item/{productId}")
-    public ResponseEntity<CartDTOApiResource> addProductToCart(
-            @PathVariable ObjectId userId,
-            @PathVariable ObjectId productId,
-            @RequestParam int quantity) {
-        return ResponseEntity.ok(
-                CartDTOApiResource.builder()
-                        .timestamp(now())
-                        .data(cartService.addProductToCart(userId, productId, quantity))
-                        .message("Product Added To Cart")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
-                        .build()
-        );
-    }
-
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
-    @PermitAll
-    @GetMapping("/{userId}")
-    public ResponseEntity<CartDTOApiResource> getUserCartWithItems(
-            @PathVariable ObjectId userId) {
-        return ResponseEntity.ok(
-                CartDTOApiResource.builder()
-                        .timestamp(now())
-                        .data(cartService.getUserCartWithItems(userId))
-                        .message("Cart with user ID " + userId + " retrieved.")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
-                        .build()
-        );
-    }
-
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
-    @PermitAll
-    @PatchMapping("/{userId}/update-item/{productId}")
-    public ResponseEntity<CartDTOApiResource> updateProductInCart(
-            @PathVariable ObjectId userId,
-            @PathVariable ObjectId productId,
-            @RequestParam int newQuantity) {
-        return ResponseEntity.ok(
-                CartDTOApiResource.builder()
-                        .timestamp(now())
-                        .data(cartService.updateProductInCart(userId, productId, newQuantity))
-                        .message("Cart with user ID " + userId + " updated.")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
-                        .build()
-        );
-    }
-
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
-    @PermitAll
-    @DeleteMapping("/{userId}/delete-item/{productId}")
-    public ResponseEntity<CartDTOApiResource> deleteProductInCart(
-            @PathVariable ObjectId userId,
-            @PathVariable ObjectId productId) {
-        return ResponseEntity.ok(
-                CartDTOApiResource.builder()
-                        .timestamp(now())
-                        .data(cartService.deleteProductFromCart(userId, productId))
-                        .message("Cart with user ID " + userId + " deleted.")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
-                        .build()
-        );
-    }
+    @Operation(tags = "Cart", summary = "Adding products into a cart")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Cart added successfully",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = CartDTOApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity);
 }

@@ -1,0 +1,11 @@
+TODO
+Create seperate userDTO for mapping user details onto other DTO's
+Remove the extended DTO's that add redundant data (dates and etc etc)
+Map the cart ID correctly for the initiate checkout
+Write unit tests
+Format amounts for productPrice and tax to 2 decimals
+If there is no images added, just leave it as an empty array instead of a null value
+Append id, createdAt, updatedAt for the GetAllProductsDTO
+Fix handleHttpRequestMethodNotSupportedException method for custom exception
+Finish off remainder of Swagger UI for API's
+Add payment gateway (Using payfast)

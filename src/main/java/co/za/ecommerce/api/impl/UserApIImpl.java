@@ -1,7 +1,5 @@
-package co.za.ecommerce.api;
+package co.za.ecommerce.api.impl;
 
-import co.za.ecommerce.business.UserService;
-import co.za.ecommerce.dto.GlobalApiResponse;
 import co.za.ecommerce.dto.api.ResetPwdDTOApiResource;
 import co.za.ecommerce.dto.api.UserCreateDTOApiResource;
 import co.za.ecommerce.dto.api.UserDTOApiResource;
@@ -22,7 +20,7 @@ import java.time.Instant;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/auth")
-public class UserApi extends API {
+public class UserApIImpl extends API {
 
     @GetMapping("/hello")
     public String helloWorld()

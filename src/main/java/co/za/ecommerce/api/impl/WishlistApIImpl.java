@@ -1,4 +1,4 @@
-package co.za.ecommerce.api;
+package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.dto.api.WishlistDTOApiResource;
 import co.za.ecommerce.dto.wishlist.WishlistDTO;
@@ -15,7 +15,7 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/wishlist")
-public class WishlistApi extends API {
+public class WishlistApIImpl extends API {
 
     //Security alternatives
     //@Secured({"USER"})

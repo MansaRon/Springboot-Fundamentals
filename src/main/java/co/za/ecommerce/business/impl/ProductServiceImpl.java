@@ -4,7 +4,6 @@ import co.za.ecommerce.business.ProductService;
 import co.za.ecommerce.dto.product.GetAllProductsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.exception.ProductException;
-import co.za.ecommerce.exception.ResourceNotFoundException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Image;
 import co.za.ecommerce.model.Product;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static co.za.ecommerce.utils.DateUtil.now;
+import static co.za.ecommerce.utils.ValueUtil.*;
 
 @Slf4j
 @Service
@@ -332,14 +332,16 @@ public class ProductServiceImpl implements ProductService {
                         "Product with id '" + id + "' not found.",
                         HttpStatus.BAD_REQUEST.value()));
 
-        productDB.setTitle(productDTO.getTitle());
-        productDB.setRate(productDTO.getRate());
-        productDB.setDescription(productDTO.getDescription());
-        productDB.setPrice(productDTO.getPrice());
-        productDB.setQuantity(productDTO.getQuantity());
+        productDB.setId(productDB.getId());
         productDB.setUpdatedAt(now());
-        productDB.setCategory(productDTO.getCategory());
-        productDB.setImageUrl(productDTO.getImageUrl());
+        productDB.setTitle(defaultIfNullOrEmpty(productDTO.getTitle(), productDB.getTitle()));
+        productDB.setRate(defaultIfNullOrEmpty(productDTO.getRate(), productDB.getRate()));
+        productDB.setDescription(defaultIfNullOrEmpty(productDTO.getDescription(), productDB.getDescription()));
+        productDB.setPrice(defaultIfNullOrZero(productDTO.getPrice(), productDB.getPrice()));
+        productDB.setQuantity(defaultIfNullOrZero(productDTO.getQuantity(), productDB.getQuantity()));
+        productDB.setUpdatedAt(now());
+        productDB.setCategory(defaultIfNullOrEmpty(productDTO.getCategory(), productDB.getCategory()));
+        productDB.setImageUrl(defaultIfNullOrEmpty(productDTO.getImageUrl(), productDB.getImageUrl()));
 
         if (imageFiles != null && !imageFiles.isEmpty()) {
             if (productDB.getImages() != null && !productDB.getImages().isEmpty()) {
@@ -353,14 +355,13 @@ public class ProductServiceImpl implements ProductService {
                         .fileSize(String.valueOf(imageFile.getSize()))
                         .fileType(imageFile.getContentType())
                         .file(ImageUtil.compressImage(imageFile.getBytes()))
-                        .createdAt(now())
                         .updatedAt(now())
                         .product(productDB)
                         .build();
                 Image savedImage = imageRepository.save(image);
                 updatedImages.add(savedImage);
             }
-            productDB.setImages(updatedImages);
+            productDB.setImages(defaultIfNullOrEmptyList(updatedImages, productDB.getImages()));
         }
 
         Product savedProduct = productRepository.save(productDB);

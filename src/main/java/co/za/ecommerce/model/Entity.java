@@ -2,16 +2,13 @@ package co.za.ecommerce.model;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -49,17 +46,4 @@ public class Entity extends Persistable {
      */
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    public String hexId() {
-        return id != null ? id.toHexString() : null;
-    }
-
-    public ObjectId getId() {
-        return id;
-    }
-
-    public void setId(ObjectId id) {
-        this.id = id;
-    }
-
 }

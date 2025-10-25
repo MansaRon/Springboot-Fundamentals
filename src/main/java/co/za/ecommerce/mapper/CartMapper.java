@@ -17,9 +17,6 @@ public class CartMapper {
     public static CartDTO toDTO(Cart cart) {
         if (cart == null) return null;
         CartDTO dto = new CartDTO();
-        dto.setId(cart.getId() != null ? cart.getId().toHexString() : null);
-        dto.setCreatedAt(cart.getCreatedAt());
-        dto.setUpdatedAt(now());
         dto.setTotalPrice(cart.getTotalPrice());
         if (cart.getCartItems() != null) {
             dto.setCartItems(cart.getCartItems()
@@ -41,7 +38,7 @@ public class CartMapper {
         return dto;
     }
 
-    private static ProductDTO toProductDTO(Product product) {
+    static ProductDTO toProductDTO(Product product) {
         if (product == null) return null;
 
         ProductDTO dto = new ProductDTO();
@@ -67,10 +64,6 @@ public class CartMapper {
     public static Cart fromDTO(CartDTO dto) {
         if (dto == null) return null;
         Cart cart = new Cart();
-        if (dto.getId() != null) {
-            cart.setId(new org.bson.types.ObjectId(dto.getId()));
-        }
-        cart.setCreatedAt(dto.getCreatedAt());
         cart.setUpdatedAt(now());
         cart.setTotalPrice(dto.getTotalPrice());
         if (dto.getCartItems() != null) {

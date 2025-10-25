@@ -7,6 +7,7 @@ import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.order.Address;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class CheckoutMapper {
