@@ -32,7 +32,7 @@ public class CheckoutAPIImpl extends API {
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
-                        .data(checkoutService.initiateCheckout(userId))
+                        .data(checkoutService.createCheckoutFromCart(userId))
                         .message("Checkout initiated.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
@@ -117,20 +117,20 @@ public class CheckoutAPIImpl extends API {
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
-    @PermitAll
-    @PostMapping("/{cartId}/confirm-checkout")
-    public ResponseEntity<OrderDTOApiResource> confirmCheckout(
-            @PathVariable ObjectId cartId) {
-        return ResponseEntity.ok(
-                OrderDTOApiResource.builder()
-                        .timestamp(now())
-                        .data(checkoutService.confirmCheckout(cartId))
-                        .message("Checkout confirmed and order created.")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
-                        .build()
-        );
-    }
+//    @PermitAll
+//    @PostMapping("/{cartId}/confirm-checkout")
+//    public ResponseEntity<OrderDTOApiResource> confirmCheckout(
+//            @PathVariable ObjectId cartId) {
+//        return ResponseEntity.ok(
+//                OrderDTOApiResource.builder()
+//                        .timestamp(now())
+//                        .data(checkoutService.confirmCheckout(cartId))
+//                        .message("Checkout confirmed and order created.")
+//                        .status(String.valueOf(HttpStatus.OK))
+//                        .statusCode(HttpStatus.OK.value())
+//                        .build()
+//        );
+//    }
 
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")

@@ -1,5 +1,7 @@
 package co.za.ecommerce.repository;
 
+import co.za.ecommerce.model.Cart;
+import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.CheckoutStatus;
 import org.bson.types.ObjectId;
@@ -16,4 +18,5 @@ public interface CheckoutRepository extends MongoRepository<Checkout, ObjectId> 
     List<Checkout> findAllByStatus(CheckoutStatus status);
     void deleteByUserId(ObjectId userId);
     List<Checkout> findByUserId(ObjectId userId);
+    Optional<Checkout> findByPaymentRequestId(String paymentRequestId);
 }

@@ -6,7 +6,9 @@ public enum OrderStatus {
     SHIPPED("Shipped"),
     DELIVERED("Delivered"),
     CANCELLED("Cancelled"),
-    ACCEPTED("Accepted");
+    ACCEPTED("Accepted"),
+    CONFIRMED("CONFIRMED"),
+    PAID("PAID");
 
     OrderStatus(String description) {
     }
