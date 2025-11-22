@@ -6,7 +6,6 @@ import co.za.ecommerce.exception.CartException;
 import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.exception.UserNotFoundException;
 import co.za.ecommerce.mapper.CartMapper;
-import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Cart;
 import co.za.ecommerce.model.CartItems;
 import co.za.ecommerce.model.Product;
@@ -237,6 +236,17 @@ public class CartServiceImpl implements CartService {
                     HttpStatus.BAD_REQUEST.value()
             );
         }
+    }
+
+    /**
+     * Clear cart after successful order creation
+     */
+    @Override
+    public void clearCart(Cart cart) {
+        log.info("Clearing cart: {}", cart.getId());
+        cart.getCartItems().clear();
+        cart.updateTotal();
+        cartRepository.save(cart);
     }
 
     private Cart createNewCartForUser(ObjectId userID) {

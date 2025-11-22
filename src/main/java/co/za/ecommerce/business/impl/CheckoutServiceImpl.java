@@ -93,7 +93,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setUser(cart.getUser());
         checkout.setCart(cart);
 
-        // Copy cart items to checkout
+        // Copy cart items to check out
         List<CartItems> checkoutItems = new ArrayList<>(cart.getCartItems());
         checkout.setItems(checkoutItems);
 
@@ -345,6 +345,19 @@ public class CheckoutServiceImpl implements CheckoutService {
         // Return the last deleted checkout or null if none were deleted
         return pendingCheckouts.isEmpty() ? null :
             objectMapper.mapObject().map(pendingCheckouts.get(pendingCheckouts.size() - 1), CheckoutDTO.class);
+    }
+
+    public CheckoutDTO getCheckoutDTOByPaymentRequestId(String paymentRequestId) {
+        log.info("Fetching checkout for payment request: {}", paymentRequestId);
+
+        Checkout checkout = checkoutRepository.findByPaymentRequestId(paymentRequestId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Checkout not found for payment request",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+
+        return CheckoutMapper.toDTO(checkout);
     }
 
     private double calculateTax(Checkout checkout) {

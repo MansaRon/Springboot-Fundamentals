@@ -6,6 +6,7 @@ import co.za.ecommerce.business.PayFastService;
 import co.za.ecommerce.business.PaymentWebhookService;
 import co.za.ecommerce.dto.PayFastITNPayload;
 import co.za.ecommerce.dto.order.PaymentStatus;
+import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.model.PayfastConfig;
 import co.za.ecommerce.model.checkout.Checkout;
@@ -66,7 +67,7 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
 
             // 3. Get checkout
             Checkout checkout = checkoutRepository.findByPaymentRequestId(payload.getM_payment_id())
-                    .orElseThrow(() -> new PaymentException(
+                    .orElseThrow(() -> new CheckoutException(
                             HttpStatus.NOT_FOUND.toString(),
                             "Checkout not found for payment request",
                             HttpStatus.NOT_FOUND.value()

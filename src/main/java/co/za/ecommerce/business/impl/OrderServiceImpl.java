@@ -1,29 +1,31 @@
 package co.za.ecommerce.business.impl;
 
+import co.za.ecommerce.business.CartService;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
-import co.za.ecommerce.model.Cart;
+import co.za.ecommerce.exception.CheckoutException;
+import co.za.ecommerce.exception.OrderException;
+import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.model.CartItems;
-import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.checkout.Checkout;
-import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
 import co.za.ecommerce.model.order.Order;
 import co.za.ecommerce.model.order.OrderItems;
 import co.za.ecommerce.model.order.OrderStatus;
 import co.za.ecommerce.model.order.PaymentDetails;
-import co.za.ecommerce.repository.CartRepository;
+import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.OrderRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static co.za.ecommerce.mapper.OrderMapper.mapToOrderDTO;
 import static co.za.ecommerce.utils.DateUtil.now;
 
 @Slf4j
@@ -32,8 +34,10 @@ import static co.za.ecommerce.utils.DateUtil.now;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final CartRepository cartRepository;
+    private final CartService cartService;
     private final InventoryService inventoryService;
+    private final CheckoutRepository checkoutRepository;
+
     /**
      * Create an order from a checkout after payment confirmation
      */
@@ -80,7 +84,7 @@ public class OrderServiceImpl implements OrderService {
         inventoryService.reduceInventory(checkout.getItems());
 
         // 6. Clear cart
-        clearCart(checkout.getCart());
+        cartService.clearCart(checkout.getCart());
 
         return savedOrder;
     }
@@ -131,35 +135,39 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * Clear cart after successful order creation
-     */
+     * Get order by payment request ID
+     * Validates payment is completed before returning order
+     **/
     @Override
-    public void clearCart(Cart cart) {
-        log.info("Clearing cart: {}", cart.getId());
-        cart.getCartItems().clear();
-        cart.updateTotal();
-        cartRepository.save(cart);
-    }
+    public OrderDTO getOrderByPaymentRequestId(String paymentRequestId) {
+        log.info("Fetching order for payment request: {}", paymentRequestId);
 
-    private OrderItems cartItemToOrderItem(CartItems cartItem) {
-        return OrderItems.builder()
-                .product(cartItem.getProduct())
-                .quantity(cartItem.getQuantity())
-                .unitPrice(cartItem.getProduct().getPrice())
-                .totalPrice(cartItem.getProduct().getPrice() * cartItem.getQuantity())
-                .discount(0.0) // Can be enhanced with product-specific discounts
-                .tax(cartItem.getProduct().getPrice() * cartItem.getQuantity() * 0.08) // Using standard tax rate
-                .build();
-    }
+        Checkout checkout = checkoutRepository.findByPaymentRequestId(paymentRequestId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Checkout not found for payment request",
+                        HttpStatus.NOT_FOUND.value()
+                ));
 
-    private double calculateShippingCost(DeliverMethod deliverMethod) {
-        // Calculate shipping cost based on delivery method
-        return switch (deliverMethod) {
-            case DHL -> 15.99;
-            case FedEx -> 12.99;
-            case Express -> 10.99;
-            case FREE -> 0.0;
-        };
-    }
+        if (!PaymentStatus.COMPLETED.equals(checkout.getPaymentStatus())) {
+            log.warn("Payment not completed for: {}. Status: {}",
+                    paymentRequestId, checkout.getPaymentStatus());
+            throw new PaymentException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Payment not yet completed",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
 
+        Order order = orderRepository.findByTransactionId(paymentRequestId)
+                .orElseThrow(() -> new OrderException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Order not found",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+
+        log.info("Order found: {}", order.getId());
+
+        return mapToOrderDTO(order);
+    }
 }

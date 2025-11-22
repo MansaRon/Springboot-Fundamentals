@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface CheckoutService {
     CheckoutDTO createCheckoutFromCart(ObjectId userId);
-    PaymentInitializationResponse initializePayment(ObjectId userId);
+    PaymentInitializationResponse initializePayment(ObjectId checkoutId);
     CheckoutDTO getCheckoutByUserId(ObjectId userId);
     CheckoutDTO getCheckoutByCartId(ObjectId cartId);
     List<CheckoutDTO> getCheckoutsByStatus(String status);
@@ -21,4 +21,5 @@ public interface CheckoutService {
     void handlePaymentCancellation(String paymentRequestId);
     Checkout getCheckoutByPaymentRequestId(String paymentRequestId);
     CheckoutStatusDTO getCheckoutStatus(ObjectId checkoutId);
+    CheckoutDTO getCheckoutDTOByPaymentRequestId(String paymentRequestId);
 }

@@ -191,6 +191,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(PaymentException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handlePaymentException(
+            final PaymentException paymentException,
+            final HttpServletRequest httpServletRequest) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpServletRequest))
+                        .status(paymentException.getMessage())
+                        .statusCode(paymentException.getStatus())
+                        .message(paymentException.getMessage())
+                        .timestamp(now())
+                        .build()
+                );
+    }
+
     // TODO
     // Create exception for unknown URL's
     // Add exception for handling 415 errors

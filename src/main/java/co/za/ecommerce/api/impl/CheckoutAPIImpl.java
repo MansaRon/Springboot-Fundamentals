@@ -1,7 +1,6 @@
 package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
-import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
@@ -113,24 +112,6 @@ public class CheckoutAPIImpl extends API {
                         .build()
         );
     }
-
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
-//    @PermitAll
-//    @PostMapping("/{cartId}/confirm-checkout")
-//    public ResponseEntity<OrderDTOApiResource> confirmCheckout(
-//            @PathVariable ObjectId cartId) {
-//        return ResponseEntity.ok(
-//                OrderDTOApiResource.builder()
-//                        .timestamp(now())
-//                        .data(checkoutService.confirmCheckout(cartId))
-//                        .message("Checkout confirmed and order created.")
-//                        .status(String.valueOf(HttpStatus.OK))
-//                        .statusCode(HttpStatus.OK.value())
-//                        .build()
-//        );
-//    }
 
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")

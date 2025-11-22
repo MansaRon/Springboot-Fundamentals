@@ -13,9 +13,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class PaymentResultDTO {
     private boolean success;
-    private String transactionId;
-    private String paymentReference;
+    private String checkoutId;
     private String paymentStatus;
-    private double amountPaid;
-    private String errorMessage;
+    private String message;
 }

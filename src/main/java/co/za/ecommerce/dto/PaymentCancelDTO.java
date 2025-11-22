@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentCancelResponse {
+public class PaymentCancelDTO {
     private boolean cancelled;
     private String message;
     private String paymentRequestId;

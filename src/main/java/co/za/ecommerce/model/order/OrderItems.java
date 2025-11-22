@@ -22,7 +22,3 @@ public class OrderItems extends Entity {
     private double tax;
     private String imageUrl;
 }
-
-// add order item
-// get all order items
-// get order item by userid
