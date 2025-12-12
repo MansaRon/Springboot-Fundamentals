@@ -1,6 +1,7 @@
 package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.user.*;
+import co.za.ecommerce.model.RefreshToken;
 import co.za.ecommerce.model.User;
 
 public interface UserService {
@@ -8,4 +9,5 @@ public interface UserService {
     UserDTO loginUser(LoginDTO loginDTO);
     UserDTO activateUserOTP(String phoneNum, String otp);
     ResetPwdDTO updatePassword(UpdatePasswordDTO updatePasswordDTO);
+    void logout(String refreshToken);
 }

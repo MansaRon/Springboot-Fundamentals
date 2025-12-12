@@ -1,5 +1,6 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.CheckoutAPI;
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import jakarta.annotation.security.PermitAll;
@@ -19,7 +20,7 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/checkout")
-public class CheckoutAPIImpl extends API {
+public class CheckoutAPIImpl extends API implements CheckoutAPI {
 
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
@@ -118,7 +119,7 @@ public class CheckoutAPIImpl extends API {
     // @Secured({"USER"})
     @PermitAll
     @DeleteMapping("/{userId}")
-    public ResponseEntity deleteCheckoutByUserId(@PathVariable ObjectId userId) {
+    public ResponseEntity<String> deleteCheckoutByUserId(@PathVariable ObjectId userId) {
         checkoutService.deleteCheckoutByUserId(userId);
         return ResponseEntity.noContent().build();
     }

@@ -40,6 +40,7 @@ public class UserDTO extends EntityDTO {
      */
     private String accessToken;
 
+    private String refreshToken;
 
     private String status;
 

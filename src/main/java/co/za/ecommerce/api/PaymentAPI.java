@@ -1,32 +1,35 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
+import co.za.ecommerce.dto.PayFastITNPayload;
 import co.za.ecommerce.dto.api.*;
-import co.za.ecommerce.dto.user.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.apache.coyote.Response;
+import org.bson.types.ObjectId;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * @author Thendo
- * @date 2025/10/11
+ * @date 2025/11/22
  */
-public interface UserAPI {
+public interface PaymentAPI {
 
-    @Operation(tags = "User", summary = "User Register")
+    @Operation(tags = "Payment", summary = "Initialize payment for a checkout")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User registered successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment successfully initiated",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = UserCreateDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = PaymentInitializationApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -69,56 +72,63 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<UserCreateDTOApiResource> register(@RequestBody @Valid UserCreateDTO registrationDTO);
+    ResponseEntity<PaymentInitializationApiResource> initializePayment(@PathVariable ObjectId checkoutId);
 
-    @Operation(tags = "User", summary = "User Verification")
+    @Operation(tags = "Payment", summary = "Verify payment and create order")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Verified user successfully",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = UserDTOApiResource.class))
-                    }),
-            @ApiResponse(responseCode = "400", description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "401", description = "Not authorised to access resource",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment verified"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
                     content = {
                             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema =
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
                     content = {
                             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema =
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "409", description = "Request could not be completed",
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
                     content = {
                             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema =
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "500", description = "Internal server error",
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
                     content = {
                             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema =
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<UserDTOApiResource> confirmUser(@PathVariable @Valid String phoneNum, @PathVariable @Valid String OTP);
+    ResponseEntity<Void> receivePayFastNotification(@Valid @RequestBody PayFastITNPayload payload, HttpServletRequest request);
 
-    @Operation(tags = "User", summary = "User Login")
+    @Operation(tags = "Payment", summary = "Payment success callback")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User logged in successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment success",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = UserDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = PaymentInitializationApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -161,15 +171,15 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<UserDTOApiResource> login(@RequestBody @Valid LoginDTO loginDTO);
+    ResponseEntity<PaymentResultDTOApiResource> handlePaymentSuccess(@RequestParam("payment_id") String paymentRequestId);
 
-    @Operation(tags = "User", summary = "Update User Password")
+    @Operation(tags = "Payment", summary = "Payment cancellation callback")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Update user successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment cancelled",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = ResetPwdDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = PaymentInitializationApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -212,15 +222,15 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<ResetPwdDTOApiResource> updatePassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO);
+    ResponseEntity<PaymentCancelDTOApiResource> handlePaymentCancellation(@RequestParam("payment_id") String paymentRequestId);
 
-    @Operation(tags = "User", summary = "User Logout")
+    @Operation(tags = "Payment", summary = "Check payment/checkout status")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User logged out successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment/Checkout status verified",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = UserDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = CheckoutStatusApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -263,54 +273,5 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<?> logout(@RequestBody @Valid LogoutDTO logoutDTO);
-
-    @Operation(tags = "User", summary = "Token Refresh")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Token refreshed successfully",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TokenRefreshDTOApiResource.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Not authorised to access resource",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Authorisation invalid",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Request could not be completed",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    })
-    })
-    ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest);
+    ResponseEntity<CheckoutStatusApiResource> getPaymentStatus(@PathVariable String checkoutId);
 }

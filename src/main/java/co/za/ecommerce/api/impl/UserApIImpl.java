@@ -2,11 +2,10 @@ package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.api.UserAPI;
 import co.za.ecommerce.dto.api.ResetPwdDTOApiResource;
+import co.za.ecommerce.dto.api.TokenRefreshDTOApiResource;
 import co.za.ecommerce.dto.api.UserCreateDTOApiResource;
 import co.za.ecommerce.dto.api.UserDTOApiResource;
-import co.za.ecommerce.dto.user.LoginDTO;
-import co.za.ecommerce.dto.user.UpdatePasswordDTO;
-import co.za.ecommerce.dto.user.UserCreateDTO;
+import co.za.ecommerce.dto.user.*;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,9 +56,7 @@ public class UserApIImpl extends API implements UserAPI {
     public ResponseEntity<UserDTOApiResource> confirmUser(
             @PathVariable @Valid String phoneNum,
             @PathVariable @Valid String OTP) {
-        log.trace("public ResponseEntity<UserDTOApiResource> confirmUser(\n" +
-                "            @PathVariable String phoneNum,\n" +
-                "            @PathVariable String OTP)");
+        log.trace("public ResponseEntity<UserDTOApiResource> confirmUser(@PathVariable String phoneNum, @PathVariable String OTP)");
         return ResponseEntity.ok(
                 UserDTOApiResource.builder()
                         .timestamp(Instant.now())
@@ -103,6 +100,31 @@ public class UserApIImpl extends API implements UserAPI {
                         .timestamp(Instant.now())
                         .data(userService.updatePassword(updatePasswordDTO))
                         .message("Password Reset")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PermitAll
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody LogoutDTO logoutDTO) {
+        log.info("public ResponseEntity<?> logout(@RequestBody LogoutDTO logoutDTO)");
+        userService.logout(logoutDTO.getRefreshToken());
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @PermitAll
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest) {
+        log.info("public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest)");
+        return ResponseEntity.ok(
+                TokenRefreshDTOApiResource.builder()
+                        .timestamp(Instant.now())
+                        .data(refreshTokenService.refreshAccessToken(tokenRefreshRequest.getRefreshToken()))
+                        .message("Token refreshed")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

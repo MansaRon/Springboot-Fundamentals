@@ -1,15 +1,15 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
-import co.za.ecommerce.dto.api.*;
-import co.za.ecommerce.dto.user.*;
+import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
+import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import org.apache.coyote.Response;
+import org.bson.types.ObjectId;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,16 +17,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * @author Thendo
- * @date 2025/10/11
+ * @date 2025/11/22
  */
-public interface UserAPI {
+public interface CheckoutAPI {
 
-    @Operation(tags = "User", summary = "User Register")
+    @Operation(tags = "Checkout", summary = "Create checkout from Cart")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User registered successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout created successfully",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = UserCreateDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -69,56 +70,15 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<UserCreateDTOApiResource> register(@RequestBody @Valid UserCreateDTO registrationDTO);
+    ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId);
 
-    @Operation(tags = "User", summary = "User Verification")
+    @Operation(tags = "Checkout", summary = "Get checkout from cart by User ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Verified user successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout retrieved successfully",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = UserDTOApiResource.class))
-                    }),
-            @ApiResponse(responseCode = "400", description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "401", description = "Not authorised to access resource",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "409", description = "Request could not be completed",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "500", description = "Internal server error",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    })
-    })
-    ResponseEntity<UserDTOApiResource> confirmUser(@PathVariable @Valid String phoneNum, @PathVariable @Valid String OTP);
-
-    @Operation(tags = "User", summary = "User Login")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User logged in successfully",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = UserDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -161,15 +121,15 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<UserDTOApiResource> login(@RequestBody @Valid LoginDTO loginDTO);
+    ResponseEntity<CheckoutDTOApiResource> getCheckoutByUserId(@PathVariable ObjectId userId);
 
-    @Operation(tags = "User", summary = "Update User Password")
+    @Operation(tags = "Checkout", summary = "Get checkout from cart by Cart ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Update user successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Retrieved checkout by cart id",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = ResetPwdDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -212,15 +172,15 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<ResetPwdDTOApiResource> updatePassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO);
+    ResponseEntity<CheckoutDTOApiResource> getCheckoutByCartId(@PathVariable ObjectId cartId);
 
-    @Operation(tags = "User", summary = "User Logout")
+    @Operation(tags = "Checkout", summary = "Get checkout from cart by status")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User logged out successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Retrieved checkout by cart status",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = UserDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -263,13 +223,15 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<?> logout(@RequestBody @Valid LogoutDTO logoutDTO);
+    ResponseEntity<CheckoutDTOApiResource> getCheckoutsByStatus(@PathVariable String status);
 
-    @Operation(tags = "User", summary = "Token Refresh")
+    @Operation(tags = "Checkout", summary = "Update checkout status")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Token refreshed successfully",
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Status updated successfully",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TokenRefreshDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -312,5 +274,53 @@ public interface UserAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest);
+    ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO);
+
+    @Operation(tags = "Checkout", summary = "Delete checkout by User ID")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout deleted successfully"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<String> deleteCheckoutByUserId(@PathVariable ObjectId userId);
 }

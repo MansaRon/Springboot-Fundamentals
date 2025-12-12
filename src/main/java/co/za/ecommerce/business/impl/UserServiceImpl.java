@@ -1,12 +1,15 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.OTPService;
+import co.za.ecommerce.business.RefreshTokenService;
 import co.za.ecommerce.business.UserService;
 import co.za.ecommerce.dto.user.*;
 import co.za.ecommerce.exception.ClientException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.AccountStatus;
+import co.za.ecommerce.model.RefreshToken;
 import co.za.ecommerce.model.User;
+import co.za.ecommerce.repository.RefreshTokenRepository;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -14,15 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -43,6 +43,11 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    private RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -93,7 +98,7 @@ public class UserServiceImpl implements UserService {
             throw new ClientException(HttpStatus.BAD_REQUEST, "Incorrect password.");
         }
 
-        log.info("============= Assign session token and login ===============");
+        log.info("============= Assign session token, refresh token and login ===============");
         return UserDTO
                 .builder()
                 .name(user.getName())
@@ -102,6 +107,7 @@ public class UserServiceImpl implements UserService {
                 .phone(user.getPhone())
                 .role(user.getRoles())
                 .accessToken(jwtTokenProvider.generateToken(user.getEmail()))
+                .refreshToken(refreshTokenService.createRefreshToken(user.getId().toString()).getToken())
                 .build();
     }
 
@@ -160,5 +166,10 @@ public class UserServiceImpl implements UserService {
                 .username(existingUser.getEmail())
                 .pwdReset(true)
                 .build();
+    }
+
+    @Override
+    public void logout(String refreshToken) {
+        refreshTokenRepository.deleteByToken(refreshToken);
     }
 }

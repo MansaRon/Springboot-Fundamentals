@@ -37,4 +37,7 @@ public abstract class API {
 
     @Autowired
     protected OrderService orderService;
+
+    @Autowired
+    protected RefreshTokenService refreshTokenService;
 }

@@ -1,11 +1,9 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.PaymentAPI;
 import co.za.ecommerce.dto.PayFastITNPayload;
 import co.za.ecommerce.dto.PaymentCancelDTO;
 import co.za.ecommerce.dto.api.*;
-import co.za.ecommerce.dto.checkout.CheckoutDTO;
-import co.za.ecommerce.mapper.CheckoutMapper;
-import co.za.ecommerce.model.checkout.Checkout;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,7 +20,7 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/payments")
-public class PaymentAPIImpl extends API {
+public class PaymentAPIImpl extends API implements PaymentAPI {
 
     /**
      * Initialize payment for a checkout
