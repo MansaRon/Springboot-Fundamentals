@@ -18,7 +18,6 @@ import java.util.List;
 @NoArgsConstructor
 @Document(collection = "order")
 public class Order extends Entity {
-
     private User customerInfo;
     private List<OrderItems> orderItems;
     private PaymentDetails paymentDetails;
@@ -34,4 +33,7 @@ public class Order extends Entity {
     private String transactionId;
     private PaymentMethod paymentMethod;
     private double shippingCost;
+    private String orderNumber;
+    private String notes;
+    private List<OrderStatusHistory> statusHistory;
 }
