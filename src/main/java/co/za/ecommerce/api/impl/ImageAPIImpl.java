@@ -1,6 +1,8 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.ImageAPI;
 import co.za.ecommerce.dto.api.ImageDTOApiResource;
+import co.za.ecommerce.model.Image;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +21,9 @@ import static java.time.Instant.now;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/image")
-public class ImageAPIImpl extends API {
+public class ImageAPIImpl extends API implements ImageAPI {
 
+    @Override
     @PermitAll
     @PostMapping("/upload")
     public ResponseEntity<ImageDTOApiResource> uploadImage(
@@ -38,6 +41,7 @@ public class ImageAPIImpl extends API {
         );
     }
 
+    @Override
     @PermitAll
     @GetMapping("/download/{id}")
     public ResponseEntity<?> download(@PathVariable String id) throws IOException {

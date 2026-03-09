@@ -35,7 +35,7 @@ public class OrderAPIImpl extends API {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
                         .timestamp(now())
-                        .data(orderService.getOrderByPaymentRequestId(paymentRequestId))  // ← Clean!
+                        .data(orderService.getOrderByPaymentRequestId(paymentRequestId))
                         .message("Order retrieved successfully.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())

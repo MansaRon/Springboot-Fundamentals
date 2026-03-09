@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 "/api/v1/image/**",
                                 "/api/v1/cart/**",
                                 "/api/v1/checkout/**",
+                                "/api/v1/payments/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()

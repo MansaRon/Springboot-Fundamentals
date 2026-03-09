@@ -22,8 +22,8 @@ public class OTPServiceImpl implements OTPService {
 
     @Override
     public String generateOTP(String phoneNumber) {
-        String otp = String.valueOf(new Random().nextInt(900000) + 100000); // Generate 6-digit OTP
-        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5); // 5-minute validity
+        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5);
 
         OtpStore otpStore = OtpStore
                 .builder()
@@ -47,7 +47,7 @@ public class OTPServiceImpl implements OTPService {
                 );
 
         if (otpStore.isExpired()) {
-            otpRepository.deleteById(phoneNumber); // Cleanup expired OTP
+            otpRepository.deleteById(phoneNumber);
             throw new OTPException(HttpStatus.BAD_REQUEST, "OTP has expired");
         }
 
@@ -55,7 +55,7 @@ public class OTPServiceImpl implements OTPService {
             otpStore.setRetryAttempts(otpStore.getRetryAttempts() + 1);
             otpRepository.save(otpStore);
 
-            if (otpStore.getRetryAttempts() >= 3) { // Limit retries
+            if (otpStore.getRetryAttempts() >= 3) {
                 otpRepository.deleteById(phoneNumber);
                 throw new OTPException(HttpStatus.BAD_REQUEST, "Too many failed attempts. OTP invalidated.");
             }
@@ -63,7 +63,7 @@ public class OTPServiceImpl implements OTPService {
             throw new OTPException(HttpStatus.BAD_REQUEST, "Invalid OTP");
         }
 
-        otpRepository.deleteById(phoneNumber); // Cleanup OTP after successful validation
+        otpRepository.deleteById(phoneNumber);
         return true;
     }
 

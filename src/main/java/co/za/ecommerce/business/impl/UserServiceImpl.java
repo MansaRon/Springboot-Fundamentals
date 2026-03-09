@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -120,21 +121,17 @@ public class UserServiceImpl implements UserService {
                         "User not found.")
                 );
 
-        // Check if the user's status is already active
         if (existingUser.getStatus().equals(AccountStatus.ACTIVE)) {
             throw new ClientException(HttpStatus.BAD_REQUEST, "User is already active.");
         }
 
-        // Verify the OTP
-        if (!otpService.validateOTP(phoneNumber, otp)) { // otpService is a mockable service for OTP management
+        if (!otpService.validateOTP(phoneNumber, otp)) {
             throw new ClientException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP.");
         }
 
-        // Update the user status to ACTIVE
         existingUser.setStatus(AccountStatus.ACTIVE);
-        //existingUser.setUpdatedAt(Instant.now());
+        existingUser.setUpdatedAt(LocalDateTime.now());
 
-        // Save the updated user
         userRepository.save(existingUser);
 
         log.info("============= User confirmation successful ===============");
@@ -170,6 +167,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            log.warn("Logout called with no refresh token");
+            return;
+        }
         refreshTokenRepository.deleteByToken(refreshToken);
     }
 }
