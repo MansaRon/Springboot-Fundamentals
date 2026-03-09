@@ -1,6 +1,5 @@
 package co.za.ecommerce.model.checkout;
 
-import co.za.ecommerce.dto.order.PaymentStatus;
 import co.za.ecommerce.model.Cart;
 import co.za.ecommerce.model.CartItems;
 import co.za.ecommerce.model.Entity;
@@ -109,38 +108,7 @@ public class Checkout extends Entity {
     private CheckoutStatus status;
 
     /**
-     * PayFast payment request ID (m_payment_id)
-     * This is your internal reference that PayFast will send back
-     */
-    private String paymentRequestId;
-
-    /**
-     * PayFast signature for verification
-     */
-    private String paymentSignature;
-
-    /**
-     * Payment status tracking
-     */
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
-
-    /**
-     * Currency (default ZAR for South Africa)
+     * The currency of th product.
      */
     private String currency = "ZAR";
-
-    /**
-     * Timestamp when payment was initiated
-     */
-    private LocalDateTime paymentInitiatedAt;
-
-    /**
-     * Number of payment attempts (for retry tracking)
-     */
-    private int paymentAttempts = 0;
-
-    /**
-     * Last payment error message (if any)
-     */
-    private String lastPaymentError;
 }
