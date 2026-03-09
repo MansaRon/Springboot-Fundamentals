@@ -18,5 +18,4 @@ public interface CheckoutRepository extends MongoRepository<Checkout, ObjectId> 
     List<Checkout> findAllByStatus(CheckoutStatus status);
     void deleteByUserId(ObjectId userId);
     List<Checkout> findByUserId(ObjectId userId);
-    Optional<Checkout> findByPaymentRequestId(String paymentRequestId);
 }
