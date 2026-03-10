@@ -2,10 +2,13 @@ package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.CheckoutService;
 import co.za.ecommerce.business.CheckoutValidationService;
+import co.za.ecommerce.business.OrderService;
+import co.za.ecommerce.business.PaymentService;
+import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
-import co.za.ecommerce.dto.checkout.CheckoutStatusDTO;
-import co.za.ecommerce.dto.order.PaymentStatus;
+import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.exception.CheckoutException;
+import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.mapper.CheckoutMapper;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Cart;
@@ -23,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,13 +45,14 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final ObjectMapper objectMapper;
     private final ProductRepository productRepository;
     private final CheckoutValidationService validationService;
-    private final PayFastService payFastService;
+    private final PaymentService paymentService;
+    private final OrderService orderService;
 
     @Override
+    @Transactional
     public CheckoutDTO createCheckoutFromCart(ObjectId userId) {
         log.info("Creating checkout from cart for user: {}", userId);
 
-        // 1. Find user's active cart
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
@@ -55,7 +60,6 @@ public class CheckoutServiceImpl implements CheckoutService {
                         HttpStatus.NOT_FOUND.value()
                 ));
 
-        // 2. Check if cart is empty
         if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -64,48 +68,28 @@ public class CheckoutServiceImpl implements CheckoutService {
             );
         }
 
-        // 3. Check if checkout already exists for this cart
         Optional<Checkout> existingCheckout = checkoutRepository.findByCartId(cart.getId());
         if (existingCheckout.isPresent() &&
                 CheckoutStatus.PENDING.equals(existingCheckout.get().getStatus())) {
-            // Return existing pending checkout
             log.info("Returning existing checkout for cart: {}", cart.getId());
             return CheckoutMapper.toDTO(existingCheckout.get());
         }
 
-        // 4. Create new checkout
         Checkout checkout = new Checkout();
         checkout.setCreatedAt(LocalDateTime.now());
         checkout.setUpdatedAt(LocalDateTime.now());
         checkout.setUser(cart.getUser());
         checkout.setCart(cart);
 
-        // Copy cart items to check out
         List<CartItems> checkoutItems = new ArrayList<>(cart.getCartItems());
         checkout.setItems(checkoutItems);
 
-        // Calculate totals
-        double subtotal = checkoutItems.stream()
-                .mapToDouble(CartItems::getProductPrice)
-                .sum();
-        checkout.setSubtotal(subtotal);
+        recalculateTotals(checkout);
 
-        double discount = calculateDiscount(checkout);
-        checkout.setDiscount(discount);
-
-        double tax = calculateTax(checkout);
-        checkout.setTax(tax);
-
-        double total = subtotal - discount + tax;
-        checkout.setTotalAmount(total);
-
-        // Set initial status
         checkout.setStatus(CheckoutStatus.PENDING);
-        checkout.setPaymentStatus(PaymentStatus.PENDING);
         checkout.setPaymentMethod(PaymentMethod.NOT_SELECTED);
         checkout.setCurrency("ZAR");
 
-        // Save checkout
         Checkout savedCheckout = checkoutRepository.save(checkout);
 
         log.info("Checkout created successfully: {}", savedCheckout.getId());
@@ -114,125 +98,28 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    public PaymentInitializationResponse initializePayment(ObjectId checkoutId) {
-        // Creates a checkout entry when a user proceeds to checkout.
-        // Retrieves the cart of the user.
-        Checkout checkout = checkoutRepository.findById(checkoutId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.NOT_FOUND.toString(),
-                        "Checkout not found",
-                        HttpStatus.NOT_FOUND.value()
-                ));
-
-        validationService.validateCheckout(checkout);
-
-        if (PaymentStatus.INITIATED.equals(checkout.getPaymentStatus()) && checkout.getPaymentInitiatedAt() != null) {
-            // Allow retry if more than 30 minutes have passed
-            if (checkout.getPaymentInitiatedAt().plusMinutes(30).isAfter(now())) {
-                log.warn("Payment already initiated for checkout: {}", checkoutId);
-                throw new CheckoutException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "Payment already in progress. Please complete or wait 30 minutes to retry.",
-                        HttpStatus.BAD_REQUEST.value()
-                );
-            }
-        }
-
-        PaymentInitializationResponse response = payFastService.initializePayment(checkout);
-
-        checkout.setPaymentRequestId(response.getPaymentRequestId());
-        checkout.setPaymentSignature(response.getSignature());
-        checkout.setPaymentStatus(PaymentStatus.INITIATED);
-        checkout.setPaymentInitiatedAt(LocalDateTime.now());
-        checkout.setPaymentAttempts(checkout.getPaymentAttempts() + 1);
-        checkout.setStatus(CheckoutStatus.PENDING);
-        checkout.setUpdatedAt(LocalDateTime.now());
-
-        checkoutRepository.save(checkout);
-
-        log.info("Payment initialized successfully for checkout: {}", checkoutId);
-        return response;
-    }
-
-    @Override
-    public void handlePaymentCancellation(String paymentRequestId) {
-        log.info("Handling payment cancellation for: {}", paymentRequestId);
-
-        Checkout checkout = checkoutRepository.findByPaymentRequestId(paymentRequestId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.NOT_FOUND.toString(),
-                        "Checkout not found for payment request",
-                        HttpStatus.NOT_FOUND.value()
-                ));
-
-        checkout.setPaymentStatus(PaymentStatus.DECLINED);
-        checkout.setStatus(CheckoutStatus.CANCELLED);
-        checkout.setLastPaymentError("Payment cancelled by user");
-        checkout.setUpdatedAt(now());
-
-        checkoutRepository.save(checkout);
-    }
-
-    @Override
-    public Checkout getCheckoutByPaymentRequestId(String paymentRequestId) {
-        return checkoutRepository.findByPaymentRequestId(paymentRequestId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.NOT_FOUND.toString(),
-                        "Checkout not found for payment request",
-                        HttpStatus.NOT_FOUND.value()
-                ));
-    }
-
-    @Override
-    public CheckoutStatusDTO getCheckoutStatus(ObjectId checkoutId) {
-        Checkout checkout = checkoutRepository.findById(checkoutId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.NOT_FOUND.toString(),
-                        "Checkout not found",
-                        HttpStatus.NOT_FOUND.value()
-                ));
-
-        return CheckoutStatusDTO.builder()
-                .checkoutId(checkout.getId().toString())
-                .status(checkout.getStatus())
-                .paymentStatus(checkout.getPaymentStatus())
-                .totalAmount(checkout.getTotalAmount())
-                .paymentMethod(checkout.getPaymentMethod())
-                .build();
-    }
-
-    @Override
     public CheckoutDTO getCheckoutByUserId(ObjectId userId) {
-        // Retrieves an ongoing checkout for a user.
         Checkout retrieveCheckout = checkoutRepository.findFirstByUserId(userId)
                 .orElseThrow(() -> new CheckoutException(
                         HttpStatus.BAD_REQUEST.toString(),
                         "User does not have any checked out items.",
                         HttpStatus.BAD_REQUEST.value()));
-
-        // Fetches the latest checkout in progress for the user.
-        // Eg) User logs in and wants to resume their checkout
         return CheckoutMapper.toDTO(retrieveCheckout);
     }
 
     @Override
     public CheckoutDTO getCheckoutByCartId(ObjectId cartId) {
-        // Retrieves checkout details for a specific cart.
-        // Useful if you store checkout history linked to cart IDs.
-        // Eg) Admin/user wants to track a checkout for a specific cart
         Checkout checkout = checkoutRepository.findByCartId(cartId)
                 .orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
                         "No checkout found for this cart.",
-                        HttpStatus.NOT_FOUND.value()));
-
+                        HttpStatus.NOT_FOUND.value())
+                );
         return CheckoutMapper.toDTO(checkout);
     }
 
     @Override
     public List<CheckoutDTO> getCheckoutsByStatus(String status) {
-//        Lists all checkouts filtered by status (e.g., PENDING, COMPLETED).
-//        Helps admin or order processing systems filter checkouts.
         CheckoutStatus checkoutStatus = Optional.ofNullable(status)
                 .map(s -> {
                     try {
@@ -260,15 +147,6 @@ public class CheckoutServiceImpl implements CheckoutService {
     public CheckoutDTO updateCheckout(ObjectId userId, CheckoutDTO checkoutDTO) {
         Checkout checkout = findActiveCheckoutByUserId(userId);
 
-        if (PaymentStatus.INITIATED.equals(checkout.getPaymentStatus())
-                || PaymentStatus.COMPLETED.equals(checkout.getPaymentStatus())) {
-            throw new CheckoutException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Cannot update checkout - payment already initiated",
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
         if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
@@ -292,15 +170,11 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public void cancelCheckout(ObjectId checkoutId) {
-        // Cancels a checkout session if the user decides not to proceed.
-        // Removes the checkout entry or marks it as CANCELLED.
-        // Cancels a checkout session if the user decides not to proceed.
         Checkout checkout = checkoutRepository.findById(checkoutId).orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Checkout not found.",
                         HttpStatus.NOT_FOUND.value()));
 
-        // Only pending checkouts can be cancelled
         if (CheckoutStatus.PENDING.equals(checkout.getStatus()) || CheckoutStatus.FAILED.equals(checkout.getStatus())) {
             checkout.setStatus(CheckoutStatus.CANCELLED);
             checkout.setUpdatedAt(now());
@@ -315,12 +189,8 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public CheckoutDTO deleteCheckoutByUserId(ObjectId userId) {
-        // Deletes all checkouts for a specific user (e.g., account deletion).
-        // Cleans up stale checkouts linked to a user.
-        // Deletes all pending checkouts for a specific user
         List<Checkout> userCheckouts = checkoutRepository.findByUserId(userId);
 
-        // Only delete PENDING checkouts
         List<Checkout> pendingCheckouts = userCheckouts.stream()
                 .filter(checkout -> CheckoutStatus.PENDING.equals(checkout.getStatus()))
                 .collect(Collectors.toList());
@@ -329,39 +199,78 @@ public class CheckoutServiceImpl implements CheckoutService {
             checkoutRepository.deleteAll(pendingCheckouts);
         }
 
-        // Return the last deleted checkout or null if none were deleted
         return pendingCheckouts.isEmpty() ? null :
-            objectMapper.mapObject().map(pendingCheckouts.get(pendingCheckouts.size() - 1), CheckoutDTO.class);
+            objectMapper.mapObject().map(
+                    pendingCheckouts.get(pendingCheckouts.size() - 1),
+                    CheckoutDTO.class
+            );
     }
 
-    public CheckoutDTO getCheckoutDTOByPaymentRequestId(String paymentRequestId) {
-        log.info("Fetching checkout for payment request: {}", paymentRequestId);
+    @Override
+    @Transactional
+    public OrderDTO confirmCheckout(ObjectId checkoutId) {
+        log.info("=== Confirming Checkout ===");
+        log.info("Checkout ID: {}", checkoutId);
 
-        Checkout checkout = checkoutRepository.findByPaymentRequestId(paymentRequestId)
+        Checkout checkout = checkoutRepository.findById(checkoutId)
                 .orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
-                        "Checkout not found for payment request",
+                        "Checkout not found",
                         HttpStatus.NOT_FOUND.value()
                 ));
 
-        return CheckoutMapper.toDTO(checkout);
-    }
-
-    private double calculateTax(Checkout checkout) {
-        double taxRate = 0.08; // Example: 8% tax rate
-        return (checkout.getSubtotal() - checkout.getDiscount()) * taxRate;
-    }
-
-    private double calculateDiscount(Checkout checkout) {
-        double discount = 0.0;
-
-        // Example: Apply a 10% discount if total is over $100
-        if (checkout.getSubtotal() > 100) {
-            discount = checkout.getSubtotal() * 0.10;
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
+            throw new CheckoutException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Cannot confirm checkout. Current status: " + checkout.getStatus(),
+                    HttpStatus.BAD_REQUEST.value()
+            );
         }
 
-        // TODO: Apply coupon-based or user-specific discounts
-        return discount;
+        recalculateTotals(checkout);
+        checkoutRepository.save(checkout);
+
+        validationService.validateCheckout(checkout);
+
+        try {
+            log.info("Processing payment...");
+            PaymentResultDTO paymentResult = paymentService.processPayment(checkout);
+
+            if (!paymentResult.isSuccess()) {
+                handlePaymentFailure(checkout, paymentResult);
+
+                throw new PaymentException(
+                        "PAYMENT_FAILED",
+                        paymentResult.getFailureReason(),
+                        HttpStatus.PAYMENT_REQUIRED.value()
+                );
+            }
+
+            log.info("Payment successful! Creating order...");
+            OrderDTO order = orderService.createOrderFromCheckout(checkout, paymentResult);
+
+            checkout.setStatus(CheckoutStatus.COMPLETED);
+            checkout.setUpdatedAt(now());
+            checkoutRepository.save(checkout);
+
+            clearCart(checkout.getCart());
+
+            log.info("✅ Order created successfully: {}", order.getOrderNumber());
+            return order;
+        } catch (PaymentException e) {
+            throw e;
+        } catch (Exception e) {
+            checkout.setStatus(CheckoutStatus.FAILED);
+            checkout.setUpdatedAt(now());
+            checkoutRepository.save(checkout);
+
+            log.error("Error during checkout confirmation: {}", e.getMessage(), e);
+            throw new CheckoutException(
+                    HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                    "Error during checkout confirmation: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     private Checkout findActiveCheckoutByUserId(ObjectId userId) {
@@ -370,6 +279,15 @@ public class CheckoutServiceImpl implements CheckoutService {
                         HttpStatus.NOT_FOUND.toString(),
                         "No active checkout found for user.",
                         HttpStatus.NOT_FOUND.value()));
+    }
+
+    private void handlePaymentFailure(Checkout checkout, PaymentResultDTO paymentResultDTO) {
+        log.warn("Payment failed for checkout: {}", checkout.getId());
+        log.warn("Reason: {}", paymentResultDTO.getFailureReason());
+
+        checkout.setStatus(CheckoutStatus.FAILED);
+        checkout.setUpdatedAt(now());
+        checkoutRepository.save(checkout);
     }
 
     private void validateCheckoutReferences(Checkout checkout) {
@@ -447,7 +365,12 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     private void recalculateTotals(Checkout checkout) {
-        double subTotal = checkout.getItems().stream().mapToDouble(CartItems::getProductPrice).sum();
+        log.debug("Recalculating totals for checkout: {}", checkout.getId());
+        double subTotal = checkout
+                .getItems()
+                .stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
         double discount = checkout.getDiscount();
         double tax = subTotal * 0.10;
         double totalAmount = (subTotal - discount) + tax;
@@ -456,5 +379,16 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setDiscount(discount);
         checkout.setTax(tax);
         checkout.setTotalAmount(totalAmount);
+
+        log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Total=R{}",
+                subTotal, discount, tax, totalAmount);
     }
+
+    private void clearCart(Cart cart) {
+        log.info("Clearing cart: {}", cart.getId());
+        cart.getCartItems().clear();
+        cart.updateTotal();
+        cartRepository.save(cart);
+    }
+
 }

@@ -5,7 +5,7 @@ import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.PaymentMethod;
-import co.za.ecommerce.utils.GenerateID;
+import co.za.ecommerce.utils.GenerateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,7 +45,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentResultDTO createSuccessResult(Checkout checkout, String paymentStatus) {
-        String transactionId = GenerateID.generateTransactionId();
+        String transactionId = GenerateUtil.generateTransactionId();
 
         log.info("✅ Payment Successful!");
         log.info("Transaction ID: {}", transactionId);
