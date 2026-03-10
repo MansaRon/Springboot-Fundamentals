@@ -255,7 +255,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             clearCart(checkout.getCart());
 
-            log.info("✅ Order created successfully: {}", order.getOrderNumber());
+            log.info("✅ Order created successfully: {}", order.getTransactionId());
             return order;
         } catch (PaymentException e) {
             throw e;

@@ -2,12 +2,8 @@ package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
-import co.za.ecommerce.model.CartItems;
 import co.za.ecommerce.model.checkout.Checkout;
-import co.za.ecommerce.model.order.Order;
-import co.za.ecommerce.model.order.OrderItems;
 import co.za.ecommerce.model.order.OrderStatus;
-import co.za.ecommerce.model.order.PaymentDetails;
 import org.bson.types.ObjectId;
 
 import java.util.List;

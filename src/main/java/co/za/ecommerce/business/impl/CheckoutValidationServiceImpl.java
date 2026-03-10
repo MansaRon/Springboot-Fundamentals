@@ -60,7 +60,6 @@ public class CheckoutValidationServiceImpl implements CheckoutValidationService 
                 );
             }
 
-            // Validate pricing hasn't changed
             if (Math.abs(product.getPrice() - item.getProduct().getPrice()) > 0.01) {
                 throw new CheckoutException(
                         HttpStatus.BAD_REQUEST.toString(),
@@ -200,10 +199,8 @@ public class CheckoutValidationServiceImpl implements CheckoutValidationService 
      */
     private boolean isOnlinePaymentMethod(PaymentMethod method) {
         return method == PaymentMethod.CASH_ON_DELIVERY ||
-                method == PaymentMethod.BANK_TRANSFER ||
                 method == PaymentMethod.NOT_SELECTED ||
-                method == PaymentMethod.CREDIT_CARD ||
-                method == PaymentMethod.PAYPAL;
+                method == PaymentMethod.CREDIT_CARD;
     }
 
     private boolean isNullOrEmpty(String str) {

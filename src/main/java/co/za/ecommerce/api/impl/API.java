@@ -33,9 +33,6 @@ public abstract class API {
     protected CheckoutService checkoutService;
 
     @Autowired
-    protected PaymentWebhookService webhookService;
-
-    @Autowired
     protected OrderService orderService;
 
     @Autowired

@@ -20,7 +20,7 @@ public final class GenerateUtil {
      * Generate unique order number
      * Format: ORD-20250315-A7B9C2
      */
-    private String generateOrderNumber() {
+    public static String generateOrderNumber() {
         String date = DateUtil.now()
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
@@ -31,7 +31,7 @@ public final class GenerateUtil {
     /**
      * Generate random alphanumeric string
      */
-    private String generateRandomAlphanumeric() {
+    public static String generateRandomAlphanumeric() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder result = new StringBuilder();
 

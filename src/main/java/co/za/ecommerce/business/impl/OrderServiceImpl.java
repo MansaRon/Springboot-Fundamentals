@@ -1,21 +1,15 @@
 package co.za.ecommerce.business.impl;
 
-import co.za.ecommerce.business.CartService;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
-import co.za.ecommerce.dto.order.PaymentStatus;
-import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.OrderException;
-import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.mapper.OrderMapper;
 import co.za.ecommerce.model.CartItems;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.DeliverMethod;
-import co.za.ecommerce.model.checkout.PaymentMethod;
 import co.za.ecommerce.model.order.*;
-import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.OrderRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
@@ -28,11 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
-import static co.za.ecommerce.mapper.OrderMapper.mapToOrderDTO;
 import static co.za.ecommerce.utils.DateUtil.now;
+import static co.za.ecommerce.utils.GenerateUtil.generateOrderNumber;
 
 @Slf4j
 @Service
@@ -74,8 +67,8 @@ public class OrderServiceImpl implements OrderService {
 
         double shippingCost = calculateShippingCost(checkout.getShippingMethod());
 
-        // 3. Build order
         Order order = Order.builder()
+                .orderNumber(orderNumber)
                 .createdAt(now())
                 .updatedAt(now())
                 .customerInfo(checkout.getUser())
@@ -212,7 +205,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setShippedDate(DateUtil.now());
                 break;
             case DELIVERED:
-                order.setDeliveredDate(DateUtil.now());
+                order.setEstimatedDeliveryDate(DateUtil.now());
                 break;
         }
 

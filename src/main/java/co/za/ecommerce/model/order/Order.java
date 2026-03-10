@@ -26,6 +26,7 @@ public class Order extends Entity {
     private OrderStatus orderStatus;
     private String shippingMethod;
     private LocalDateTime estimatedDeliveryDate;
+    private LocalDateTime shippedDate;
     private double subtotal;
     private double discount;
     private double tax;
