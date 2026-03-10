@@ -1,10 +1,10 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
-import co.za.ecommerce.dto.api.ApiResource;
-import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
-import co.za.ecommerce.dto.checkout.CheckoutDTO;
+import co.za.ecommerce.dto.api.OrderDTOListApiResource;
+import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
+import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,219 +19,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * @author Thendo
- * @date 2025/11/22
+ * @date 2026/03/10
  */
-public interface CheckoutAPI {
+public interface OrderAPI {
 
-    @Operation(tags = "Checkout", summary = "Create checkout from Cart")
+    @Operation(tags = "Checkout", summary = "Get Order")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Checkout created successfully",
-                    content = {
-                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Not authorised to access resource",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Authorisation invalid",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Request could not be completed",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    })
-    })
-    ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId);
-
-    @Operation(tags = "Checkout", summary = "Get checkout from cart by Cart ID")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Retrieved checkout by cart id",
-                    content = {
-                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Not authorised to access resource",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Authorisation invalid",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Request could not be completed",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    })
-    })
-    ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId);
-
-    @Operation(tags = "Checkout", summary = "Get checkout from cart by status")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Retrieved checkout by cart status",
-                    content = {
-                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Not authorised to access resource",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Authorisation invalid",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Request could not be completed",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    })
-    })
-    ResponseEntity<CheckoutDTOApiResource> getCheckoutsByStatus(@PathVariable String status);
-
-    @Operation(tags = "Checkout", summary = "Update checkout status")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Status updated successfully",
-                    content = {
-                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Request failed, incorrect payload",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Not authorised to access resource",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Authorisation invalid",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Request could not be completed",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    }),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema =
-                                    @Schema(implementation = GlobalApiErrorResponse.class))
-                    })
-    })
-    ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO);
-
-    @Operation(tags = "Checkout", summary = "Order placed successfully")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Status updated successfully",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
                     }),
@@ -276,15 +72,15 @@ public interface CheckoutAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId);
+    ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId);
 
-    @Operation(tags = "Checkout", summary = "Active checkout retrieved")
+    @Operation(tags = "Checkout", summary = "Track order by order number")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Status updated successfully",
+                    description = "Checkout created successfully",
                     content = {
-                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -327,15 +123,15 @@ public interface CheckoutAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId);
+    ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber);
 
-    @Operation(tags = "Checkout", summary = "Cancel checkout")
+    @Operation(tags = "Checkout", summary = "Get order history")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Status updated successfully",
+                    description = "Checkout created successfully",
                     content = {
-                            @Content(schema = @Schema(implementation = ApiResource.class))
+                            @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -378,15 +174,15 @@ public interface CheckoutAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<ApiResource> cancelCheckout(@PathVariable ObjectId checkoutId);
+    ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId);
 
-    @Operation(tags = "Checkout", summary = "Delete user checkout")
+    @Operation(tags = "Checkout", summary = "Get user order by status")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Status updated successfully",
+                    description = "Checkout created successfully",
                     content = {
-                            @Content(schema = @Schema(implementation = CheckoutDTOApiResource.class))
+                            @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -429,5 +225,260 @@ public interface CheckoutAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId);
+    ResponseEntity<OrderDTOListApiResource> getUserOrdersByStatus(@PathVariable ObjectId userId, @PathVariable String status);
+
+    @Operation(tags = "Checkout", summary = "Get all orders")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout created successfully",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderDTOListApiResource> getAllOrders();
+
+    @Operation(tags = "Checkout", summary = "Get orders by status")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout created successfully",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(@PathVariable String status);
+
+    @Operation(tags = "Checkout", summary = "Get recent orders")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout created successfully",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderDTOListApiResource> getRecentOrders();
+
+    @Operation(tags = "Checkout", summary = "Update order status")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout created successfully",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderDTOApiResource> updateOrderStatus(@PathVariable ObjectId orderId, @Valid @RequestBody OrderStatusUpdateRequest request);
+
+    @Operation(tags = "Checkout", summary = "Get order statistics")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Checkout created successfully",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderStatisticsApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request failed, incorrect payload",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authorised to access resource",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Request could not be completed",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderStatisticsApiResource> getOrderStatistics();
 }

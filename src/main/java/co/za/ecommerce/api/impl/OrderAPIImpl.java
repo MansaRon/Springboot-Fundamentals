@@ -1,5 +1,6 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.api.OrderAPI;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
@@ -19,13 +20,11 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.List;
 
-import static java.time.Instant.now;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/order")
-public class OrderAPIImpl extends API {
+public class OrderAPIImpl extends API implements OrderAPI {
 
     /**
      * Get order by ID
@@ -34,8 +33,7 @@ public class OrderAPIImpl extends API {
      * Customer can view their own order details
      */
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDTOApiResource> getOrderById(
-            @PathVariable ObjectId orderId) {
+    public ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
                         .timestamp(Instant.now())
@@ -54,8 +52,7 @@ public class OrderAPIImpl extends API {
      * Allows customer to track order by order number
      */
     @GetMapping("/number/{orderNumber}")
-    public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(
-            @PathVariable String orderNumber) {
+    public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
                         .timestamp(Instant.now())
@@ -74,8 +71,7 @@ public class OrderAPIImpl extends API {
      * Customer views their order history
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<OrderDTOListApiResource> getUserOrders(
-            @PathVariable ObjectId userId) {
+    public ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId) {
         List<OrderDTO> orders = orderService.getUserOrders(userId);
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
@@ -140,8 +136,7 @@ public class OrderAPIImpl extends API {
      */
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/status/{status}")
-    public ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(
-            @PathVariable String status) {
+    public ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(@PathVariable String status) {
         OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
         List<OrderDTO> orders = orderService.getOrdersByStatus(orderStatus);
         return ResponseEntity.ok(
