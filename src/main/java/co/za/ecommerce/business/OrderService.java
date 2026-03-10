@@ -18,6 +18,5 @@ public interface OrderService {
 
     List<OrderDTO> getAllOrders();
     List<OrderDTO> getOrdersByStatus(OrderStatus status);
-    List<OrderDTO> getRecentOrders();
     OrderDTO updateOrderStatus(ObjectId orderId, OrderStatus newStatus, String notes);
 }

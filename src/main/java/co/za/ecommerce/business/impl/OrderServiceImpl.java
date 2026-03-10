@@ -163,16 +163,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderDTO> getRecentOrders() {
-        log.info("Fetching recent orders");
-
-        List<Order> orders = orderRepository.findTop10ByOrderByOrderDateDesc();
-        return orders.stream()
-                .map(OrderMapper::mapToOrderDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     @Transactional
     public OrderDTO updateOrderStatus(ObjectId orderId, OrderStatus newStatus, String notes) {
         log.info("Updating order {} status to: {}", orderId, newStatus);

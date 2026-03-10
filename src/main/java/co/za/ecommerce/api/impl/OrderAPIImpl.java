@@ -151,27 +151,6 @@ public class OrderAPIImpl extends API implements OrderAPI {
     }
 
     /**
-     * Get recent orders (Admin dashboard)
-     * GET /api/v1/orders/admin/recent
-     *
-     * Admin views 10 most recent orders
-     */
-    @Secured("ROLE_ADMIN")
-    @GetMapping("/admin/recent")
-    public ResponseEntity<OrderDTOListApiResource> getRecentOrders() {
-        List<OrderDTO> orders = orderService.getRecentOrders();
-        return ResponseEntity.ok(
-                OrderDTOListApiResource.builder()
-                        .timestamp(Instant.now())
-                        .data(orders)
-                        .message("Retrieved recent orders.")
-                        .status(String.valueOf(HttpStatus.OK))
-                        .statusCode(HttpStatus.OK.value())
-                        .build()
-        );
-    }
-
-    /**
      * Update order status (Admin)
      * PUT /api/v1/orders/{orderId}/status
      *
