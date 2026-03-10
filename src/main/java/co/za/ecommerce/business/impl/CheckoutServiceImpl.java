@@ -92,6 +92,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         Checkout savedCheckout = checkoutRepository.save(checkout);
 
+        log.info("====================Checkout ID==========================");
         log.info("Checkout created successfully: {}", savedCheckout.getId());
 
         return CheckoutMapper.toDTO(savedCheckout);
