@@ -24,10 +24,8 @@ public class CartAPIImpl extends API implements CartAPI {
     @Override
     @PermitAll
     @PostMapping("/{userId}/add-item/{productId}")
-    public ResponseEntity<CartDTOApiResource> addProductToCart(
-            @PathVariable ObjectId userId,
-            @PathVariable ObjectId productId,
-            @RequestParam int quantity) {
+    public ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity) {
+        log.trace("public ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity)");
         return ResponseEntity.ok(
                 CartDTOApiResource.builder()
                         .timestamp(now())
@@ -45,8 +43,8 @@ public class CartAPIImpl extends API implements CartAPI {
     @Override
     @PermitAll
     @GetMapping("/{userId}")
-    public ResponseEntity<CartDTOApiResource> getUserCartWithItems(
-            @PathVariable ObjectId userId) {
+    public ResponseEntity<CartDTOApiResource> getUserCartWithItems(@PathVariable ObjectId userId) {
+        log.info("ResponseEntity<CartDTOApiResource> getUserCartWithItems(@PathVariable ObjectId userId)");
         return ResponseEntity.ok(
                 CartDTOApiResource.builder()
                         .timestamp(now())
@@ -64,10 +62,8 @@ public class CartAPIImpl extends API implements CartAPI {
     @Override
     @PermitAll
     @PatchMapping("/{userId}/update-item/{productId}")
-    public ResponseEntity<CartDTOApiResource> updateProductInCart(
-            @PathVariable ObjectId userId,
-            @PathVariable ObjectId productId,
-            @RequestParam int newQuantity) {
+    public ResponseEntity<CartDTOApiResource> updateProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int newQuantity) {
+        log.info("ResponseEntity<CartDTOApiResource> updateProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int newQuantity)");
         return ResponseEntity.ok(
                 CartDTOApiResource.builder()
                         .timestamp(now())
@@ -84,9 +80,8 @@ public class CartAPIImpl extends API implements CartAPI {
     // @Secured({"USER"})
     @PermitAll
     @DeleteMapping("/{userId}/delete-item/{productId}")
-    public ResponseEntity<CartDTOApiResource> deleteProductInCart(
-            @PathVariable ObjectId userId,
-            @PathVariable ObjectId productId) {
+    public ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId) {
+        log.info("ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId)");
         return ResponseEntity.ok(
                 CartDTOApiResource.builder()
                         .timestamp(now())

@@ -24,18 +24,6 @@ public class Entity extends Persistable {
     private ObjectId id;
 
     /**
-     * Human readable unique number for the instance
-     */
-//    @NonNull
-//    private String reference;
-
-    /**
-     * Short description defining the instance.
-     */
-//    @NonNull
-//    private String description;
-
-    /**
      * Timestamp when the record was created in the database.
      */
     @CreatedDate

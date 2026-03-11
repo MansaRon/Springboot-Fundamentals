@@ -62,7 +62,8 @@ public class SecurityConfig {
                                 "/api/v1/checkout/**",
                                 "api/v1/order/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/v1/otp/**"
                         ).permitAll()
                         .anyRequest()
                         .authenticated())

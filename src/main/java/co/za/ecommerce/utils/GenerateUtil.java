@@ -41,4 +41,11 @@ public final class GenerateUtil {
 
         return result.toString();
     }
+
+    /**
+     * Generate an OTP
+     */
+    public static String generateOTP() {
+        return String.valueOf(new Random().nextInt(900000) + 100000);
+    }
 }

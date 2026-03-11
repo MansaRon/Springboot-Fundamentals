@@ -1,27 +1,29 @@
 package co.za.ecommerce.model;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "otp")
-public class OtpStore {
+public class OtpStore extends Entity {
 
-    @Id
-    private String phoneNumber; // Could be email, phone, or UUID
+    @Indexed(unique = true)
+    private String phoneNumber;
 
-    @NonNull
+    @NotNull
     private String otp;
 
-    @NonNull
+    @NotNull
     private LocalDateTime expiryTime;
 
     private int retryAttempts;

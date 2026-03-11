@@ -1,10 +1,7 @@
 package co.za.ecommerce.business;
 
-import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
-import co.za.ecommerce.dto.checkout.CheckoutStatusDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
-import co.za.ecommerce.model.checkout.Checkout;
 import org.bson.types.ObjectId;
 
 import java.util.List;
@@ -18,5 +15,4 @@ public interface CheckoutService {
     void cancelCheckout(ObjectId checkoutId);
     CheckoutDTO deleteCheckoutByUserId(ObjectId userId);
     OrderDTO confirmCheckout(ObjectId checkoutId);
-    //void handlePaymentFailure(Checkout checkout, PaymentResultDTO paymentResultDTO);
 }

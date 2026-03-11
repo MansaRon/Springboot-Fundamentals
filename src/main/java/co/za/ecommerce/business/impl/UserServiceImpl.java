@@ -7,11 +7,11 @@ import co.za.ecommerce.dto.user.*;
 import co.za.ecommerce.exception.ClientException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.AccountStatus;
-import co.za.ecommerce.model.RefreshToken;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.RefreshTokenRepository;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.security.JwtTokenProvider;
+import co.za.ecommerce.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -48,6 +44,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private RefreshTokenService refreshTokenService;
 
+    @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
     @Override
@@ -64,7 +61,8 @@ public class UserServiceImpl implements UserService {
         log.info("============= Creating a user ===============");
 
         User user = User.builder()
-                //.createdAt(Instant.now())
+                .createdAt(DateUtil.now())
+                .updatedAt(DateUtil.now())
                 .name(userCreateDTO.getName())
                 .email(userCreateDTO.getEmail())
                 .phone(userCreateDTO.getPhone())
@@ -72,14 +70,13 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(userCreateDTO.getPwd()))
                 .build();
 
-
         user.addRoles("ROLE_USER");
         log.info("============= Saving user ===============");
         userRepository.save(user);
 
         log.info("============= Generate OTP ===============");
-        String optGenerated = otpService.generateOTP(user.getPhone());
-        log.info("============= OTP {} ===============", optGenerated);
+        otpService.generateOTP(user.getPhone());
+        log.info("============= OTP {} ===============", otpService.generateOTP(user.getPhone()));
         return user;
     }
 
@@ -123,10 +120,6 @@ public class UserServiceImpl implements UserService {
 
         if (existingUser.getStatus().equals(AccountStatus.ACTIVE)) {
             throw new ClientException(HttpStatus.BAD_REQUEST, "User is already active.");
-        }
-
-        if (!otpService.validateOTP(phoneNumber, otp)) {
-            throw new ClientException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP.");
         }
 
         existingUser.setStatus(AccountStatus.ACTIVE);

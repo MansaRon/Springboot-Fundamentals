@@ -37,4 +37,7 @@ public abstract class API {
 
     @Autowired
     protected RefreshTokenService refreshTokenService;
+
+    @Autowired
+    protected OTPService otpService;
 }

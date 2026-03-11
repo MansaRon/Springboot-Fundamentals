@@ -4,10 +4,13 @@ import co.za.ecommerce.model.OtpStore;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface OTPRepository extends MongoRepository<OtpStore, String> {
-    Optional<OtpStore> findByPhoneNumber(String id);
-    void deleteById(String id);
+    Optional<OtpStore> findByPhoneNumber(String phoneNumber);
+    void deleteByPhoneNumber(String phoneNumber);
+    List<OtpStore> findByExpiryTimeBefore(LocalDateTime dateTime);
 }

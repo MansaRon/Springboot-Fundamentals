@@ -31,6 +31,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @PermitAll
     @PostMapping("/{userId}/initiate-checkout")
     public ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId) {
+        log.info("ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId)");
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
@@ -48,6 +49,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @PermitAll
     @GetMapping("/cart/{cartId}")
     public ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId) {
+        log.info("ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId)");
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
@@ -65,6 +67,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @PermitAll
     @GetMapping("/admin/status/{status}")
     public ResponseEntity<CheckoutDTOApiResource> getCheckoutsByStatus(@PathVariable String status) {
+        log.info("ResponseEntity<CheckoutDTOApiResource> getCheckoutsByStatus(@PathVariable String status)");
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
@@ -81,9 +84,8 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     // @Secured({"USER"})
     @PermitAll
     @PutMapping("/{userId}")
-    public ResponseEntity<CheckoutDTOApiResource> updateCheckout(
-            @PathVariable ObjectId userId,
-            @Valid @RequestBody CheckoutDTO checkoutDTO) {
+    public ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO) {
+        log.info("ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO)");
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
@@ -101,6 +103,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @PermitAll
     @PostMapping("/{checkoutId}/confirm")
     public ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId) {
+        log.info("ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId)");
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
                         .timestamp(Instant.now())
@@ -116,6 +119,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @PermitAll
     @GetMapping("/user/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId) {
+        log.info("ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId)");
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
                         .timestamp(Instant.now())
@@ -130,6 +134,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @Override
     @DeleteMapping("/{checkoutId}")
     public ResponseEntity<ApiResource> cancelCheckout(@PathVariable ObjectId checkoutId) {
+        log.info("ResponseEntity<ApiResource> cancelCheckout(@PathVariable ObjectId checkoutId)");
         checkoutService.cancelCheckout(checkoutId);
         return ResponseEntity.ok(
                 ApiResource
@@ -145,6 +150,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     @Override
     @DeleteMapping("/user/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId) {
+        log.info("ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId)");
         CheckoutDTO deleted = checkoutService.deleteCheckoutByUserId(userId);
         return ResponseEntity.ok(
                 CheckoutDTOApiResource.builder()
