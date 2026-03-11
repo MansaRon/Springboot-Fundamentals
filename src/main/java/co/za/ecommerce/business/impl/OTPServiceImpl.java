@@ -45,6 +45,7 @@ public class OTPServiceImpl implements OTPService {
         otpRepository.save(otpStore);
 
         log.info("OTP generated for: {}. Expires at: {}", phoneNumber, expiryTime);
+        log.info("OTP: {}", otp);
 
         return OTPResponseDTO.builder()
                 .phoneNumber(phoneNumber)

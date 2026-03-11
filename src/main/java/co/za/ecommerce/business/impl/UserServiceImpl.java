@@ -122,6 +122,9 @@ public class UserServiceImpl implements UserService {
             throw new ClientException(HttpStatus.BAD_REQUEST, "User is already active.");
         }
 
+        log.info("============= Validating OTP ===============");
+        otpService.validateOTPInternal(phoneNumber, otp);
+
         existingUser.setStatus(AccountStatus.ACTIVE);
         existingUser.setUpdatedAt(LocalDateTime.now());
 
