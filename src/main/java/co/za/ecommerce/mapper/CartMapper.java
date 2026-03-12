@@ -42,8 +42,8 @@ public class CartMapper {
 
         ProductDTO dto = new ProductDTO();
         dto.setId(product.getId() != null ? product.getId().toHexString() : null);
-        dto.setCreatedAt(now());
-        dto.setUpdatedAt(now());
+        dto.setCreatedAt(product.getCreatedAt());
+        dto.setUpdatedAt(product.getUpdatedAt());
         dto.setTitle(product.getTitle());
         dto.setDescription(product.getDescription());
         dto.setCategory(product.getCategory());

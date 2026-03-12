@@ -34,61 +34,28 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDTO addProductToCart(ObjectId userId, ObjectId productId, int quantity) {
-        if (productId.toString().length() != 24) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid product ID format: " + productId,
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
-        if (userId.toString().length() != 24) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid user ID format: " + userId,
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> createNewCartForUser(userId));
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "Product not found",
-                        HttpStatus.BAD_REQUEST.value()
-                ));
+        Product product = findProductById(productId);
 
-        if (product.getQuantity() == 0) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    product.getTitle() + " is not available.",
-                    HttpStatus.BAD_REQUEST.value());
-        }
-        if (product.getQuantity() < quantity) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Please make an order of the " + product.getTitle() + " less than or equal to the " + product.getQuantity() + ".",
-                    HttpStatus.BAD_REQUEST.value());
-        }
+        validateProductStock(product, quantity);
 
-        Optional<CartItems> existingCartItem = cart.getCartItems()
-                .stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst();
+        Optional<CartItems> existingCartItem = findCartItem(cart, productId);
 
         if (existingCartItem.isPresent()) {
             CartItems item = existingCartItem.get();
+            validateProductStock(product, item.getQuantity() + quantity);
             item.setQuantity(item.getQuantity() + quantity);
             item.setProductPrice(item.getProductPrice() + (product.getPrice() * quantity));
         } else {
-            CartItems newCartItem = new CartItems();
-            newCartItem.setProduct(product);
-            newCartItem.setQuantity(quantity);
-            newCartItem.setDiscount(0);
-            newCartItem.setTax(0);
-            newCartItem.setProductPrice(product.getPrice() * quantity);
+            CartItems newCartItem = CartItems.builder()
+                    .product(product)
+                    .quantity(quantity)
+                    .discount(0)
+                    .tax(0)
+                    .productPrice(product.getPrice() * quantity)
+                    .build();
             cart.getCartItems().add(newCartItem);
         }
 
@@ -104,50 +71,21 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDTO getUserCartWithItems(ObjectId userId) {
-        if (userId.toString().length() != 24) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid user ID format: " + userId,
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> createNewCartForUser(userId));
 
         return CartMapper.toDTO(cart);
     }
 
-    // Updates single item inside the cart
     @Override
     public CartDTO updateProductInCart(ObjectId userId, ObjectId productId, int newQuantity) {
-        if (productId.toString().length() != 24) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid product ID format: " + productId,
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
-        if (userId.toString().length() != 24) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid user ID format: " + userId,
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartException(
                         HttpStatus.BAD_REQUEST.toString(),
                         "Cart not found for user",
                         HttpStatus.BAD_REQUEST.value()));
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "Product not found",
-                        HttpStatus.BAD_REQUEST.value()));
+        Product product = findProductById(productId);
 
         Optional<CartItems> existingCartItem = cart.getCartItems()
                 .stream()
@@ -238,9 +176,6 @@ public class CartServiceImpl implements CartService {
         }
     }
 
-    /**
-     * Clear cart after successful order creation
-     */
     @Override
     public void clearCart(Cart cart) {
         log.info("Clearing cart: {}", cart.getId());
