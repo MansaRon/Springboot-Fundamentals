@@ -47,15 +47,10 @@ public class CartMapper {
         dto.setTitle(product.getTitle());
         dto.setDescription(product.getDescription());
         dto.setCategory(product.getCategory());
-        dto.setImageUrl(product.getImageUrl());
         dto.setPrice(product.getPrice());
         dto.setRate(product.getRate());
         dto.setQuantity(product.getQuantity());
-
-        dto.setImages(
-                product.getImages() != null ?
-                product.getImages().stream().map(Image::getFileName).collect(Collectors.toList()) :
-                null);
+        dto.setImages(product.getImageUrls());
 
         return dto;
     }
@@ -95,11 +90,10 @@ public class CartMapper {
         product.setTitle(dto.getTitle());
         product.setDescription(dto.getDescription());
         product.setCategory(dto.getCategory());
-        product.setImageUrl(dto.getImageUrl());
+        product.setImageUrls(dto.getImages());
         product.setPrice(dto.getPrice());
         product.setRate(dto.getRate());
         product.setQuantity(dto.getQuantity());
-        product.setImages(null);
         return product;
     }
 }

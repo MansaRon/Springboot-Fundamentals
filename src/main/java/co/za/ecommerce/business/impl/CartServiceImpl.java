@@ -87,93 +87,56 @@ public class CartServiceImpl implements CartService {
 
         Product product = findProductById(productId);
 
-        Optional<CartItems> existingCartItem = cart.getCartItems()
-                .stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst();
-
-        if (existingCartItem.isPresent()) {
-            CartItems cartItem = existingCartItem.get();
+        CartItems cartItem = findCartItem(cart, productId)
+                .orElseThrow(() -> new CartException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Product not found in cart.",
+                        HttpStatus.NOT_FOUND.value()));
 
             if (newQuantity <= 0) {
                 cart.getCartItems().remove(cartItem);
+                product.setQuantity(product.getQuantity() + cartItem.getQuantity());
             } else {
-                if (newQuantity > product.getQuantity()) {
-                    throw new ProductException(
-                            HttpStatus.BAD_REQUEST.toString(),
-                            "Only " + product.getQuantity() + " units available for " + product.getTitle(),
-                            HttpStatus.BAD_REQUEST.value()
-                    );
-                }
-
                 int previousQuantity = cartItem.getQuantity();
-                cartItem.setQuantity(newQuantity);
-                cartItem.setProductPrice(newQuantity * product.getPrice());
+                int stockDelta = newQuantity - previousQuantity;
+                int updatedStock = product.getQuantity() - stockDelta;
 
-                product.setQuantity(product.getQuantity() - (newQuantity - previousQuantity));
-                productRepository.save(product);
+                cartItem.setQuantity(newQuantity);
+                cartItem.setProductPrice(product.getPrice() * newQuantity);
+                product.setQuantity(updatedStock);
             }
 
+            productRepository.save(product);
             cart.updateTotal();
             cartRepository.save(cart);
 
             return CartMapper.toDTO(cart);
-        } else {
-            throw new CartException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Product not found in the cart",
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
     }
 
     @Override
     public CartDTO deleteProductFromCart(ObjectId userId, ObjectId productId) {
-        if (productId.toString().length() != 24) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid product ID format: " + productId,
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
-
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartException(
                         HttpStatus.BAD_REQUEST.toString(),
                         "Cart not found for user",
                         HttpStatus.BAD_REQUEST.value()));
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "Product not found",
-                        HttpStatus.BAD_REQUEST.value()));
+        CartItems cartItems = findCartItem(cart, productId).orElseThrow(() -> new CartException(
+                HttpStatus.NOT_FOUND.toString(),
+                "Product not found in cart.",
+                HttpStatus.NOT_FOUND.value()));
 
-        Optional<CartItems> existingCartItem = cart.getCartItems()
-                .stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst();
+        Product product = findProductById(productId);
 
-        if (existingCartItem.isPresent()) {
-            CartItems cartItem = existingCartItem.get();
+        product.setQuantity(product.getQuantity() + cartItems.getQuantity());
+        productRepository.save(product);
 
-            product.setQuantity(product.getQuantity() + cartItem.getQuantity());
-            productRepository.save(product);
+        cart.getCartItems().remove(cartItems);
+        cart.updateTotal();
 
-            cart.getCartItems().remove(cartItem);
+        Cart updatedCart = cartRepository.save(cart);
 
-            cart.updateTotal();
-
-            Cart updatedCart = cartRepository.save(cart);
-
-            return CartMapper.toDTO(updatedCart);
-        } else {
-            throw new CartException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Product not found in the cart",
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
+        return CartMapper.toDTO(updatedCart);
     }
 
     @Override
@@ -194,5 +157,35 @@ public class CartServiceImpl implements CartService {
         newCart.setCreatedAt(now());
         newCart.setUpdatedAt(now());
         return cartRepository.save(newCart);
+    }
+
+    private Product findProductById(ObjectId productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Product not found.",
+                        HttpStatus.NOT_FOUND.value()));
+    }
+
+    private Optional<CartItems> findCartItem(Cart cart, ObjectId productId) {
+        return cart.getCartItems()
+                .stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst();
+    }
+
+    private void validateProductStock(Product product, int requestedQuantity) {
+        if (product.getQuantity() == 0) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    product.getTitle() + " is not available.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+        if (product.getQuantity() < requestedQuantity) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Please order " + product.getTitle() + " in a quantity less than or equal to " + product.getQuantity() + ".",
+                    HttpStatus.BAD_REQUEST.value());
+        }
     }
 }
