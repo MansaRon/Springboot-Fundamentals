@@ -23,20 +23,19 @@ public class Product extends Entity {
     /**
      * Short description defining the instance.
      */
-    @NonNull
+    @NotNull
     private String description;
 
     /**
      * Category for the product (Eg. Jewellery, Men's clothing etc...)
      */
-    @NonNull
+    @NotNull
     private String category;
 
     /**
      * URL of the image.
      */
-    @NonNull
-    private String imageUrl;
+    private List<String> imageUrls;
 
     /**
      * Price for the product.
@@ -47,13 +46,13 @@ public class Product extends Entity {
     /**
      * Rating of the product.
      */
-    @NonNull
+    @NotNull
     private String rate;
 
     /**
      * Title of the product.
      */
-    @NonNull
+    @NotNull
     private String title;
 
     /**
@@ -62,10 +61,4 @@ public class Product extends Entity {
     @NotNull
     @Size(min = 1, max = 20)
     private int quantity;
-
-    /**
-     * Associated images for the product.
-     */
-    @DBRef
-    private List<Image> images;
 }

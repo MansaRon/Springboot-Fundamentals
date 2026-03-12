@@ -68,16 +68,16 @@ class UserServiceImplTest {
 
         // Login details
         validLoginDTO = LoginDTO.builder()
-                .email("netshi10@gmail.com")
-                .password("Joyful95")
+                .email("usertest@gmail.com")
+                .password("password")
                 .build();
         activeUser = User.builder()
-                .name("Fulufhelo")
-                .email("netshi10@gmail.com")
-                .password("Joyful95")
+                .name("michael")
+                .email("hamilton@gmail.com")
+                .password("ferrari")
                 .status(AccountStatus.ACTIVE)
                 .roles(Set.of("ROLE_USER"))
-                .phone("0815126811")
+                .phone("0112346000")
                 .build();
     }
 

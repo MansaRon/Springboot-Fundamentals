@@ -2,6 +2,7 @@ package co.za.ecommerce.utils;
 
 import org.bson.types.ObjectId;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -22,5 +23,9 @@ public final class DateUtil {
 
     public static LocalDateTime now() {
         return LocalDateTime.now();
+    }
+
+    public static Instant instantNow() {
+        return Instant.now();
     }
 }

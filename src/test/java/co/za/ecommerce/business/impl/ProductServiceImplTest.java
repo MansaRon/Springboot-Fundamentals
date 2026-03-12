@@ -2,13 +2,9 @@ package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.exception.ProductException;
-import co.za.ecommerce.factories.DTOFactory;
 import co.za.ecommerce.mapper.ObjectMapper;
-import co.za.ecommerce.model.Image;
 import co.za.ecommerce.model.Product;
-import co.za.ecommerce.repository.ImageRepository;
 import co.za.ecommerce.repository.ProductRepository;
-import co.za.ecommerce.utils.ImageUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;

@@ -34,9 +34,8 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PermitAll
     @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProductDTOApiResource> createProduct(
-            @RequestPart("product") @Valid String productJson,
-            @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
+    public ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart("product") @Valid String productJson, @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
+        log.info("ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart(\"product\") @Valid String productJson, @RequestPart(\"images\") @Valid List<MultipartFile> imageFiles)");
         ProductDTO productDTO = jsonMapper.readValue(productJson, ProductDTO.class);
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()

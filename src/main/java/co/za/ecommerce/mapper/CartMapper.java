@@ -5,7 +5,6 @@ import co.za.ecommerce.dto.cart.CartItemsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.model.Cart;
 import co.za.ecommerce.model.CartItems;
-import co.za.ecommerce.model.Image;
 import co.za.ecommerce.model.Product;
 
 import java.util.stream.Collectors;

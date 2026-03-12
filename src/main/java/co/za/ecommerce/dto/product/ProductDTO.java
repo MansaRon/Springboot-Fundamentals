@@ -15,22 +15,19 @@ import java.util.List;
 @AllArgsConstructor
 public class ProductDTO extends EntityDTO {
 
-    @NonNull
+    @NotNull
     private String description;
 
-    @NonNull
+    @NotNull
     private String category;
-
-    @NonNull
-    private String imageUrl;
 
     @PositiveOrZero
     private double price;
 
-    @NonNull
+    @NotNull
     private String rate;
 
-    @NonNull
+    @NotNull
     private String title;
 
     @NotNull

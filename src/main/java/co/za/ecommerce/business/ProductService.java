@@ -2,8 +2,6 @@ package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.product.GetAllProductsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
-import co.za.ecommerce.model.Image;
-import co.za.ecommerce.model.Product;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;

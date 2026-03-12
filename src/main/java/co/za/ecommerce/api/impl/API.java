@@ -18,9 +18,6 @@ public abstract class API {
     protected ProductService productService;
 
     @Autowired
-    protected ImageService imageService;
-
-    @Autowired
     protected com.fasterxml.jackson.databind.ObjectMapper jsonMapper;
 
     @Autowired
