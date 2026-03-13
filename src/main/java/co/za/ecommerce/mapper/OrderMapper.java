@@ -18,11 +18,11 @@ public class OrderMapper {
         dto.setId(order.getId() != null ? order.getId().toHexString() : null);
         dto.setUpdatedAt(order.getUpdatedAt());
         dto.setCreatedAt(order.getCreatedAt());
-        dto.setCustomerDTO(toUserDTO(order.getCustomerInfo()));
-        dto.setOrderItemsDTOS(order.getOrderItems().stream().map(OrderMapper::mapToOrderItemsDTO).collect(Collectors.toList()));
-        dto.setPaymentDTO(mapToPaymentDetailsDTO(order.getPaymentDetails()));
-        dto.setShippingAddressDTO(toAddressDTO(order.getShippingAddress()));
-        dto.setBillingAddressDTO(toAddressDTO(order.getBillingAddress()));
+        dto.setCustomerInfo(toUserDTO(order.getCustomerInfo()));
+        dto.setOrderItems(order.getOrderItems().stream().map(OrderMapper::mapToOrderItemsDTO).collect(Collectors.toList()));
+        dto.setPaymentDetails(mapToPaymentDetailsDTO(order.getPaymentDetails()));
+        dto.setShippingAddress(toAddressDTO(order.getShippingAddress()));
+        dto.setBillingAddress(toAddressDTO(order.getBillingAddress()));
         dto.setOrderStatus(order.getOrderStatus().toString());
         dto.setShippingMethod(order.getShippingMethod());
         dto.setEstimatedDeliveryDate(order.getEstimatedDeliveryDate());
@@ -43,9 +43,9 @@ public class OrderMapper {
         dto.setId(user.getId() != null ? user.getId().toHexString() : null);
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
-        dto.setFirstName(user.getName());
+        dto.setName(user.getName());
+        dto.setPhone(user.getPhone());
         dto.setEmail(user.getEmail());
-        dto.setNumber(user.getPhone());
         return dto;
     }
 
@@ -66,7 +66,6 @@ public class OrderMapper {
         dto.setId(orderItems.getId() != null ? orderItems.getId().toHexString() : null);
         dto.setQuantity(orderItems.getQuantity());
         dto.setTotalPrice(orderItems.getTotalPrice());
-        dto.setImageUrl(orderItems.getImageUrl());
         dto.setProductId(orderItems.getId().toHexString());
 
         return dto;
@@ -74,6 +73,11 @@ public class OrderMapper {
 
     public static PaymentDTO mapToPaymentDetailsDTO(PaymentDetails paymentDetails) {
         if (paymentDetails == null) return null;
-        return null;
+        return PaymentDTO.builder()
+                .paymentMethod(paymentDetails.getPaymentMethod())
+                .paymentDate(paymentDetails.getPaymentDate())
+                .paymentStatus(paymentDetails.getPaymentStatus())
+                .transactionId(paymentDetails.getTransactionId())
+                .build();
     }
 }

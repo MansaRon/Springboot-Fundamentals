@@ -17,11 +17,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderDTO extends EntityDTO {
-    private CustomerDTO customerDTO;
-    private List<OrderItemsDTO> orderItemsDTOS;
-    private PaymentDTO paymentDTO;
-    private AddressDTO shippingAddressDTO;
-    private AddressDTO billingAddressDTO;
+    private CustomerDTO customerInfo;
+    private List<OrderItemsDTO> orderItems;
+    private PaymentDTO paymentDetails;
+    private AddressDTO shippingAddress;
+    private AddressDTO billingAddress;
     private String orderStatus;
     private String shippingMethod;
     private LocalDateTime estimatedDeliveryDate;
@@ -32,4 +32,5 @@ public class OrderDTO extends EntityDTO {
     private String transactionId;
     private PaymentMethod paymentMethod;
     private double shippingCost;
+    private String orderNumber;
 }

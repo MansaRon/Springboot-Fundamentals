@@ -4,6 +4,7 @@ import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.PaymentStatus;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
 import co.za.ecommerce.model.CartItems;
@@ -14,6 +15,7 @@ import co.za.ecommerce.repository.OrderRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -29,51 +31,36 @@ import static co.za.ecommerce.utils.GenerateUtil.generateOrderNumber;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
     private final InventoryService inventoryService;
 
-    /**
-     * Create order from checkout after successful payment
-     *
-     * @param checkout The checkout to create order from
-     * @param paymentResultDTO Result of payment processing
-     * @return OrderDTO with order details
-     */
     @Override
     @Transactional
     public OrderDTO createOrderFromCheckout(Checkout checkout, PaymentResultDTO paymentResultDTO) {
         log.info("Creating order from checkout: {}", checkout.getId());
 
-        String orderNumber = generateOrderNumber();
+        double shippingCost = calculateShippingCost(checkout.getShippingMethod());
 
-        List<OrderItems> orderItems = createOrderItems(checkout.getItems());
-
-        PaymentDetails paymentDetails = createPaymentDetails(checkout, paymentResultDTO);
-
-        List<OrderStatusHistory> statusHistory = new ArrayList<>();
-        OrderStatus initialStatus = "COMPLETED".equals(paymentResultDTO.getPaymentStatus())
+        OrderStatus initialStatus = PaymentStatus.COMPLETED.equals(paymentResultDTO.getPaymentStatus())
                 ? OrderStatus.CONFIRMED
                 : OrderStatus.PENDING;
 
-        statusHistory.add(OrderStatusHistory.builder()
+        List<OrderStatusHistory> statusHistory = List.of(OrderStatusHistory.builder()
                 .status(initialStatus)
                 .timestamp(DateUtil.now())
                 .notes("Order created")
                 .build());
 
-        double shippingCost = calculateShippingCost(checkout.getShippingMethod());
-
         Order order = Order.builder()
-                .orderNumber(orderNumber)
+                .orderNumber(generateOrderNumber())
                 .createdAt(now())
                 .updatedAt(now())
                 .customerInfo(checkout.getUser())
-                .orderItems(orderItems)
-                .paymentDetails(paymentDetails)
+                .orderItems(createOrderItems(checkout.getItems()))
+                .paymentDetails(createPaymentDetails(checkout, paymentResultDTO))
                 .shippingAddress(checkout.getShippingAddress())
                 .billingAddress(checkout.getBillingAddress())
                 .shippingMethod(checkout.getShippingMethod().name())
@@ -81,15 +68,16 @@ public class OrderServiceImpl implements OrderService {
                 .subtotal(checkout.getSubtotal())
                 .discount(checkout.getDiscount())
                 .tax(checkout.getTax())
+                .shippingCost(shippingCost)
                 .totalAmount(checkout.getTotalAmount() + shippingCost)
                 .paymentMethod(checkout.getPaymentMethod())
+                .orderStatus(initialStatus)
+                .statusHistory(new ArrayList<>(statusHistory))
                 .build();
 
-        // 4. Save order
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {} ({})", savedOrder.getOrderNumber(), savedOrder.getId());
 
-        // 5. Update inventory
         inventoryService.reduceInventory(checkout.getItems());
 
         return OrderMapper.mapToOrderDTO(savedOrder);
@@ -126,8 +114,8 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getUserOrders(ObjectId userId) {
         log.info("Fetching orders for user: {}", userId);
 
-        List<Order> orders = orderRepository.findByCustomerInfoId(userId);
-        return orders.stream()
+        return orderRepository.findByCustomerInfoId(userId)
+                .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
     }
@@ -136,8 +124,8 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getUserOrdersByStatus(ObjectId userId, OrderStatus status) {
         log.info("Fetching {} orders for user: {}", status, userId);
 
-        List<Order> orders = orderRepository.findByCustomerInfoIdAndOrderStatus(userId, status);
-        return orders.stream()
+        return orderRepository.findByCustomerInfoIdAndOrderStatus(userId, status)
+                .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
     }
@@ -146,8 +134,8 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getAllOrders() {
         log.info("Fetching all orders (admin)");
 
-        List<Order> orders = orderRepository.findAll();
-        return orders.stream()
+        return orderRepository.findAll()
+                .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
     }
@@ -156,8 +144,8 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getOrdersByStatus(OrderStatus status) {
         log.info("Fetching orders with status: {}", status);
 
-        List<Order> orders = orderRepository.findByOrderStatus(status);
-        return orders.stream()
+        return orderRepository.findByOrderStatus(status)
+                .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
     }
@@ -167,12 +155,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updateOrderStatus(ObjectId orderId, OrderStatus newStatus, String notes) {
         log.info("Updating order {} status to: {}", orderId, newStatus);
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderException(
-                        HttpStatus.NOT_FOUND.toString(),
-                        "Order not found",
-                        HttpStatus.NOT_FOUND.value()
-                ));
+        Order order = findOrderById(orderId);
 
         validateStatusTransition(order.getOrderStatus(), newStatus);
 
@@ -191,12 +174,8 @@ public class OrderServiceImpl implements OrderService {
                 .build());
 
         switch (newStatus) {
-            case SHIPPED:
-                order.setShippedDate(DateUtil.now());
-                break;
-            case DELIVERED:
-                order.setEstimatedDeliveryDate(DateUtil.now());
-                break;
+            case SHIPPED -> order.setShippedDate(DateUtil.now());
+            case DELIVERED -> order.setEstimatedDeliveryDate(DateUtil.now());
         }
 
         Order updatedOrder = orderRepository.save(order);
@@ -205,9 +184,15 @@ public class OrderServiceImpl implements OrderService {
         return OrderMapper.mapToOrderDTO(updatedOrder);
     }
 
-    /**
-     * Create order items from cart items
-     */
+    private Order findOrderById(ObjectId orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Order not found.",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+    }
+
     private List<OrderItems> createOrderItems(List<CartItems> cartItems) {
         return cartItems.stream()
                 .map(cartItem -> OrderItems.builder()
@@ -219,7 +204,6 @@ public class OrderServiceImpl implements OrderService {
                         .totalPrice(cartItem.getProductPrice())
                         .discount(cartItem.getDiscount())
                         .tax(cartItem.getTax())
-                        .imageUrl(cartItem.getProduct().getImageUrl())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -227,7 +211,7 @@ public class OrderServiceImpl implements OrderService {
     private PaymentDetails createPaymentDetails(Checkout checkout, PaymentResultDTO paymentResult) {
         return PaymentDetails.builder()
                 .paymentMethod(checkout.getPaymentMethod().toString())
-                .paymentStatus(paymentResult.getPaymentStatus())
+                .paymentStatus(paymentResult.getPaymentStatus().toString())
                 .paymentDate(DateUtil.now())
                 .transactionId(paymentResult.getTransactionId())
                 .build();
@@ -246,7 +230,7 @@ public class OrderServiceImpl implements OrderService {
         if (currentStatus == OrderStatus.CANCELLED || currentStatus == OrderStatus.REFUNDED) {
             throw new OrderException(
                     HttpStatus.BAD_REQUEST.toString(),
-                    "Cannot update status of cancelled or refunded order",
+                    "Cannot update status of cancelled or refunded order.",
                     HttpStatus.BAD_REQUEST.value()
             );
         }
@@ -254,7 +238,7 @@ public class OrderServiceImpl implements OrderService {
         if (currentStatus == OrderStatus.DELIVERED && newStatus != OrderStatus.REFUNDED) {
             throw new OrderException(
                     HttpStatus.BAD_REQUEST.toString(),
-                    "Delivered orders can only be refunded",
+                    "Delivered orders can only be refunded.",
                     HttpStatus.BAD_REQUEST.value()
             );
         }

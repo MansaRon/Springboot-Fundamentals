@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Getter
 @Setter
 @SuperBuilder
@@ -14,7 +16,11 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class OrderItemsDTO extends EntityDTO {
     private String productId;
+    private String productTitle;
+    private List<String> imageUrls;
     private int quantity;
+    private double unitPrice;
     private double totalPrice;
-    private String imageUrl;
+    private double discount;
+    private double tax;
 }

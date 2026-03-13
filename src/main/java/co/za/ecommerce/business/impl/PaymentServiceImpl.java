@@ -2,13 +2,16 @@ package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.PaymentService;
 import co.za.ecommerce.dto.PaymentResultDTO;
+import co.za.ecommerce.dto.order.PaymentStatus;
 import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.PaymentMethod;
+import co.za.ecommerce.utils.DateUtil;
 import co.za.ecommerce.utils.GenerateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +23,13 @@ import java.util.Random;
 public class PaymentServiceImpl implements PaymentService {
 
     private final Random random = new Random();
+    private static final String[] FAILURE_REASONS = {
+            "Insufficient funds",
+            "Card declined",
+            "Transaction timeout",
+            "Invalid card details",
+            "Payment gateway error"
+    };
 
     @Override
     public PaymentResultDTO processPayment(Checkout checkout) {
@@ -28,26 +38,24 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Amount: R{}", checkout.getTotalAmount());
         log.info("Payment Method: {}", checkout.getPaymentMethod());
 
+        validatePaymentRequest(checkout);
         simulateProcessingDelay();
 
         if (PaymentMethod.CASH_ON_DELIVERY.equals(checkout.getPaymentMethod())) {
-            return createSuccessResult(checkout, "PENDING");
+            return createSuccessResult(checkout, PaymentStatus.PENDING);
         }
 
         boolean isSuccess = random.nextInt(100) < 70;
 
-        if (isSuccess) {
-            return createSuccessResult(checkout, "COMPLETED");
-        } else {
-            return createFailureResult(checkout);
-        }
+        return isSuccess
+                ? createSuccessResult(checkout, PaymentStatus.COMPLETED)
+                : createFailureResult(checkout);
     }
 
-    @Override
-    public PaymentResultDTO createSuccessResult(Checkout checkout, String paymentStatus) {
+    private PaymentResultDTO createSuccessResult(Checkout checkout, PaymentStatus paymentStatus) {
         String transactionId = GenerateUtil.generateTransactionId();
 
-        log.info("✅ Payment Successful!");
+        log.info("Payment Successful!");
         log.info("Transaction ID: {}", transactionId);
 
         return PaymentResultDTO.builder()
@@ -56,30 +64,21 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentStatus(paymentStatus)
                 .amountProcessed(checkout.getTotalAmount())
                 .paymentMethod(checkout.getPaymentMethod().toString())
-                .updatedAt(LocalDateTime.now())
+                .updatedAt(DateUtil.now())
                 .message("Payment processed successfully")
                 .build();
     }
 
-    @Override
-    public PaymentResultDTO createFailureResult(Checkout checkout) {
-        String[] failureReasons = {
-                "Insufficient funds",
-                "Card declined",
-                "Transaction timeout",
-                "Invalid card details",
-                "Payment gateway error"
-        };
-
-        String reason = failureReasons[random.nextInt(failureReasons.length)];
-
-        log.warn("❌ Payment Failed!");
+    private PaymentResultDTO createFailureResult(Checkout checkout) {
+        String reason = FAILURE_REASONS[random.nextInt(FAILURE_REASONS.length)];
+        log.warn("Payment Failed!");
         log.warn("Reason: {}", reason);
+        log.warn("Checkout ID: {}", checkout.getId());
 
         return PaymentResultDTO.builder()
                 .success(false)
                 .transactionId(null)
-                .paymentStatus("FAILED")
+                .paymentStatus(PaymentStatus.FAILED)
                 .amountProcessed(0.0)
                 .paymentMethod(checkout.getPaymentMethod().toString())
                 .updatedAt(LocalDateTime.now())
@@ -105,16 +104,16 @@ public class PaymentServiceImpl implements PaymentService {
         if (checkout.getTotalAmount() <= 0) {
             throw new PaymentException(
                     "INVALID_AMOUNT",
-                    "Payment amount must be greater than zero",
-                    400
+                    "Payment amount must be greater than zero.",
+                    HttpStatus.BAD_REQUEST.value()
             );
         }
 
         if (PaymentMethod.NOT_SELECTED.equals(checkout.getPaymentMethod())) {
             throw new PaymentException(
                     "NO_PAYMENT_METHOD",
-                    "Payment method not selected",
-                    400
+                    "Payment method not selected.",
+                    HttpStatus.BAD_REQUEST.value()
             );
         }
     }

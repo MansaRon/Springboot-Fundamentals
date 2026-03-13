@@ -1,6 +1,7 @@
 package co.za.ecommerce.dto;
 
 import co.za.ecommerce.dto.base.EntityDTO;
+import co.za.ecommerce.dto.order.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 public class PaymentResultDTO extends EntityDTO {
     private boolean success;
     private String transactionId;
-    private String paymentStatus;
+    private PaymentStatus paymentStatus;
     private double amountProcessed;
     private String paymentMethod;
     private String failureReason;

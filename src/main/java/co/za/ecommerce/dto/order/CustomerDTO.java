@@ -13,8 +13,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerDTO extends EntityDTO {
-    private String firstName;
-    private String lastName;
-    private String number;
+    private String name;
+    private String phone;
     private String email;
 }
