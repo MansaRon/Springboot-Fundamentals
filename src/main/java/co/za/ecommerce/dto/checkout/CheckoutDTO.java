@@ -22,7 +22,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CheckoutDTO extends EntityDTO {
-    private UserDTO userDTO;
+    private UserDTO user;
     private ObjectId cartId;
     private List<CartItemsDTO> items;
     private double subtotal;

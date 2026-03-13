@@ -1,9 +1,6 @@
 package co.za.ecommerce.business.impl;
 
-import co.za.ecommerce.business.CheckoutService;
-import co.za.ecommerce.business.CheckoutValidationService;
-import co.za.ecommerce.business.OrderService;
-import co.za.ecommerce.business.PaymentService;
+import co.za.ecommerce.business.*;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
@@ -47,6 +44,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CheckoutValidationService validationService;
     private final PaymentService paymentService;
     private final OrderService orderService;
+    private final CartService cartService;
 
     @Override
     @Transactional
@@ -176,32 +174,36 @@ public class CheckoutServiceImpl implements CheckoutService {
                         "Checkout not found.",
                         HttpStatus.NOT_FOUND.value()));
 
-        if (CheckoutStatus.PENDING.equals(checkout.getStatus()) || CheckoutStatus.FAILED.equals(checkout.getStatus())) {
-            checkout.setStatus(CheckoutStatus.CANCELLED);
-            checkout.setUpdatedAt(now());
-            checkoutRepository.save(checkout);
-        } else {
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus()) &&
+                !CheckoutStatus.FAILED.equals(checkout.getStatus())) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
                     "Cannot cancel checkout with status: " + checkout.getStatus(),
                     HttpStatus.BAD_REQUEST.value());
         }
+
+        checkout.setStatus(CheckoutStatus.CANCELLED);
+        checkout.setUpdatedAt(now());
+        checkoutRepository.save(checkout);
     }
 
     @Override
     public CheckoutDTO deleteCheckoutByUserId(ObjectId userId) {
-        List<Checkout> userCheckouts = checkoutRepository.findByUserId(userId);
-
-        List<Checkout> pendingCheckouts = userCheckouts.stream()
+        List<Checkout> pendingCheckouts = checkoutRepository.findByUserId(userId).stream()
                 .filter(checkout -> CheckoutStatus.PENDING.equals(checkout.getStatus()))
                 .collect(Collectors.toList());
 
-        if (!pendingCheckouts.isEmpty()) {
-            checkoutRepository.deleteAll(pendingCheckouts);
+        if (pendingCheckouts.isEmpty()) {
+            throw new CheckoutException(
+                    HttpStatus.NOT_FOUND.toString(),
+                    "No pending checkouts found for user.",
+                    HttpStatus.NOT_FOUND.value()
+            );
         }
 
-        return pendingCheckouts.isEmpty() ? null :
-            objectMapper.mapObject().map(
+        checkoutRepository.deleteAll(pendingCheckouts);
+
+        return objectMapper.mapObject().map(
                     pendingCheckouts.get(pendingCheckouts.size() - 1),
                     CheckoutDTO.class
             );
@@ -210,7 +212,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Override
     @Transactional
     public OrderDTO confirmCheckout(ObjectId checkoutId) {
-        log.info("=== Confirming Checkout ===");
+        log.info("========================== Confirming Checkout ================================");
         log.info("Checkout ID: {}", checkoutId);
 
         Checkout checkout = checkoutRepository.findById(checkoutId)
@@ -234,12 +236,11 @@ public class CheckoutServiceImpl implements CheckoutService {
         validationService.validateCheckout(checkout);
 
         try {
-            log.info("Processing payment...");
+            log.info("Processing payment for checkout: {}", checkout);
             PaymentResultDTO paymentResult = paymentService.processPayment(checkout);
 
             if (!paymentResult.isSuccess()) {
                 handlePaymentFailure(checkout, paymentResult);
-
                 throw new PaymentException(
                         "PAYMENT_FAILED",
                         paymentResult.getFailureReason(),
@@ -247,14 +248,14 @@ public class CheckoutServiceImpl implements CheckoutService {
                 );
             }
 
-            log.info("Payment successful! Creating order...");
+            log.info("Payment successful! Creating order for checkout: {}", checkoutId);
             OrderDTO order = orderService.createOrderFromCheckout(checkout, paymentResult);
 
             checkout.setStatus(CheckoutStatus.COMPLETED);
             checkout.setUpdatedAt(now());
             checkoutRepository.save(checkout);
 
-            clearCart(checkout.getCart());
+            cartService.clearCart(checkout.getCart());
 
             log.info("✅ Order created successfully: {}", order.getTransactionId());
             return order;
@@ -293,15 +294,27 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     private void validateCheckoutReferences(Checkout checkout) {
         if (checkout.getUser() == null || checkout.getUser().getId() == null) {
-            throw new IllegalStateException("Checkout user reference is null or has no ID");
+            throw new CheckoutException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Checkout user reference is missing.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
         }
         if (checkout.getCart() == null || checkout.getCart().getId() == null) {
-            throw new IllegalStateException("Checkout cart reference is null or has no ID");
+            throw new CheckoutException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Checkout cart reference is missing.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
         }
         if (checkout.getItems() != null) {
             checkout.getItems().forEach(item -> {
                 if (item.getProduct() == null || item.getProduct().getId() == null) {
-                    throw new IllegalStateException("CartItem product reference is null or has no ID");
+                    throw new CheckoutException(
+                            HttpStatus.BAD_REQUEST.toString(),
+                            "Cart item is missing a product reference.",
+                            HttpStatus.BAD_REQUEST.value()
+                    );
                 }
             });
         }
@@ -336,33 +349,40 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     private void updateCartItems(Checkout checkout, CheckoutDTO checkoutDTO) {
-        if (checkoutDTO.getItems() != null && !checkoutDTO.getItems().isEmpty()) {
-            List<CartItems> updatedCartItems = checkoutDTO.getItems().stream()
-                    .map(dto -> {
-                        CartItems entity = new CartItems();
-
-                        if (dto.getProductDTO() == null) {
-                            throw new IllegalArgumentException("ProductDTO cannot be null");
-                        }
-
-                        Product product = null;
-                        if (dto.getProductDTO().getId() != null) {
-                            product = productRepository.findById(new ObjectId(dto.getProductDTO().getId()))
-                                    .orElseThrow(() -> new IllegalArgumentException(
-                                            "Product not found with ID: " + dto.getProductDTO().getId()
-                                    ));
-                        }
-                        entity.setProduct(product);
-                        entity.setQuantity(dto.getQuantity());
-                        entity.setDiscount(dto.getDiscount());
-                        entity.setTax(dto.getTax());
-                        entity.setProductPrice(dto.getProductPrice());
-
-                        return entity;
-                    }).collect(Collectors.toList());
-
-            checkout.setItems(updatedCartItems);
+        if (checkoutDTO.getItems() == null || checkoutDTO.getItems().isEmpty()) {
+            return;
         }
+
+        List<CartItems> updatedCartItems = checkoutDTO.getItems().stream()
+                .map(dto -> {
+                    CartItems entity = new CartItems();
+
+                    if (dto.getProductDTO() == null) {
+                        throw new CheckoutException(
+                                HttpStatus.BAD_REQUEST.toString(),
+                                "Cart item is missing a product.",
+                                HttpStatus.BAD_REQUEST.value()
+                        );
+                    }
+
+                    Product product = productRepository.findById(
+                            new ObjectId(dto.getProductDTO().getId()))
+                                .orElseThrow(() -> new CheckoutException(
+                                        HttpStatus.NOT_FOUND.toString(),
+                                        "Product not found with ID: " + dto.getProductDTO().getId(),
+                                        HttpStatus.NOT_FOUND.value()
+                                ));
+
+                    return CartItems.builder()
+                            .product(product)
+                            .quantity(dto.getQuantity())
+                            .discount(dto.getDiscount())
+                            .tax(dto.getTax())
+                            .productPrice(dto.getProductPrice())
+                            .build();
+                }).collect(Collectors.toList());
+
+        checkout.setItems(updatedCartItems);
     }
 
     private void recalculateTotals(Checkout checkout) {
@@ -383,13 +403,6 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Total=R{}",
                 subTotal, discount, tax, totalAmount);
-    }
-
-    private void clearCart(Cart cart) {
-        log.info("Clearing cart: {}", cart.getId());
-        cart.getCartItems().clear();
-        cart.updateTotal();
-        cartRepository.save(cart);
     }
 
 }

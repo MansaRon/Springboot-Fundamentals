@@ -19,7 +19,7 @@ public class CheckoutMapper {
         dto.setCreatedAt(checkout.getCreatedAt());
         dto.setUpdatedAt(checkout.getUpdatedAt());
 
-        dto.setUserDTO(toUserDTO(checkout.getUser()));
+        dto.setUser(toUserDTO(checkout.getUser()));
         dto.setCartId(checkout.getCart() != null ? checkout.getCart().getId() : null);
         dto.setItems(checkout.getItems() != null
                 ? checkout.getItems().stream().map(CartMapper::toCartItemsDTO).collect(Collectors.toList())
