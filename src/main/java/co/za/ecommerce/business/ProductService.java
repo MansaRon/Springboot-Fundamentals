@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.List;
 
 public interface ProductService {
-    ProductDTO addProduct(ProductDTO productDTO, List<MultipartFile> imageFile) throws IOException;
+    ProductDTO addProduct(ProductDTO productDTO, List<MultipartFile> imageFile);
     GetAllProductsDTO getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir);
     ProductDTO getProduct(String id);
     // category

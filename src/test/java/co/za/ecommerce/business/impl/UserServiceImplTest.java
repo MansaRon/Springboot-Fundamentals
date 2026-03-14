@@ -8,6 +8,7 @@ import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.security.JwtTokenProvider;
+import co.za.ecommerce.utils.DateUtil;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,10 +20,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,7 +61,7 @@ class UserServiceImplTest {
                 .phone(userCreateDTOTest.getPhone())
                 .status(AccountStatus.AWAITING_CONFIRMATION)
                 .password(userCreateDTOTest.getPwd())
-                .roles(new HashSet<>(Arrays.asList("ROLE_USER")))
+                .roles(new HashSet<>(List.of("ROLE_USER")))
                 .build();
 
         // Login details
@@ -102,7 +100,7 @@ class UserServiceImplTest {
         given(userRepository.save(any(User.class))).willAnswer(invocation -> {
             User user = invocation.getArgument(0);
             user.setId(new ObjectId()); // Simulate database assigning an ID
-            user.setCreatedAt(LocalDateTime.now()); // Simulate database timestamp
+            user.setCreatedAt(DateUtil.now()); // Simulate database timestamp
             return user;
         });
 

@@ -3,17 +3,18 @@
 ## Current Status: Core E-Commerce Complete ✅
 
 ### Completed in Current Session
-- ✅ OTP flow (generate, validate, resend, scheduled cleanup)
-- ✅ Product module refactored (AWS S3 image storage, Image collection removed)
-- ✅ Cart service refactored (ModelMapper, stock delta fix, builder pattern)
-- ✅ Checkout service refactored (CheckoutMapper removed, clearCart delegated)
-- ✅ Order service refactored (OrderMapper removed, statusHistory bug fixed)
-- ✅ Payment service refactored (PaymentStatus enum, validatePaymentRequest wired)
-- ✅ GlobalApiResponse pattern enforced across all controllers
-- ✅ Manual mappers (CartMapper, CheckoutMapper, OrderMapper) removed
-- ✅ @RequiredArgsConstructor enforced across all services
-- ✅ NOT_FOUND vs BAD_REQUEST HTTP status codes corrected
-- ✅ isOnlinePaymentMethod logic fixed (CREDIT_CARD only)
+-  OTP flow (generate, validate, resend, scheduled cleanup)
+-  Product module refactored (AWS S3 image storage, Image collection removed)
+-  Cart service refactored (ModelMapper, stock delta fix, builder pattern)
+-  Checkout service refactored (CheckoutMapper removed, clearCart delegated)
+-  Order service refactored (OrderMapper removed, statusHistory bug fixed)
+-  Payment service refactored (PaymentStatus enum, validatePaymentRequest wired)
+-  GlobalApiResponse pattern enforced across all controllers
+-  Manual mappers (CartMapper, CheckoutMapper, OrderMapper) removed
+-  @RequiredArgsConstructor enforced across all services
+-  NOT_FOUND vs BAD_REQUEST HTTP status codes corrected
+-  isOnlinePaymentMethod logic fixed (CREDIT_CARD only)
+-  Fix the DTO returned for confirm user API
 
 ---
 

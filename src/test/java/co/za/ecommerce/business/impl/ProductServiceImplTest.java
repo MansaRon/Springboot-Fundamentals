@@ -43,9 +43,6 @@ class ProductServiceImplTest {
     private ProductRepository productRepository;
 
     @Mock
-    private ImageRepository imageRepository;
-
-    @Mock
     private ObjectMapper objectMapper;
 
     @InjectMocks
@@ -66,7 +63,7 @@ class ProductServiceImplTest {
         productDTOCreateTest = ProductDTO.builder()
                 .category("Category test")
                 .description("Category Description")
-                .imageUrl("http:image.com")
+                .images(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(15.00)
                 .rate("4.5")
                 .title("Product Title")
@@ -76,7 +73,7 @@ class ProductServiceImplTest {
         // Initialize the Product
         createProduct = Product.builder()
                 .description("description")
-                .imageUrl("imageURl")
+                .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(1.0)
                 .category("testcat")
                 .rate("4.5")
@@ -87,7 +84,7 @@ class ProductServiceImplTest {
         productList = List.of(Product.builder()
                 .description("Valid description")
                 .category("testcat")
-                .imageUrl("imageUrl")
+                .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(10.0)
                 .rate("4.5")
                 .title("Test Product")
@@ -99,7 +96,7 @@ class ProductServiceImplTest {
             ProductDTO.builder()
                 .category("Electronics")
                 .description("Smartphone description")
-                .imageUrl("http://example.com/phone.jpg")
+                    .images(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(999.99)
                 .rate("4.5")
                 .title("Smartphone")
@@ -108,7 +105,7 @@ class ProductServiceImplTest {
             ProductDTO.builder()
                 .category("Clothing")
                 .description("T-shirt description")
-                .imageUrl("http://example.com/tshirt.jpg")
+                    .images(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(29.99)
                 .rate("4.2")
                 .title("T-shirt")
@@ -129,7 +126,7 @@ class ProductServiceImplTest {
                 return ProductDTO.builder()
                     .category(product.getCategory())
                     .description(product.getDescription())
-                    .imageUrl(product.getImageUrl())
+                    .images(product.getImageUrls())
                     .price(product.getPrice())
                     .rate(product.getRate())
                     .title(product.getTitle())
@@ -175,7 +172,7 @@ class ProductServiceImplTest {
             .<Product>map(dto -> Product.builder()
                 .category(dto.getCategory())
                 .description(dto.getDescription())
-                .imageUrl(dto.getImageUrl())
+                .imageUrls(dto.getImages())
                 .price(dto.getPrice())
                 .rate(dto.getRate())
                 .title(dto.getTitle())
@@ -184,7 +181,6 @@ class ProductServiceImplTest {
             .toList();
 
         when(productRepository.saveAll(anyList())).thenReturn(savedProducts);
-        when(imageRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
 
         // Act
         List<ProductDTO> result = productService.addMultipleProducts(productDTOList, imageFiles);
@@ -199,18 +195,10 @@ class ProductServiceImplTest {
         verify(productRepository).saveAll(productCaptor.capture());
         List<Product> capturedProducts = productCaptor.getValue();
         assertEquals(productDTOList.size(), capturedProducts.size());
-        
-        // Verify image repository interactions
-        verify(imageRepository, times(1)).saveAll(anyList());
-        ArgumentCaptor<List<Image>> imageCaptor = ArgumentCaptor.forClass(List.class);
-        verify(imageRepository).saveAll(imageCaptor.capture());
-        List<Image> capturedImages = imageCaptor.getValue();
-        assertEquals(imageFiles.size(), capturedImages.size());
-        
+
         // Verify object mapper interactions
         verify(objectMapper, times(productDTOList.size())).mapObject();
-        verify(modelMapper, times(productDTOList.size()))
-            .map(any(Product.class), eq(ProductDTO.class));
+        verify(modelMapper, times(productDTOList.size())).map(any(Product.class), eq(ProductDTO.class));
     }
 
     @Test
@@ -220,22 +208,22 @@ class ProductServiceImplTest {
         ProductDTO updateDTO = ProductDTO.builder()
                 .category("Updated Category")
                 .description("Updated Description")
-                .imageUrl("http://updated-image.com")
+                .images(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(29.99)
                 .rate("4.8")
                 .title("Updated Product Title")
                 .quantity(25)
                 .build();
 
-        List<MultipartFile> imageFiles = Arrays.asList(
-            new MockMultipartFile("image1", "image1.jpg", "image/jpeg", "test image 1".getBytes())
+        List<MultipartFile> imageFiles = List.of(
+                new MockMultipartFile("image1", "image1.jpg", "image/jpeg", "test image 1".getBytes())
         );
 
         Product existingProduct = Product.builder()
                 .id(new ObjectId(productId))
                 .category("Original Category")
                 .description("Original Description")
-                .imageUrl("http://original-image.com")
+                .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(19.99)
                 .rate("4.5")
                 .title("Original Product Title")
@@ -246,7 +234,7 @@ class ProductServiceImplTest {
                 .id(new ObjectId(productId))
                 .category(updateDTO.getCategory())
                 .description(updateDTO.getDescription())
-                .imageUrl(updateDTO.getImageUrl())
+                .imageUrls(updateDTO.getImages())
                 .price(updateDTO.getPrice())
                 .rate(updateDTO.getRate())
                 .title(updateDTO.getTitle())
@@ -257,7 +245,6 @@ class ProductServiceImplTest {
         when(productRepository.save(any(Product.class))).thenReturn(updatedProduct);
         when(objectMapper.mapObject()).thenReturn(modelMapper);
         when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(updateDTO);
-        when(imageRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
 
         // Act
         ProductDTO result = productService.updateProduct(productId, updateDTO, imageFiles);
@@ -266,7 +253,7 @@ class ProductServiceImplTest {
         assertNotNull(result);
         assertEquals(updateDTO.getCategory(), result.getCategory());
         assertEquals(updateDTO.getDescription(), result.getDescription());
-        assertEquals(updateDTO.getImageUrl(), result.getImageUrl());
+        assertEquals(updateDTO.getImages(), result.getImages());
         assertEquals(updateDTO.getPrice(), result.getPrice());
         assertEquals(updateDTO.getRate(), result.getRate());
         assertEquals(updateDTO.getTitle(), result.getTitle());
@@ -289,14 +276,14 @@ class ProductServiceImplTest {
         ProductDTO updateDTO = ProductDTO.builder()
                 .category("Updated Category")
                 .description("Updated Description")
-                .imageUrl("http://updated-image.com")
+                .images(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(29.99)
                 .rate("4.8")
                 .title("Updated Product Title")
                 .quantity(25)
                 .build();
 
-        List<MultipartFile> imageFiles = Arrays.asList(
+        List<MultipartFile> imageFiles = List.of(
             new MockMultipartFile("image1", "image1.jpg", "image/jpeg", "test image 1".getBytes())
         );
 
@@ -306,13 +293,11 @@ class ProductServiceImplTest {
         ProductException exception = assertThrows(ProductException.class,
                 () -> productService.updateProduct(productId, updateDTO, imageFiles));
 
-        assertFalse(exception.getMessage().contains("Product with ID " + productId + " doesn't exist"));
+        assertTrue(exception.getMessage().contains("Product with ID " + productId + " doesn't exist"));
 
         // Verify repository interactions
         verify(productRepository, times(1)).findById(new ObjectId(productId));
         verify(productRepository, never()).save(any(Product.class));
-        verify(imageRepository, never()).saveAll(anyList());
-        
         // Verify no object mapper interactions
         verify(objectMapper, never()).mapObject();
         verify(modelMapper, never()).map(any(Product.class), eq(ProductDTO.class));
@@ -325,14 +310,14 @@ class ProductServiceImplTest {
         ProductDTO updateDTO = ProductDTO.builder()
                 .category("")  // Invalid: empty category
                 .description("Updated Description")
-                .imageUrl("http://updated-image.com")
+                .images(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(-10.0)  // Invalid: negative price
                 .rate("4.8")
                 .title("")     // Invalid: empty title
                 .quantity(-5)   // Invalid: negative quantity
                 .build();
 
-        List<MultipartFile> imageFiles = Arrays.asList(
+        List<MultipartFile> imageFiles = List.of(
             new MockMultipartFile("image1", "image1.jpg", "image/jpeg", "test image 1".getBytes())
         );
 
@@ -340,7 +325,7 @@ class ProductServiceImplTest {
                 .id(new ObjectId(productId))
                 .category("Original Category")
                 .description("Original Description")
-                .imageUrl("http://original-image.com")
+                .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(19.99)
                 .rate("4.5")
                 .title("Original Product Title")
@@ -349,15 +334,7 @@ class ProductServiceImplTest {
 
         when(productRepository.findById(new ObjectId(productId))).thenReturn(Optional.of(existingProduct));
 
-        // Act & Assert
-        // ProductException exception = assertThrows(ProductException.class, () -> productService.updateProduct(productId, updateDTO, imageFiles));
-
-        // assertTrue(exception.getMessage().contains("Invalid product data"));
-
-        // Verify repository interactions
-        // verify(productRepository, times(1)).findById(new ObjectId(productId));
         verify(productRepository, never()).save(any(Product.class));
-        verify(imageRepository, never()).saveAll(anyList());
         
         // Verify no object mapper interactions
         verify(objectMapper, never()).mapObject();
@@ -372,7 +349,7 @@ class ProductServiceImplTest {
                 .id(new ObjectId(productId))
                 .category("Test Category")
                 .description("Test Description")
-                .imageUrl("http://test-image.com")
+                .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(19.99)
                 .rate("4.5")
                 .title("Test Product")
@@ -432,7 +409,7 @@ class ProductServiceImplTest {
                 .id(new ObjectId("67683885e7419802624dd4c4"))
                 .category("Category 1")
                 .description("Description 1")
-                .imageUrl("http://image1.com")
+                    .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(19.99)
                 .rate("4.5")
                 .title("Product 1")
@@ -442,7 +419,7 @@ class ProductServiceImplTest {
                 .id(new ObjectId("67683885e7419802624dd4c5"))
                 .category("Category 2")
                 .description("Description 2")
-                .imageUrl("http://image2.com")
+                    .imageUrls(List.of("http:image.com", "https:image.com", "https:image.com"))
                 .price(29.99)
                 .rate("4.8")
                 .title("Product 2")
