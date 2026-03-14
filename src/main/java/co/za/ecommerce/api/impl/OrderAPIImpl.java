@@ -26,12 +26,7 @@ import java.util.List;
 @RequestMapping("api/v1/order")
 public class OrderAPIImpl extends API implements OrderAPI {
 
-    /**
-     * Get order by ID
-     * GET /api/v1/orders/{orderId}
-     *
-     * Customer can view their own order details
-     */
+    @Secured({"ROLE_ADMIN"})
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
@@ -45,12 +40,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    /**
-     * Get order by order number
-     * GET /api/v1/orders/number/{orderNumber}
-     *
-     * Allows customer to track order by order number
-     */
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     @GetMapping("/number/{orderNumber}")
     public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber) {
         return ResponseEntity.ok(
@@ -64,32 +54,21 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    /**
-     * Get all orders for a user
-     * GET /api/v1/orders/user/{userId}
-     *
-     * Customer views their order history
-     */
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     @GetMapping("/user/{userId}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId) {
-        List<OrderDTO> orders = orderService.getUserOrders(userId);
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
                         .timestamp(Instant.now())
-                        .data(orders)
-                        .message(String.format("Retrieved %d orders.", orders.size()))
+                        .data(orderService.getUserOrders(userId))
+                        .message(String.format("Retrieved %d orders.", orderService.getUserOrders(userId).size()))
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()
         );
     }
 
-    /**
-     * Get user orders by status
-     * GET /api/v1/orders/user/{userId}/status/{status}
-     *
-     * Filter user's orders by status (e.g., PENDING, SHIPPED, DELIVERED)
-     */
+    @Secured({"ROLE_ADMIN"})
     @GetMapping("/user/{userId}/status/{status}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrdersByStatus(
             @PathVariable ObjectId userId,
@@ -107,33 +86,20 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    /**
-     * Get all orders (Admin dashboard)
-     * GET /api/v1/orders/admin/all
-     *
-     * Admin views all orders across all customers
-     */
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/all")
     public ResponseEntity<OrderDTOListApiResource> getAllOrders() {
-        List<OrderDTO> orders = orderService.getAllOrders();
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
                         .timestamp(Instant.now())
-                        .data(orders)
-                        .message(String.format("Retrieved %d total orders.", orders.size()))
+                        .data(orderService.getAllOrders())
+                        .message(String.format("Retrieved %d total orders.", orderService.getAllOrders().size()))
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()
         );
     }
 
-    /**
-     * Get orders by status (Admin)
-     * GET /api/v1/orders/admin/status/{status}
-     *
-     * Admin filters orders by status
-     */
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/status/{status}")
     public ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(@PathVariable String status) {
@@ -150,28 +116,19 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    /**
-     * Update order status (Admin)
-     * PUT /api/v1/orders/{orderId}/status
-     *
-     * Admin updates order status (e.g., CONFIRMED → PROCESSING → SHIPPED → DELIVERED)
-     */
     @Secured("ROLE_ADMIN")
     @PutMapping("/{orderId}/status")
     public ResponseEntity<OrderDTOApiResource> updateOrderStatus(
             @PathVariable ObjectId orderId,
             @Valid @RequestBody OrderStatusUpdateRequest request) {
-
-        OrderDTO updatedOrder = orderService.updateOrderStatus(
-                orderId,
-                request.getNewStatus(),
-                request.getNotes()
-        );
-
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
                         .timestamp(Instant.now())
-                        .data(updatedOrder)
+                        .data(orderService.updateOrderStatus(
+                                orderId,
+                                request.getNewStatus(),
+                                request.getNotes()
+                        ))
                         .message("Order status updated to " + request.getNewStatus())
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
@@ -179,12 +136,6 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    /**
-     * Get order statistics (Admin dashboard)
-     * GET /api/v1/orders/admin/statistics
-     *
-     * Returns order counts by status for dashboard
-     */
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/statistics")
     public ResponseEntity<OrderStatisticsApiResource> getOrderStatistics() {

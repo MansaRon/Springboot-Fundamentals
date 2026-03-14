@@ -78,6 +78,7 @@ public class CartAPIImpl extends API implements CartAPI {
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
+    @Override
     @PermitAll
     @DeleteMapping("/{userId}/delete-item/{productId}")
     public ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId) {
