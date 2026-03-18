@@ -1,0 +1,104 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# DOCKER COMPOSE — LOCAL DEVELOPMENT
+#
+# Spins up the full stack locally with a single command:
+#   docker compose up --build
+#
+# Services:
+#   mongodb   → MongoDB 7 with a persistent volume
+#   app       → Your Spring Boot application (built from Dockerfile)
+#
+# The app waits for MongoDB to be healthy before starting, so you never
+# hit a "connection refused" error on startup.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ─── MONGODB ───────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: ecommerce-mongodb
+
+    # Restart automatically if the container crashes or the machine reboots.
+    restart: unless-stopped
+
+    ports:
+      # Maps host port 27017 to container port 27017.
+      # Lets you connect from MongoDB Compass or IntelliJ on your machine.
+      - "27017:27017"
+
+    environment:
+      # Creates a root admin user on first startup.
+      # These are local dev credentials only — never use these in production.
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: ecommerce
+
+    volumes:
+      # Named volume keeps your data between docker compose down/up cycles.
+      # Without this, all data is wiped every time the container stops.
+      - mongodb_data:/data/db
+
+    healthcheck:
+      # Pings MongoDB to confirm it is ready to accept connections.
+      # The app service uses this as its depends_on condition.
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - ecommerce-network
+
+  # ─── SPRING BOOT APP ───────────────────────────────────────────────────────
+  app:
+    container_name: ecommerce-api
+
+    # Builds from the Dockerfile in the current directory.
+    # Use 'image' instead of 'build' if you want to pull from Docker Hub:
+    #   image: your-dockerhub-username/ecommerce-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      # Spring Boot profile — activates application-prod.yml or prod-specific
+      # properties. Create src/main/resources/application-prod.yml with your
+      # production config (MongoDB URI, JWT config etc).
+      SPRING_PROFILES_ACTIVE: prod
+
+      # MongoDB connection string pointing to the mongodb service above.
+      # 'mongodb' resolves to the MongoDB container via Docker's internal DNS.
+      # The credentials must match MONGO_INITDB_ROOT_USERNAME/PASSWORD above.
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/ecommerce?authSource=admin
+
+      # JWT configuration — override with real values via .env file (see below)
+      JWT_SECRET: ${JWT}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # AWS S3 configuration — pulled from .env file
+      AWS_ACCESS_KEY: ${ACCESS}
+      AWS_SECRET_KEY: ${SECRET}
+      AWS_BUCKET_NAME: ${BUCKET_NAME}
+      AWS_REGION: ${REGION}
+
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+    networks:
+      - ecommerce-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  ecommerce-network:
+    driver: bridge

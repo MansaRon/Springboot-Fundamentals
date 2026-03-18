@@ -29,13 +29,13 @@ public class JwtTokenProvider {
 
     private String generateToken(Map<String, Object> extraClaims,
                                  String username) {
-        // Sets token expiry to 5 minutes
+        // Sets token expiry to 15 minutes
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

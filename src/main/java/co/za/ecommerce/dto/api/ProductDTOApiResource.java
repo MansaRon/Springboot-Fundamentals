@@ -15,5 +15,4 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class ProductDTOApiResource extends GlobalApiResponse {
     private ProductDTO data;
-    private String delete;
 }

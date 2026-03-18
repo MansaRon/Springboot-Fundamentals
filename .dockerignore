@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .dockerignore
+#
+# Prevents unnecessary files from being sent to the Docker build context.
+# Speeds up builds and prevents secrets from accidentally leaking into images.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Git
+.git
+.gitignore
+
+# Maven build output (builder stage compiles fresh inside Docker)
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Environment files — never copy secrets into the image
+.env
+.env.*
+!.env.example
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test reports
+target/surefire-reports/
+target/site/

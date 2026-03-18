@@ -32,7 +32,7 @@ public class OTPServiceImpl implements OTPService {
                 .ifPresent(existing -> otpRepository.deleteByPhoneNumber(phoneNumber));
 
         String otp = GenerateUtil.generateOTP();
-        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5);
+        LocalDateTime expiryTime = LocalDateTime.now().plusHours(1);
 
         OtpStore otpStore = OtpStore
                 .builder()
@@ -49,7 +49,7 @@ public class OTPServiceImpl implements OTPService {
 
         return OTPResponseDTO.builder()
                 .phoneNumber(phoneNumber)
-                .expiryMinutes(5)
+                .expiryMinutes(10)
                 .build();
     }
 

@@ -32,7 +32,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
     @Override
-    @PermitAll
+    // @PermitAll
     @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart("product") @Valid String productJson, @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
         log.info("ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart(\"product\") @Valid String productJson, @RequestPart(\"images\") @Valid List<MultipartFile> imageFiles)");
@@ -178,10 +178,10 @@ public class ProductApIImpl extends API implements ProductAPI {
     public ResponseEntity<ProductDTOApiResource> deleteProduct(
             @PathVariable String productId) {
         log.trace("public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId)");
+        productService.deleteProduct(productId);
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
                         .timestamp(now())
-                        .delete(productService.deleteProduct(productId))
                         .message("Product Deleted.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
@@ -196,10 +196,10 @@ public class ProductApIImpl extends API implements ProductAPI {
     @DeleteMapping("/product")
     public ResponseEntity<ProductDTOApiResource> deleteAllProduct() {
         log.trace("public ResponseEntity<ProductDTOApiResource> deleteAllProduct()");
+        productService.deleteAllProducts();
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
                         .timestamp(now())
-                        .delete(productService.deleteAllProducts())
                         .message("All products deleted.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())

@@ -14,7 +14,6 @@ import co.za.ecommerce.security.JwtTokenProvider;
 import co.za.ecommerce.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,26 +25,13 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private OTPService otpService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    private RefreshTokenService refreshTokenService;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+    private final OTPService otpService;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -99,6 +85,8 @@ public class UserServiceImpl implements UserService {
         log.info("============= Assign session token, refresh token and login ===============");
         return UserDTO
                 .builder()
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .name(user.getName())
                 .email(user.getEmail())
                 .status(user.getStatus().name())

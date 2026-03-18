@@ -15,6 +15,7 @@
 -  NOT_FOUND vs BAD_REQUEST HTTP status codes corrected
 -  isOnlinePaymentMethod logic fixed (CREDIT_CARD only)
 -  Fix the DTO returned for confirm user API
+-  Delete the delete field from the ProductDTOAPIResource class 
 
 ---
 

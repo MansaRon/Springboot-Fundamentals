@@ -54,7 +54,7 @@ public class ProductServiceImpl implements ProductService {
                 .rate(productDTO.getRate())
                 .title(productDTO.getTitle())
                 .quantity(productDTO.getQuantity())
-                .imageUrls(imageUrls)
+                .imageUrls(!imageUrls.isEmpty() ? imageUrls : List.of())
                 .build();
         Product savedProduct = productRepository.save(product);
         log.info("Product saved with id: {}", savedProduct.getId());
