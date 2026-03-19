@@ -1,0 +1,15 @@
+spring:
+  data:
+    mongodb:
+      uri: ${DB_URI}
+
+aws:
+  s3:
+    access-key: ${ACCESS}
+    secret-key: ${SECRET}
+    bucket-name: ${BUCKET_NAME}
+    region: ${REGION}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
