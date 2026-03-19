@@ -6,8 +6,8 @@ import co.za.ecommerce.exception.OTPException;
 import co.za.ecommerce.model.OtpStore;
 import co.za.ecommerce.repository.OTPRepository;
 import co.za.ecommerce.utils.GenerateUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -18,10 +18,10 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OTPServiceImpl implements OTPService {
 
-    @Autowired
-    private OTPRepository otpRepository;
+    private final OTPRepository otpRepository;
 
     @Override
     @Transactional
