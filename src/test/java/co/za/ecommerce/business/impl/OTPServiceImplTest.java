@@ -121,7 +121,7 @@ class OTPServiceImplTest {
             assertThat(generatedOtp).matches("\\d{6}");
         }
     }
-    
+
     @Nested
     @DisplayName("cleanupExpiredOtps")
     class CleanupExpiredOtps {
