@@ -1,6 +1,7 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.dto.otp.OTPResponseDTO;
+import co.za.ecommerce.exception.OTPException;
 import co.za.ecommerce.model.OtpStore;
 import co.za.ecommerce.repository.OTPRepository;
 import org.bson.types.ObjectId;
@@ -13,15 +14,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OTPService Tests")
@@ -118,17 +121,82 @@ class OTPServiceImplTest {
             assertThat(generatedOtp).matches("\\d{6}");
         }
     }
+    
+    @Nested
+    @DisplayName("cleanupExpiredOtps")
+    class CleanupExpiredOtps {
 
-    @Test
-    void validateOTP() {
+        @Test
+        @DisplayName("shouldDeleteAllExpiredOTPsWhenExpiredOTPsExist")
+        void shouldDeleteAllExpiredOTPsWhenExpiredOTPsExist() {
+            // Arrange
+            List<OtpStore> expiredList = List.of(expiredOtpStore);
+            when(otpRepository.findByExpiryTimeBefore(any(LocalDateTime.class))).thenReturn(expiredList);
+
+            // Act
+            otpService.cleanupExpiredOtps();
+
+            // Assert
+            verify(otpRepository).deleteAll(expiredList);
+        }
+
+        @Test
+        @DisplayName("shouldNotCallDeleteAllWhenNoExpiredOTPsExist")
+        void shouldNotCallDeleteAllWhenNoExpiredOTPsExist() {
+            // Arrange
+            when(otpRepository.findByExpiryTimeBefore(any(LocalDateTime.class))).thenReturn(List.of());
+
+            // Act
+            otpService.cleanupExpiredOtps();
+
+            // Assert
+            verify(otpRepository, never()).deleteAll(anyList());
+        }
     }
 
-    @Test
-    void cleanupExpiredOtps() {
-    }
+    @Nested
+    @DisplayName("hasValidOTP")
+    class HasValidOTP {
 
-    @Test
-    void hasValidOTP() {
+        @Test
+        @DisplayName("shouldReturnTrueWhenValidNonExpiredOTPExists")
+        void shouldReturnTrueWhenValidNonExpiredOTPExists() {
+            // Arrange
+            when(otpRepository.findByPhoneNumber(PHONE_NUMBER)).thenReturn(Optional.of(validOtpStore));
+
+            // Act
+            boolean result = otpService.hasValidOTP(PHONE_NUMBER);
+
+            // Assert
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("shouldReturnFalseWhenOTPIsExpired")
+        void shouldReturnFalseWhenOTPIsExpired() {
+            // Arrange
+            when(otpRepository.findByPhoneNumber(PHONE_NUMBER)).thenReturn(Optional.of(expiredOtpStore));
+
+            // Act
+            boolean result = otpService.hasValidOTP(PHONE_NUMBER);
+
+            // Assert
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("shouldReturnFalseWhenNoOTPExistsForPhoneNumber")
+        void shouldReturnFalseWhenNoOTPExistsForPhoneNumber() {
+            // Arrange
+            when(otpRepository.findByPhoneNumber(PHONE_NUMBER)).thenReturn(Optional.empty());
+
+            // Act
+            boolean result = otpService.hasValidOTP(PHONE_NUMBER);
+
+            // Assert
+            assertThat(result).isFalse();
+        }
+
     }
 
     @Test
@@ -138,6 +206,7 @@ class OTPServiceImplTest {
     @Nested
     @DisplayName("resendOTP")
     class ResendOTP {
+
         @Test
         @DisplayName("shouldResendOTPByDelegatingToGenerateOTP")
         void shouldResendOTPByDelegatingToGenerateOTP() {
@@ -151,6 +220,21 @@ class OTPServiceImplTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getPhoneNumber()).isEqualTo(PHONE_NUMBER);
+            verify(otpRepository).save(any(OtpStore.class));
+        }
+
+        @Test
+        @DisplayName("shouldDeleteOldOTPWhenResending")
+        void shouldDeleteOldOTPWhenResending() {
+            // Arrange
+            when(otpRepository.findByPhoneNumber(PHONE_NUMBER)).thenReturn(Optional.of(validOtpStore));
+            when(otpRepository.save(any(OtpStore.class))).thenReturn(validOtpStore);
+
+            // Act
+            otpService.resendOTP(PHONE_NUMBER);
+
+            // Assert
+            verify(otpRepository).deleteByPhoneNumber(PHONE_NUMBER);
             verify(otpRepository).save(any(OtpStore.class));
         }
     }
