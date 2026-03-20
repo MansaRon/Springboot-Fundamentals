@@ -50,7 +50,7 @@ public class CartMapper {
         dto.setPrice(product.getPrice());
         dto.setRate(product.getRate());
         dto.setQuantity(product.getQuantity());
-        dto.setImages(product.getImageUrls());
+        dto.setImageUrls(product.getImageUrls());
 
         return dto;
     }
@@ -90,7 +90,7 @@ public class CartMapper {
         product.setTitle(dto.getTitle());
         product.setDescription(dto.getDescription());
         product.setCategory(dto.getCategory());
-        product.setImageUrls(dto.getImages());
+        product.setImageUrls(dto.getImageUrls());
         product.setPrice(dto.getPrice());
         product.setRate(dto.getRate());
         product.setQuantity(dto.getQuantity());

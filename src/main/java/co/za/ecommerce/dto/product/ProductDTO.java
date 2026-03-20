@@ -33,5 +33,5 @@ public class ProductDTO extends EntityDTO {
     @NotNull
     private int quantity;
 
-    private List<String> images;
+    private List<String> imageUrls;
 }
