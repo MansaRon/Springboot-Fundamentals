@@ -28,3 +28,9 @@ aws:
     secret-key: ${SECRET}
     bucket-name: ${BUCKET_NAME}
     region: ${REGION}
+
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.2
