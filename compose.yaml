@@ -55,13 +55,6 @@ services:
   app:
     container_name: ecommerce-api
 
-    # Builds from the Dockerfile in the current directory.
-    # Use 'image' instead of 'build' if you want to pull from Docker Hub:
-    #   image: your-dockerhub-username/ecommerce-api:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-
     restart: unless-stopped
 
     image: mansaron/ecommerce-api:latest
