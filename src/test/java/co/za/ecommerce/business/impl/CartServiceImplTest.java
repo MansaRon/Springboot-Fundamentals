@@ -39,17 +39,10 @@ import static org.mockito.Mockito.*;
 @DisplayName("CartService Tests")
 class CartServiceImplTest {
 
-    @Mock
-    private CartRepository cartRepository;
-
-    @Mock
-    private ProductRepository productRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @InjectMocks
-    private CartServiceImpl cartService;
+    @Mock private CartRepository cartRepository;
+    @Mock private ProductRepository productRepository;
+    @Mock private UserRepository userRepository;
+    @InjectMocks private CartServiceImpl cartService;
 
     private ObjectId userId;
     private ObjectId productId;
