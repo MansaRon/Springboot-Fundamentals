@@ -30,11 +30,8 @@ import static org.mockito.Mockito.*;
 @DisplayName("OTPService Tests")
 class OTPServiceImplTest {
 
-    @Mock
-    private OTPRepository otpRepository;
-
-    @InjectMocks
-    private OTPServiceImpl otpService;
+    @Mock private OTPRepository otpRepository;
+    @InjectMocks private OTPServiceImpl otpService;
 
     private static final String PHONE_NUMBER = "1234567890";
     private static final String VALID_OTP = "98765";
