@@ -1,6 +1,7 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.dto.cart.CartDTO;
+import co.za.ecommerce.exception.CartException;
 import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.exception.UserNotFoundException;
 import co.za.ecommerce.mapper.CartMapper;
@@ -304,17 +305,264 @@ class CartServiceImplTest {
     @Nested
     @DisplayName("GetUserCartWithItems")
     class GetUserCartWithItems {
+        @Test
+        @DisplayName("shouldReturnExistingCartWhenCartFound")
+        void shouldReturnExistingCartWhenCartFound() {
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                CartDTO expectedDTO = CartDTO.builder()
+                        .totalPrice(99.98)
+                        .build();
+                cartMapperMock.when(() -> CartMapper.toDTO(cart)).thenReturn(expectedDTO);
+
+                CartDTO result = cartService.getUserCartWithItems(userId);
+
+                assertThat(result).isNotNull();
+                assertThat(result.getTotalPrice()).isEqualTo(99.98);
+                // No new cart should be created when one already exists
+                verify(userRepository, never()).findById(any());
+            }
+        }
+
+        @Test
+        @DisplayName("shouldCreateAndReturnNewCartWhenNoneExists")
+        void shouldCreateAndReturnNewCartWhenNoneExists() {
+            Cart newCart = Cart.builder()
+                    .id(new ObjectId())
+                    .user(user)
+                    .cartItems(new ArrayList<>())
+                    .totalPrice(0.0)
+                    .build();
+
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(cartRepository.save(any(Cart.class))).thenReturn(newCart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                cartService.getUserCartWithItems(userId);
+
+                // A new cart should have been created and saved
+                verify(cartRepository).save(any(Cart.class));
+                verify(userRepository).findById(userId);
+            }
+        }
     }
 
-    @Test
-    void updateProductInCart() {
+    @Nested
+    @DisplayName("updateProductInCart")
+    class UpdateProductInCart {
+        @Test
+        @DisplayName("shouldThrowCartExceptionWhenCartNotFound")
+        void shouldThrowCartExceptionWhenCartNotFound() {
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> cartService.updateProductInCart(userId, productId, 3))
+                    .isInstanceOf(CartException.class)
+                    .hasMessageContaining("Cart not found");
+
+            verify(cartRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowCartExceptionWhenProductNotFoundInCart")
+        void shouldThrowCartExceptionWhenProductNotFoundInCart() {
+            // Arrange — cart exists but contains a different product
+            ObjectId differentProductId = new ObjectId();
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.findById(differentProductId)).thenReturn(Optional.of(product));
+
+            assertThatThrownBy(() ->
+                    cartService.updateProductInCart(userId, differentProductId, 3))
+                    .isInstanceOf(CartException.class)
+                    .hasMessageContaining("Product not found in cart");
+        }
+
+        @Test
+        @DisplayName("shouldRemoveItemAndRestoreStockWhenNewQuantityIsZero")
+        void shouldRemoveItemAndRestoreStockWhenNewQuantityIsZero() {
+            // Arrange
+            // Cart has 2 hoodies. Setting quantity to 0 should:
+            // 1. Remove the item from the cart entirely
+            // 2. Return the 2 units back to the product stock
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+            when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                cartService.updateProductInCart(userId, productId, 0);
+
+                // Cart should now be empty
+                assertThat(cart.getCartItems()).isEmpty();
+
+                // Stock should be restored: 25 original + 2 from cart = 27
+                ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+                verify(productRepository).save(productCaptor.capture());
+                assertThat(productCaptor.getValue().getQuantity()).isEqualTo(27);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldRemoveItemAndRestoreStockWhenNewQuantityIsNegative")
+        void shouldRemoveItemAndRestoreStockWhenNewQuantityIsNegative() {
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+            when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                cartService.updateProductInCart(userId, productId, -1);
+
+                assertThat(cart.getCartItems()).isEmpty();
+                verify(productRepository).save(any(Product.class));
+            }
+        }
+
+        @Test
+        @DisplayName("shouldUpdateQuantityAndAdjustStockByDeltaWhenIncreasing")
+        void shouldUpdateQuantityAndAdjustStockByDeltaWhenIncreasing() {
+            // Arrange
+            // Cart has 2 hoodies. Updating to 5 means requesting 3 more.
+            // Delta = 5 - 2 = +3 → stock reduces by 3 (25 → 22)
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+            when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                cartService.updateProductInCart(userId, productId, 5);
+
+                // Cart item quantity should be 5
+                assertThat(cart.getCartItems().get(0).getQuantity()).isEqualTo(5);
+
+                // Stock: 25 - (5 - 2) = 22
+                ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+                verify(productRepository).save(productCaptor.capture());
+                assertThat(productCaptor.getValue().getQuantity()).isEqualTo(22);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldUpdateQuantityAndRestoreStockByDeltaWhenDecreasing")
+        void shouldUpdateQuantityAndRestoreStockByDeltaWhenDecreasing() {
+            // Arrange
+            // Cart has 2 hoodies. Updating to 1 means returning 1.
+            // Delta = 1 - 2 = -1 → stock increases by 1 (25 → 26)
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+            when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                cartService.updateProductInCart(userId, productId, 1);
+
+                assertThat(cart.getCartItems().get(0).getQuantity()).isEqualTo(1);
+
+                // Stock: 25 - (1 - 2) = 26
+                ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+                verify(productRepository).save(productCaptor.capture());
+                assertThat(productCaptor.getValue().getQuantity()).isEqualTo(26);
+            }
+        }
     }
 
-    @Test
-    void deleteProductFromCart() {
+    // deleteProductFromCart
+    //
+    // Logic being tested:
+    // 1. Cart not found → throw CartException
+    // 2. Product not found in cart → throw CartException
+    // 3. Product found → remove from cart, restore stock, save
+    //
+    // Removing from cart is permanent — the item is gone and stock is returned.
+    // This differs from updateProductInCart(qty=0) in that it's intentional removal.
+    @Nested
+    @DisplayName("deleteProductFromCart")
+    class DeleteProductFromCart {
+        @Test
+        @DisplayName("shouldRemoveItemAndRestoreStockWhenProductExistsInCart")
+        void shouldRemoveItemAndRestoreStockWhenProductExistsInCart() {
+            // Arrange
+            // Cart has 2 hoodies. Deleting restores 2 units to the product.
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+            when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                cartService.deleteProductFromCart(userId, productId);
+
+                // Cart should be empty after deletion
+                assertThat(cart.getCartItems()).isEmpty();
+
+                // Stock restored: 25 + 2 = 27
+                ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+                verify(productRepository).save(productCaptor.capture());
+                assertThat(productCaptor.getValue().getQuantity()).isEqualTo(27);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowCartExceptionWhenCartNotFound")
+        void shouldThrowCartExceptionWhenCartNotFound() {
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> cartService.deleteProductFromCart(userId, productId))
+                    .isInstanceOf(CartException.class)
+                    .hasMessageContaining("Cart not found");
+
+            verify(productRepository, never()).save(any());
+            verify(cartRepository, never()).save(any());
+        }
     }
 
-    @Test
-    void clearCart() {
+    @Nested
+    @DisplayName("clearCart")
+    class ClearCart {
+        @Test
+        @DisplayName("shouldClearItemsUpdateTotalAndSaveCart")
+        void shouldClearItemsUpdateTotalAndSaveCart() {
+            // Arrange — cart has items before clearing
+            assertThat(cart.getCartItems()).isNotEmpty();
+
+            // Act
+            cartService.clearCart(cart);
+
+            // Assert
+            assertThat(cart.getCartItems()).isEmpty();
+            assertThat(cart.getTotalPrice()).isZero();
+            verify(cartRepository).save(cart);
+        }
+
+        @Test
+        @DisplayName("shouldSaveCartEvenWhenCartIsAlreadyEmpty")
+        void shouldSaveCartEvenWhenCartIsAlreadyEmpty() {
+            // Arrange — cart is already empty
+            Cart emptyCart = Cart.builder()
+                    .id(new ObjectId())
+                    .user(user)
+                    .cartItems(new ArrayList<>())
+                    .totalPrice(0.0)
+                    .build();
+
+            // Act
+            cartService.clearCart(emptyCart);
+
+            // Assert — save still called even on already-empty cart
+            assertThat(emptyCart.getCartItems()).isEmpty();
+            verify(cartRepository).save(emptyCart);
+        }
     }
 }
