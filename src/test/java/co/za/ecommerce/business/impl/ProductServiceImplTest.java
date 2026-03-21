@@ -37,14 +37,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("ProductServiceImpl Tests")
 class ProductServiceImplTest {
 
-    // @Mock creates a fake version of each dependency.
-    // None of these make real database calls or real S3 uploads.
-    // We control exactly what they return in each test.
-    //
-    // @InjectMocks creates a real instance of ProductServiceImpl and
-    // automatically injects the mocks above as its constructor arguments.
-    // This means we're testing the REAL service logic with FAKE dependencies.
-
     @Mock
     private ProductRepository productRepository;
 
@@ -59,10 +51,6 @@ class ProductServiceImplTest {
 
     @InjectMocks
     private ProductServiceImpl productService;
-
-    // We define reusable test data here and rebuild it fresh before each test
-    // in @BeforeEach. This prevents one test from accidentally mutating shared
-    // state and causing another test to fail for the wrong reason.
 
     private static final String VALID_ID = "507f1f77bcf86cd799439011";
     private static final String INVALID_ID = "invalid-id";
