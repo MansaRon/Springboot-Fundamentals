@@ -10,6 +10,5 @@ aws:
     bucket-name: ${BUCKET_NAME}
     region: ${REGION}
 
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
+app:
+  jwt-secret: ${JWT}

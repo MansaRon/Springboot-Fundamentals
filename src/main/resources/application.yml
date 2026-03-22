@@ -1,0 +1,27 @@
+spring:
+  data:
+    mongodb:
+      uri: ${DB_URI}
+  config:
+    import: optional:file:env.properties
+  application:
+    name: ecommerce backend
+
+app:
+  jwt-secret: ${JWT}
+
+aws:
+  s3:
+    access-key: ${ACCESS}
+    secret-key: ${SECRET}
+    bucket-name: ${BUCKET_NAME}
+    region: ${REGION}
+
+logging.level.root: info
+logging.level.co.za.ecommerce: DEBUG
+
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.2
