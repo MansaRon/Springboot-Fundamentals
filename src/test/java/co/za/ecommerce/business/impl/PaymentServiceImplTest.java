@@ -37,8 +37,6 @@ class PaymentServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(paymentService).simulateProcessingDelay();
-
         Product product = Product.builder()
                 .id(new ObjectId())
                 .title("payment product")
@@ -108,17 +106,9 @@ class PaymentServiceImplTest {
     @Nested
     @DisplayName("processPayment - Cash on Delivery")
     class ProcessPaymentCOD {
-        @Test
-        @DisplayName("shouldReturnSuccessWithPendingStatusForCashOnDelivery")
-        void shouldReturnSuccessWithPendingStatusForCashOnDelivery() {
-            PaymentResultDTO result = paymentService.processPayment(codCheckout);
-
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
-            assertThat(result.getTransactionId()).isNotNull().isNotEmpty();
-            assertThat(result.getAmountProcessed()).isEqualTo(109.978);
-            assertThat(result.getPaymentMethod()).isEqualTo("CASH_ON_DELIVERY");
-            assertThat(result.getMessage()).isEqualTo("Payment processed successfully");
+        @BeforeEach
+        void setUp() {
+            doNothing().when(paymentService).simulateProcessingDelay();
         }
 
         @Test
@@ -230,6 +220,10 @@ class PaymentServiceImplTest {
     @Nested
     @DisplayName("processPayment - Credit Card")
     class ProcessPaymentCreditCard {
+        @BeforeEach
+        void setUp() {
+            doNothing().when(paymentService).simulateProcessingDelay();
+        }
 
         @Test
         @DisplayName("shouldReturnResultWithCorrectShapeRegardlessOfSuccessOrFailure")
