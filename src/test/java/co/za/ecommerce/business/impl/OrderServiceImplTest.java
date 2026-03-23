@@ -19,6 +19,7 @@ import co.za.ecommerce.model.order.OrderStatus;
 import co.za.ecommerce.model.order.OrderStatusHistory;
 import co.za.ecommerce.repository.OrderRepository;
 import co.za.ecommerce.utils.DateUtil;
+import factory.TestDataBuilder;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,8 +54,6 @@ class OrderServiceImplTest {
     private ObjectId orderId;
     private ObjectId userId;
     private User user;
-    private Product product;
-    private CartItems cartItem;
     private Cart cart;
     private Checkout checkout;
     private PaymentResultDTO successfulPayment;
@@ -66,58 +65,9 @@ class OrderServiceImplTest {
         orderId = new ObjectId();
         userId = new ObjectId();
 
-        user = new User();
-        user.setId(userId);
-
-        product = Product.builder()
-                .id(new ObjectId())
-                .title("Organic Fleece Hoodie")
-                .price(49.99)
-                .quantity(25)
-                .build();
-
-        cartItem = CartItems.builder()
-                .product(product)
-                .quantity(2)
-                .productPrice(99.98)
-                .discount(0)
-                .tax(0)
-                .build();
-
-        cart = Cart.builder()
-                .id(new ObjectId())
-                .user(user)
-                .cartItems(new ArrayList<>(List.of(cartItem)))
-                .totalPrice(99.98)
-                .build();
-
-        checkout = Checkout.builder()
-                .id((new ObjectId()))
-                .user(user)
-                .cart(cart)
-                .items(new ArrayList<>(List.of(cartItem)))
-                .subtotal(99.98)
-                .discount(0)
-                .tax(9.988)
-                .totalAmount(109.978)
-                .paymentMethod(PaymentMethod.CREDIT_CARD)
-                .shippingMethod(DeliverMethod.DHL)
-                .shippingAddress(Address.builder()
-                        .streetAddress("51 Frank Ocean Street")
-                        .city("Johannesburg")
-                        .state("Gauteng")
-                        .country("South Africa")
-                        .postalCode("2003")
-                        .build())
-                .billingAddress(Address.builder()
-                        .streetAddress("51 Frank Ocean Street")
-                        .city("Johannesburg")
-                        .state("Gauteng")
-                        .country("South Africa")
-                        .postalCode("2003")
-                        .build())
-                .estimatedDeliveryDate(DateUtil.now().plusDays(5))
-                .build();
+        user = TestDataBuilder.buildUser(userId);
+        cart = TestDataBuilder.buildCart(user, TestDataBuilder.buildProduct());
+        checkout = TestDataBuilder.buildPendingCheckout(user, cart);
 
         successfulPayment = PaymentResultDTO.builder()
                 .success(true)
@@ -127,23 +77,8 @@ class OrderServiceImplTest {
                 .paymentMethod("CREDIT_CARD")
                 .build();
 
-        savedOrder = Order.builder()
-                .id(orderId)
-                .orderNumber("ORD-20260314-483920")
-                .orderStatus(OrderStatus.CONFIRMED)
-                .customerInfo(user)
-                .subtotal(99.98)
-                .tax(9.998)
-                .discount(0)
-                .shippingCost(15.99)
-                .totalAmount(125.968)
-                .paymentMethod(PaymentMethod.CREDIT_CARD)
-                .shippingMethod(DeliverMethod.DHL.name())
-                .orderItems(new ArrayList<>())
-                .statusHistory(new ArrayList<>())
-                .createdAt(DateUtil.now())
-                .updatedAt(DateUtil.now())
-                .build();
+        savedOrder = TestDataBuilder.buildOrder(user);
+        savedOrder.setId(orderId);
 
         orderDTO = OrderDTO.builder()
                 .orderNumber("ORD-20260314-483920")

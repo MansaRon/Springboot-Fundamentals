@@ -4,6 +4,7 @@ import co.za.ecommerce.dto.otp.OTPResponseDTO;
 import co.za.ecommerce.exception.OTPException;
 import co.za.ecommerce.model.OtpStore;
 import co.za.ecommerce.repository.OTPRepository;
+import co.za.ecommerce.utils.DateUtil;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,8 +34,8 @@ class OTPServiceImplTest {
     @Mock private OTPRepository otpRepository;
     @InjectMocks private OTPServiceImpl otpService;
 
-    private static final String PHONE_NUMBER = "1234567890";
-    private static final String VALID_OTP = "98765";
+    private static final String PHONE_NUMBER = "0821234567";
+    private static final String VALID_OTP = "483920";
 
     private OtpStore validOtpStore;
     private OtpStore expiredOtpStore;
@@ -45,18 +46,18 @@ class OTPServiceImplTest {
                 .id(new ObjectId())
                 .phoneNumber(PHONE_NUMBER)
                 .otp(VALID_OTP)
-                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .expiryTime(DateUtil.now().plusMinutes(5))
                 .retryAttempts(0)
-                .createdAt(LocalDateTime.now())
+                .createdAt(DateUtil.now())
                 .build();
 
         expiredOtpStore = OtpStore.builder()
                 .id(new ObjectId())
                 .phoneNumber(PHONE_NUMBER)
                 .otp(VALID_OTP)
-                .expiryTime(LocalDateTime.now().minusMinutes(10))
+                .expiryTime(DateUtil.now().minusMinutes(10))
                 .retryAttempts(0)
-                .createdAt(LocalDateTime.now().minusMinutes(15))
+                .createdAt(DateUtil.now().minusMinutes(15))
                 .build();
     }
 
