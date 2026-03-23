@@ -8,6 +8,7 @@ import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
+import factory.TestDataBuilder;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -65,18 +66,7 @@ class ProductServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        savedProduct = Product.builder()
-                .id(new ObjectId(VALID_ID))
-                .title(PRODUCT_TITLE)
-                .description("Lightweight hoodie")
-                .category(PRODUCT_CATEGORY)
-                .price(49.99)
-                .rate("4.5")
-                .quantity(25)
-                .imageUrls(List.of(IMAGE_URL_1))
-                .createdAt(DateUtil.now())
-                .updatedAt(DateUtil.now())
-                .build();
+        savedProduct = TestDataBuilder.buildProduct(new ObjectId(VALID_ID));
 
         productDTO = ProductDTO.builder()
                 .title(PRODUCT_TITLE)
@@ -548,7 +538,7 @@ class ProductServiceImplTest {
             productService.updateProduct(VALID_ID, productDTO, List.of(imageFile));
 
             // Assert — old image deleted from S3, new one uploaded
-            verify(s3Service).deleteFile(IMAGE_URL_1);
+            verify(s3Service).deleteFile("https://s3.amazonaws.com/hoodie.jpg");
             verify(s3Service).uploadFile(any(MultipartFile.class));
         }
     }
@@ -568,7 +558,7 @@ class ProductServiceImplTest {
 
             // Assert
             assertThat(result).contains(VALID_ID);
-            verify(s3Service).deleteFile(IMAGE_URL_1);
+            verify(s3Service).deleteFile("https://s3.amazonaws.com/hoodie.jpg");
             verify(productRepository).delete(savedProduct);
         }
 
@@ -621,7 +611,7 @@ class ProductServiceImplTest {
 
             // Assert
             assertThat(result).containsIgnoringCase("deleted");
-            verify(s3Service).deleteFile(IMAGE_URL_1);
+            verify(s3Service).deleteFile("https://s3.amazonaws.com/hoodie.jpg");
             verify(productRepository).deleteAll(List.of(savedProduct));
         }
 

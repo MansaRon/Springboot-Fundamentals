@@ -13,6 +13,7 @@ import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.utils.DateUtil;
+import factory.TestDataBuilder;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -56,24 +57,12 @@ class CartServiceImplTest {
         userId = new ObjectId();
         productId = new ObjectId();
 
-        user = new User();
+        user = TestDataBuilder.buildUser(userId);
         user.setId(userId);
 
-        product = Product.builder()
-                .id(productId)
-                .title("Organic Fleece Hoodie")
-                .price(49.99)
-                .quantity(25)
-                .imageUrls(List.of("https://s3.amazonaws.com/hoodie.jpg"))
-                .build();
+        product = TestDataBuilder.buildProduct(productId);
 
-        cartItem = CartItems.builder()
-                .product(product)
-                .quantity(2)
-                .discount(0)
-                .tax(0)
-                .productPrice(99.98)
-                .build();
+        cartItem = TestDataBuilder.buildCartItem(product, 2);
 
         cart = Cart.builder()
                 .id(new ObjectId())

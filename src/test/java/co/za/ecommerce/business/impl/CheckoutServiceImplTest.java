@@ -23,6 +23,7 @@ import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
+import factory.TestDataBuilder;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -84,42 +85,13 @@ class CheckoutServiceImplTest {
         checkoutId = new ObjectId();
         cartId = new ObjectId();
 
-        user = new User();
+        user = TestDataBuilder.buildUser(userId);
         user.setId(userId);
+        cart = TestDataBuilder.buildCart(user, TestDataBuilder.buildProduct());
+        cart.setId(cartId);
 
-        product = Product.builder()
-                .id(new ObjectId())
-                .title("Organic Fleece Hoodie")
-                .price(49.99)
-                .quantity(25)
-                .build();
-
-        cartItem = CartItems.builder()
-                .product(product)
-                .quantity(2)
-                .discount(0)
-                .tax(0)
-                .productPrice(99.98)
-                .build();
-
-        cart = Cart.builder()
-                .id(cartId)
-                .user(user)
-                .cartItems(new ArrayList<>(List.of(cartItem)))
-                .totalPrice(99.98)
-                .build();
-
-        pendingCheckout = new Checkout();
+        pendingCheckout = TestDataBuilder.buildPendingCheckout(user, cart);
         pendingCheckout.setId(checkoutId);
-        pendingCheckout.setUser(user);
-        pendingCheckout.setCart(cart);
-        pendingCheckout.setItems(new ArrayList<>(List.of(cartItem)));
-        pendingCheckout.setStatus(CheckoutStatus.PENDING);
-        pendingCheckout.setPaymentMethod(PaymentMethod.NOT_SELECTED);
-        pendingCheckout.setDiscount(0);
-        pendingCheckout.setCurrency("ZAR");
-        pendingCheckout.setCreatedAt(DateUtil.now());
-        pendingCheckout.setUpdatedAt(DateUtil.now());
 
         checkoutDTO = CheckoutDTO.builder()
                 .paymentMethod(PaymentMethod.CREDIT_CARD)
