@@ -5,6 +5,9 @@ import co.za.ecommerce.dto.product.GetAllProductsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.exception.GlobalExceptionHandler;
 import co.za.ecommerce.exception.ProductException;
+import co.za.ecommerce.mapper.ObjectMapper;
+import co.za.ecommerce.security.CustomUserDetailsService;
+import co.za.ecommerce.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +38,18 @@ class ProductApIImplTest {
 
     @Autowired private MockMvc mockMvc;
     @MockBean private ProductService productService;
+
+    @MockBean private OTPService otpService;
+    @MockBean private UserService userService;
+    @MockBean private CartService cartService;
+    @MockBean private CheckoutService checkoutService;
+    @MockBean private OrderService orderService;
+    @MockBean private WishlistService wishlistService;
+    @MockBean private RefreshTokenService refreshTokenService;
+    @MockBean private S3Service s3Service;
+    @MockBean private ObjectMapper objectMapper;
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+    @MockBean private CustomUserDetailsService customUserDetailsService;
 
     private static final String VALID_ID = "507f1f77bcf86cd799439011";
     private static final String PRODUCT_JSON = """
