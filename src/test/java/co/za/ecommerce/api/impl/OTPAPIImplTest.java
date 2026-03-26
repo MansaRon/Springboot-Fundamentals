@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(OTPAPIImpl.class)
 @Import(GlobalExceptionHandler.class)
-@DisplayName("OTPAPIImpl Controller Tests")
+@DisplayName("OTPAPI Controller Tests")
 @AutoConfigureMockMvc(addFilters = false)
 class OTPAPIImplTest {
 
