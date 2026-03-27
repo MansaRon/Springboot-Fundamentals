@@ -25,3 +25,6 @@ de:
     mongodb:
       embedded:
         version: 7.0.2
+
+server:
+  port: 8080
