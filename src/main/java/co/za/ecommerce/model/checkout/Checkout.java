@@ -108,7 +108,7 @@ public class Checkout extends Entity {
     private CheckoutStatus status;
 
     /**
-     * The currency of th product.
+     * The currency of the product.
      */
     private String currency = "ZAR";
 }
