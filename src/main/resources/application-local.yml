@@ -2,7 +2,6 @@ spring:
   data:
     mongodb:
       username: ${DB_USER}
-      database: ${DB_DATABASE}
       password: ${DB_PASSWORD}
       uri: ${DB_URI}
   config:

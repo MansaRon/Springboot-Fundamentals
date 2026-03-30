@@ -2,7 +2,6 @@ spring:
   data:
     mongodb:
       uri: ${DB_URI}
-      database: ${DB_DATABASE}
   config:
     import: optional:file:env.properties
   application:
