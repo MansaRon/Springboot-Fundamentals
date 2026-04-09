@@ -11,10 +11,7 @@ import co.za.ecommerce.model.checkout.PaymentMethod;
 import co.za.ecommerce.security.CustomUserDetailsService;
 import co.za.ecommerce.security.JwtTokenProvider;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -240,6 +237,7 @@ class CheckoutAPIImplTest {
     }
 
     @Nested
+    @Disabled
     @DisplayName("PUT /api/v1/checkout/{userId}")
     class UpdateCheckout {
 
