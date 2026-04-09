@@ -87,6 +87,8 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setStatus(CheckoutStatus.PENDING);
         checkout.setPaymentMethod(PaymentMethod.NOT_SELECTED);
         checkout.setCurrency("ZAR");
+        checkout.setBillingAddress(null);
+        checkout.setShippingAddress(null);
 
         Checkout savedCheckout = checkoutRepository.save(checkout);
 
@@ -144,7 +146,11 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public CheckoutDTO updateCheckout(ObjectId userId, CheckoutDTO checkoutDTO) {
-        Checkout checkout = findActiveCheckoutByUserId(userId);
+        Checkout checkout = checkoutRepository.findFirstByUserId(userId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "User does not have any checked out items.",
+                        HttpStatus.BAD_REQUEST.value()));
 
         if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
             throw new CheckoutException(
@@ -162,7 +168,11 @@ public class CheckoutServiceImpl implements CheckoutService {
         updateShippingMethod(checkout, checkoutDTO);
         updateCartItems(checkout, checkoutDTO);
         recalculateTotals(checkout);
-
+        log.info("Received checkoutDTO: paymentMethod={}, shippingAddress={}, billingAddress={}, shippingMethod={}",
+                checkoutDTO.getPaymentMethod(),
+                checkoutDTO.getShippingAddress(),
+                checkoutDTO.getBillingAddress(),
+                checkoutDTO.getShippingMethod());
         Checkout savedCheckout = checkoutRepository.save(checkout);
         return CheckoutMapper.toDTO(savedCheckout);
     }
@@ -327,17 +337,19 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     private void updateShippingAddress(Checkout checkout, CheckoutDTO dto) {
+        log.debug("Shipping address checkout: {}", dto.getShippingAddress());
         if (dto.getShippingAddress() != null) {
             checkout.setShippingAddress(
-                    objectMapper.mapObject().map(dto.getShippingAddress(), Address.class)
+                    CheckoutMapper.toAddress(dto.getShippingAddress())
             );
         }
     }
 
     private void updateBillingAddress(Checkout checkout, CheckoutDTO dto) {
+        log.debug("Billing address checkout: {}", dto.getBillingAddress());
         if (dto.getBillingAddress() != null) {
             checkout.setBillingAddress(
-                    objectMapper.mapObject().map(dto.getBillingAddress(), Address.class)
+                    CheckoutMapper.toAddress(dto.getShippingAddress())
             );
         }
     }

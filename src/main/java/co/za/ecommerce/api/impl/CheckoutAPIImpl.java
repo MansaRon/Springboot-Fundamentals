@@ -72,7 +72,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Secured({"ROLE_USER"})
-    @PutMapping("/{userId}")
+    @PatchMapping("/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO) {
         log.info("ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO)");
         return ResponseEntity.ok(

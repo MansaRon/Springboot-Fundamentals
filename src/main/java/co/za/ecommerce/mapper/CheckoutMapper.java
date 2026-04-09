@@ -63,4 +63,15 @@ public class CheckoutMapper {
         dto.setPostalCode(address.getPostalCode());
         return dto;
     }
+
+    public static Address toAddress(AddressDTO addressDTO) {
+        if (addressDTO == null) return null;
+        return Address.builder()
+                .city(addressDTO.getCity())
+                .state(addressDTO.getState())
+                .streetAddress(addressDTO.getStreetAddress())
+                .country(addressDTO.getCountry())
+                .postalCode(addressDTO.getPostalCode())
+                .build();
+    }
 }
