@@ -6,6 +6,9 @@ import co.za.ecommerce.dto.order.AddressDTO;
 import co.za.ecommerce.dto.user.UserDTO;
 import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +26,7 @@ import java.util.List;
 @AllArgsConstructor
 public class CheckoutDTO extends EntityDTO {
     private UserDTO user;
+    @JsonIgnore
     private ObjectId cartId;
     private List<CartItemsDTO> items;
     private double subtotal;

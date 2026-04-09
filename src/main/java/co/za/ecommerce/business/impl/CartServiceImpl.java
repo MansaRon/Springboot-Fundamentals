@@ -34,8 +34,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDTO addProductToCart(ObjectId userId, ObjectId productId, int quantity) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseGet(() -> createNewCartForUser(userId));
+        Cart cart = cartRepository
+                .findByUserId(userId).orElseGet(() -> createNewCartForUser(userId));
 
         Product product = findProductById(productId);
 
