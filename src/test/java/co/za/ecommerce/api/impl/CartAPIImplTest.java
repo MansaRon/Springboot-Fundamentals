@@ -68,7 +68,6 @@ class CartAPIImplTest {
 
         cartDTO = CartDTO.builder()
                 .cartItems(List.of(item))
-                .totalPrice(99.98)
                 .build();
     }
 
@@ -184,7 +183,6 @@ class CartAPIImplTest {
             // getUserCartWithItems silently creates a cart if none exists
             CartDTO emptyCart = CartDTO.builder()
                     .cartItems(List.of())
-                    .totalPrice(0.0)
                     .build();
 
             when(cartService.getUserCartWithItems(eq(new ObjectId(USER_ID))))
@@ -242,7 +240,6 @@ class CartAPIImplTest {
         void shouldReturn200WhenNewQuantityIsZeroRemovingItem() throws Exception {
             CartDTO emptyCart = CartDTO.builder()
                     .cartItems(List.of())
-                    .totalPrice(0.0)
                     .build();
 
             when(cartService.updateProductInCart(any(), any(), eq(0))).thenReturn(emptyCart);
@@ -295,7 +292,6 @@ class CartAPIImplTest {
         void shouldReturn200WithUpdatedCartWhenItemDeleted() throws Exception {
             CartDTO cartAfterDeletion = CartDTO.builder()
                     .cartItems(List.of())
-                    .totalPrice(0.0)
                     .build();
 
             when(cartService.deleteProductFromCart(

@@ -27,13 +27,13 @@ import static java.time.Instant.now;
 @RequiredArgsConstructor
 @RequestMapping("api/v1/products")
 public class ProductApIImpl extends API implements ProductAPI {
-
+    // All admin for products fall under ADMIN
     // To change soon to only admin, permitAll for testing only
     // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
     // @Secured({"USER"})
     @Override
     // @PermitAll
-    @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart("product") @Valid String productJson, @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
         log.info("ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart(\"product\") @Valid String productJson, @RequestPart(\"images\") @Valid List<MultipartFile> imageFiles)");
         ProductDTO productDTO = jsonMapper.readValue(productJson, ProductDTO.class);

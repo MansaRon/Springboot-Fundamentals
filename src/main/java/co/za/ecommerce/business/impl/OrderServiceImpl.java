@@ -73,6 +73,7 @@ public class OrderServiceImpl implements OrderService {
                 .paymentMethod(checkout.getPaymentMethod())
                 .orderStatus(initialStatus)
                 .statusHistory(new ArrayList<>(statusHistory))
+                .transactionId(paymentResultDTO.getTransactionId())
                 .build();
 
         Order savedOrder = orderRepository.save(order);

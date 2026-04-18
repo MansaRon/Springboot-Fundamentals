@@ -13,11 +13,14 @@ import co.za.ecommerce.model.CartItems;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.CheckoutStatus;
+import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
 import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.ProductRepository;
+import co.za.ecommerce.utils.DateUtil;
+import co.za.ecommerce.utils.ValueUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -78,17 +81,16 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setUpdatedAt(LocalDateTime.now());
         checkout.setUser(cart.getUser());
         checkout.setCart(cart);
-
-        List<CartItems> checkoutItems = new ArrayList<>(cart.getCartItems());
-        checkout.setItems(checkoutItems);
-
-        recalculateTotals(checkout);
-
+        checkout.setItems(new ArrayList<>(cart.getCartItems()));
         checkout.setStatus(CheckoutStatus.PENDING);
         checkout.setPaymentMethod(PaymentMethod.NOT_SELECTED);
         checkout.setCurrency("ZAR");
         checkout.setBillingAddress(null);
         checkout.setShippingAddress(null);
+        checkout.setEstimatedDeliveryDate(DateUtil.getEstimatedDeliveryDate().atStartOfDay());
+        checkout.setShippingMethod(DeliverMethod.FREE);
+
+        recalculateTotals(checkout);
 
         Checkout savedCheckout = checkoutRepository.save(checkout);
 
@@ -410,8 +412,9 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         checkout.setSubtotal(subTotal);
         checkout.setDiscount(discount);
-        checkout.setTax(tax);
-        checkout.setTotalAmount(totalAmount);
+        // TODO remove util method and utilise BigDecimal for precise numbers
+        checkout.setTax(ValueUtil.round(tax, 2));
+        checkout.setTotalAmount(ValueUtil.round(totalAmount, 2));
 
         log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Total=R{}",
                 subTotal, discount, tax, totalAmount);

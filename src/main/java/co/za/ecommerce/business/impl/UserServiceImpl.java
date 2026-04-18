@@ -85,8 +85,7 @@ public class UserServiceImpl implements UserService {
         log.info("============= Assign session token, refresh token and login ===============");
         return UserDTO
                 .builder()
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
+                .id(user.getId().toString())
                 .name(user.getName())
                 .email(user.getEmail())
                 .status(user.getStatus().name())

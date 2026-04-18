@@ -33,6 +33,7 @@ public class OrderMapper {
         dto.setTransactionId(order.getTransactionId());
         dto.setPaymentMethod(order.getPaymentMethod());
         dto.setShippingCost(order.getShippingCost());
+        dto.setOrderNumber(order.getOrderNumber());
 
         return dto;
     }
@@ -63,10 +64,14 @@ public class OrderMapper {
     public static OrderItemsDTO mapToOrderItemsDTO(OrderItems orderItems) {
         if (orderItems == null) return null;
         OrderItemsDTO dto = new OrderItemsDTO();
+        dto.setCreatedAt(orderItems.getCreatedAt());
+        dto.setUpdatedAt(orderItems.getUpdatedAt());
+        dto.setProductTitle(orderItems.getProduct().getTitle());
+        dto.setImageUrls(orderItems.getProduct().getImageUrls());
         dto.setId(orderItems.getId() != null ? orderItems.getId().toHexString() : null);
         dto.setQuantity(orderItems.getQuantity());
         dto.setTotalPrice(orderItems.getTotalPrice());
-        dto.setProductId(orderItems.getId().toHexString());
+        dto.setProductId(String.valueOf(orderItems.getProduct().getId()));
 
         return dto;
     }

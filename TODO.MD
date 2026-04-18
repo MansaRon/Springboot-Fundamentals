@@ -15,7 +15,9 @@
 -  NOT_FOUND vs BAD_REQUEST HTTP status codes corrected
 -  isOnlinePaymentMethod logic fixed (CREDIT_CARD only)
 -  Fix the DTO returned for confirm user API
--  Delete the delete field from the ProductDTOAPIResource class 
+-  Delete the delete field from the ProductDTOAPIResource class
+-  Checkout doesn't clear from the previous session and clashes with a new added checkout 
+-  Add categories for products, making it clear to distinguish
 
 ---
 

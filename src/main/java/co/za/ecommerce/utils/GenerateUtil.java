@@ -1,5 +1,7 @@
 package co.za.ecommerce.utils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import java.util.UUID;
@@ -48,4 +50,5 @@ public final class GenerateUtil {
     public static String generateOTP() {
         return String.valueOf(new Random().nextInt(900000) + 100000);
     }
+
 }

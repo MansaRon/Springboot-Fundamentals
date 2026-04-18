@@ -15,5 +15,4 @@ import java.util.List;
 @AllArgsConstructor
 public class CartDTO {
     private List<CartItemsDTO> cartItems;
-    private double totalPrice = 0.0;
 }

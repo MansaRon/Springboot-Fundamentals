@@ -1,5 +1,7 @@
 package co.za.ecommerce.utils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 public final class ValueUtil {
@@ -67,5 +69,22 @@ public final class ValueUtil {
     public static <T> List<T> defaultIfNullOrEmptyList(List<T> newValue, List<T> currentValue) {
         return (newValue != null && !newValue.isEmpty()) ? newValue : currentValue;
     }
+
+    /**
+     * Returns double number rounded to the specific decimal if it's not null or empty.
+     * Works for any double number.
+     *
+     * @param value      The number to be brought to 2 decimals
+     * @param places     The decimal number to round the value to
+     * @return A double value
+     */
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
 
 }

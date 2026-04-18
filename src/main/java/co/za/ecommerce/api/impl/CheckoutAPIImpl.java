@@ -34,6 +34,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
                         .data(checkoutService.createCheckoutFromCart(userId))
+                        .dataList(new ArrayList<>())
                         .message("Checkout initiated.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
@@ -49,6 +50,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
                 CheckoutDTOApiResource.builder()
                         .timestamp(now())
                         .data(checkoutService.getCheckoutByCartId(cartId))
+                        .dataList(new ArrayList<>())
                         .message("Checkout retrieved.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
@@ -87,7 +89,6 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
-
     @Override
     @Secured({"ROLE_USER"})
     @PostMapping("/{checkoutId}/confirm")
@@ -113,6 +114,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
                 CheckoutDTOApiResource.builder()
                         .timestamp(Instant.now())
                         .data(checkoutService.getCheckoutByUserId(userId))
+                        .dataList(new ArrayList<>())
                         .message("Active checkout retrieved.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
@@ -147,6 +149,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
                 CheckoutDTOApiResource.builder()
                         .timestamp(Instant.now())
                         .data(deleted)
+                        .dataList(new ArrayList<>())
                         .message("User checkouts deleted.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())

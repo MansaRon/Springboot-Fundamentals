@@ -32,6 +32,7 @@ public class CartServiceImpl implements CartService {
     private ProductRepository productRepository;
     private UserRepository userRepository;
 
+    // TODO - check logic that adds none existing item to cart
     @Override
     public CartDTO addProductToCart(ObjectId userId, ObjectId productId, int quantity) {
         Cart cart = cartRepository
@@ -147,6 +148,7 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
     }
 
+    // TODO add method to remove specific product within cart
     private Cart createNewCartForUser(ObjectId userID) {
         Cart newCart = new Cart();
         newCart.setUser(userRepository.findById(userID).orElseThrow(() -> new UserNotFoundException(

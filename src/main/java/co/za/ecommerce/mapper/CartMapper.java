@@ -16,7 +16,6 @@ public class CartMapper {
     public static CartDTO toDTO(Cart cart) {
         if (cart == null) return null;
         CartDTO dto = new CartDTO();
-        dto.setTotalPrice(cart.getTotalPrice());
         if (cart.getCartItems() != null) {
             dto.setCartItems(cart.getCartItems()
                     .stream()
@@ -59,7 +58,6 @@ public class CartMapper {
         if (dto == null) return null;
         Cart cart = new Cart();
         cart.setUpdatedAt(now());
-        cart.setTotalPrice(dto.getTotalPrice());
         if (dto.getCartItems() != null) {
             cart.setCartItems(dto.getCartItems().stream()
                     .map(CartMapper::fromCartItemsDTO)

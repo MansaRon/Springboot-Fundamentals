@@ -257,14 +257,12 @@ class CartServiceImplTest {
 
             try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
                 CartDTO expectedDTO = CartDTO.builder()
-                        .totalPrice(99.98)
                         .build();
                 cartMapperMock.when(() -> CartMapper.toDTO(cart)).thenReturn(expectedDTO);
 
                 CartDTO result = cartService.getUserCartWithItems(userId);
 
                 assertThat(result).isNotNull();
-                assertThat(result.getTotalPrice()).isEqualTo(99.98);
 
                 verify(userRepository, never()).findById(any());
             }
