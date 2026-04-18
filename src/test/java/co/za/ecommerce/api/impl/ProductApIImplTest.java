@@ -99,7 +99,7 @@ class ProductApIImplTest {
         void shouldReturn200WithProductDataWhenRequestIsValid() throws Exception {
             when(productService.addProduct(any(ProductDTO.class), anyList())).thenReturn(productDTO);
 
-            mockMvc.perform(multipart("/api/v1/products/product")
+            mockMvc.perform(multipart("/api/v1/products")
                             .file(productPart)
                             .file(imagePart)
                             .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -119,7 +119,7 @@ class ProductApIImplTest {
                             "Product creation failed.",
                             HttpStatus.BAD_REQUEST.value()));
 
-            mockMvc.perform(multipart("/api/v1/products/product")
+            mockMvc.perform(multipart("/api/v1/products")
                             .file(productPart)
                             .file(imagePart)
                             .contentType(MediaType.MULTIPART_FORM_DATA))

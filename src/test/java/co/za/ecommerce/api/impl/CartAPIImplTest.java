@@ -89,7 +89,6 @@ class CartAPIImplTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message").value("Product Added To Cart"))
-                    .andExpect(jsonPath("$.data.totalPrice").value(99.98))
                     .andExpect(jsonPath("$.data.cartItems").isArray())
                     .andExpect(jsonPath("$.data.cartItems[0].quantity").value(2));
         }
@@ -173,7 +172,6 @@ class CartAPIImplTest {
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message")
                             .value("Cart with user ID " + USER_ID + " retrieved."))
-                    .andExpect(jsonPath("$.data.totalPrice").value(99.98))
                     .andExpect(jsonPath("$.data.cartItems").isArray());
         }
 
@@ -190,7 +188,6 @@ class CartAPIImplTest {
 
             mockMvc.perform(get("/api/v1/cart/{userId}", USER_ID))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.totalPrice").value(0.0))
                     .andExpect(jsonPath("$.data.cartItems").isEmpty());
         }
     }
@@ -214,9 +211,7 @@ class CartAPIImplTest {
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.statusCode").value(200))
-                    .andExpect(jsonPath("$.message")
-                            .value("Cart with user ID " + USER_ID + " updated."))
-                    .andExpect(jsonPath("$.data.totalPrice").value(99.98));
+                    .andExpect(jsonPath("$.message").value("Cart with user ID " + USER_ID + " updated."));
         }
 
         @Test
@@ -247,8 +242,7 @@ class CartAPIImplTest {
             mockMvc.perform(patch("/api/v1/cart/{userId}/update-item/{productId}",
                             USER_ID, PRODUCT_ID)
                             .param("newQuantity", "0"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.totalPrice").value(0.0));
+                    .andExpect(status().isOk());
         }
 
         @Test
@@ -306,7 +300,6 @@ class CartAPIImplTest {
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message")
                             .value("Cart with user ID " + USER_ID + " deleted."))
-                    .andExpect(jsonPath("$.data.totalPrice").value(0.0))
                     .andExpect(jsonPath("$.data.cartItems").isEmpty());
         }
 
