@@ -6,6 +6,7 @@ import co.za.ecommerce.dto.user.UserDTO;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.order.Address;
+import co.za.ecommerce.utils.DateUtil;
 
 import java.util.stream.Collectors;
 
@@ -17,7 +18,7 @@ public class CheckoutMapper {
         CheckoutDTO dto = new CheckoutDTO();
         dto.setId(checkout.getId() != null ? checkout.getId().toHexString() : null);
         dto.setCreatedAt(checkout.getCreatedAt());
-        dto.setUpdatedAt(checkout.getUpdatedAt());
+        dto.setUpdatedAt(DateUtil.now());
 
         dto.setUser(toUserDTO(checkout.getUser()));
         dto.setCartId(checkout.getCart() != null ? checkout.getCart().getId() : null);

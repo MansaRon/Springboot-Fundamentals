@@ -4,6 +4,7 @@ import co.za.ecommerce.api.OTPAPI;
 import co.za.ecommerce.dto.api.OTPApiResource;
 import co.za.ecommerce.dto.otp.OTPGenerateDTO;
 import co.za.ecommerce.dto.otp.OTPValidateDTO;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.time.Instant;
 public class OTPAPIImpl extends API implements OTPAPI {
 
     @Override
+    @PermitAll
     @PostMapping("/generate")
     public ResponseEntity<OTPApiResource> generateOTP(@Valid @RequestBody OTPGenerateDTO request) {
         log.trace("public ResponseEntity<OTPApiResource> generateOTP(@Valid @RequestBody OTPGenerateDTO request)");
@@ -38,6 +40,7 @@ public class OTPAPIImpl extends API implements OTPAPI {
     }
 
     @Override
+    @PermitAll
     @PostMapping("/resend")
     public ResponseEntity<OTPApiResource> resendOTP(@Valid @RequestBody OTPGenerateDTO request) {
         log.trace("public ResponseEntity<OTPApiResource> resendOTP(@Valid @RequestBody OTPGenerateDTO request)");
@@ -52,6 +55,7 @@ public class OTPAPIImpl extends API implements OTPAPI {
         );
     }
 
+    @PermitAll
     @PostMapping("/validate")
     public ResponseEntity<OTPApiResource> validateOTP(@Valid @RequestBody OTPValidateDTO request) {
         log.trace("public ResponseEntity<OTPApiResource> validateOTP(@Valid @RequestBody OTPValidateDTO request)");

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import static java.time.Instant.now;
@@ -18,11 +19,8 @@ import static java.time.Instant.now;
 @RequestMapping("api/v1/cart")
 public class CartAPIImpl extends API implements CartAPI {
 
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/{userId}/add-item/{productId}")
     public ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity) {
         log.trace("public ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity)");
@@ -37,11 +35,8 @@ public class CartAPIImpl extends API implements CartAPI {
         );
     }
 
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/{userId}")
     public ResponseEntity<CartDTOApiResource> getUserCartWithItems(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CartDTOApiResource> getUserCartWithItems(@PathVariable ObjectId userId)");
@@ -56,11 +51,8 @@ public class CartAPIImpl extends API implements CartAPI {
         );
     }
 
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @PatchMapping("/{userId}/update-item/{productId}")
     public ResponseEntity<CartDTOApiResource> updateProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int newQuantity) {
         log.info("ResponseEntity<CartDTOApiResource> updateProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int newQuantity)");
@@ -75,11 +67,8 @@ public class CartAPIImpl extends API implements CartAPI {
         );
     }
 
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{userId}/delete-item/{productId}")
     public ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId) {
         log.info("ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId)");

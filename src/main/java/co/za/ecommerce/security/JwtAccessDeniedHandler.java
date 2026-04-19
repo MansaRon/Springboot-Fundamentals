@@ -1,7 +1,6 @@
 package co.za.ecommerce.security;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import co.za.ecommerce.utils.DateUtil;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -10,37 +9,38 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
 /**
- * Handles 401 Unauthorized errors.
+ * Handles 403 Forbidden errors.
  * Triggered when:
- * - No JWT token is present in the request
- * - The JWT token is invalid or malformed
- * - The JWT token has expired
+ * - A valid JWT is present but the user lacks the required role
+ * - A ROLE_USER tries to access a ROLE_ADMIN endpoint
+ * - @PreAuthorize check fails at the filter chain level
  *
  * Returns a GlobalApiErrorResponse consistent with all other
  * exception responses in the application.
  */
 @Slf4j
 @Component
-public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
+public class JwtAccessDeniedHandler implements AccessDeniedHandler {
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-        log.warn("Unauthorized access attempt to: {} - {}", request.getRequestURI(), authException.getMessage());
+    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
+        log.warn("Access denied to: {} - {}", request.getRequestURI(), accessDeniedException.getMessage());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
         GlobalApiErrorResponse errorResponse = GlobalApiErrorResponse.builder()
-                .status(HttpStatus.UNAUTHORIZED.toString())
-                .statusCode(HttpStatus.UNAUTHORIZED.value())
-                .message("Authentication required. Please login to access this resource.")
+                .status(HttpStatus.FORBIDDEN.toString())
+                .statusCode(HttpStatus.FORBIDDEN.value())
+                .message("Access denied. You do not have permission to access this resource.")
                 .path(request.getRequestURI())
                 .timestamp(DateUtil.now())
                 .build();

@@ -311,8 +311,8 @@ No request body needed.
     ],
     "subtotal": 279.95,
     "discount": 0.0,
-    "tax": 27.995,
-    "totalAmount": 307.945,
+    "tax": 27.99,
+    "totalAmount": 307.94,
     "status": "PENDING",
     "paymentMethod": "NOT_SELECTED",
     "currency": "ZAR"
@@ -421,9 +421,9 @@ No request body needed.
     },
     "subtotal": 279.95,
     "discount": 0.0,
-    "tax": 27.995,
+    "tax": 27.99,
     "shippingCost": 15.99,
-    "totalAmount": 323.935
+    "totalAmount": 323.93
   }
 }
 ```

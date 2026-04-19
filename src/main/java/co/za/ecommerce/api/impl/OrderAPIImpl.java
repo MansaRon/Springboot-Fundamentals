@@ -15,6 +15,7 @@ import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -26,7 +27,7 @@ import java.util.List;
 @RequestMapping("api/v1/order")
 public class OrderAPIImpl extends API implements OrderAPI {
 
-    @Secured({"ROLE_ADMIN"})
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
@@ -40,7 +41,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/number/{orderNumber}")
     public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber) {
         return ResponseEntity.ok(
@@ -54,7 +55,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @GetMapping("/user/{userId}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId) {
         return ResponseEntity.ok(
@@ -68,7 +69,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured({"ROLE_ADMIN"})
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/user/{userId}/status/{status}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrdersByStatus(
             @PathVariable ObjectId userId,
@@ -86,7 +87,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured("ROLE_ADMIN")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/all")
     public ResponseEntity<OrderDTOListApiResource> getAllOrders() {
         return ResponseEntity.ok(
@@ -100,7 +101,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured("ROLE_ADMIN")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/status/{status}")
     public ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(@PathVariable String status) {
         OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
@@ -116,7 +117,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured("ROLE_ADMIN")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{orderId}/status")
     public ResponseEntity<OrderDTOApiResource> updateOrderStatus(
             @PathVariable ObjectId orderId,
@@ -136,7 +137,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @Secured("ROLE_ADMIN")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics")
     public ResponseEntity<OrderStatisticsApiResource> getOrderStatistics() {
         OrderStatisticsDTO stats = OrderStatisticsDTO.builder()

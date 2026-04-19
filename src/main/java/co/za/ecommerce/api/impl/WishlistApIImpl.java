@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import static java.time.Instant.now;
@@ -18,11 +19,8 @@ import static java.time.Instant.now;
 @RequestMapping("api/v1/wishlist")
 public class WishlistApIImpl extends API implements WishlistAPI {
 
-    //Security alternatives
-    //@Secured({"USER"})
-    //@PreAuthorize("hasRole('ADMIN')")
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @PostMapping()
     public ResponseEntity<WishlistDTOApiResource> addWishlist(@RequestBody WishlistDTO wishlistDTO) {
         log.trace("public ResponseEntity<WishlistDTOApiResource> addItemToWishlist(@RequestBody WishlistDTO wishlistDTO)");
@@ -37,11 +35,9 @@ public class WishlistApIImpl extends API implements WishlistAPI {
         );
     }
 
-    //@Secured({"USER"})
-    //@PreAuthorize("hasRole('ADMIN')")
     // TODO to refactor to have pagination
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @GetMapping()
     public ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID) {
         log.trace("public ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID)");
@@ -56,10 +52,8 @@ public class WishlistApIImpl extends API implements WishlistAPI {
         );
     }
 
-    //@Secured({"USER"})
-    //@PreAuthorize("hasRole('ADMIN')")
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{userID}")
     public ResponseEntity<WishlistDTOApiResource> deleteWishlist(@PathVariable String userID, @RequestBody WishlistDTO wishlistDTO) {
         log.trace("public ResponseEntity<WishlistDTOApiResource> deleteWishlist(@RequestBody String userID, @RequestBody WishlistDTO wishlistDTO)");

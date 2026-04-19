@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,12 +28,9 @@ import static java.time.Instant.now;
 @RequiredArgsConstructor
 @RequestMapping("api/v1/products")
 public class ProductApIImpl extends API implements ProductAPI {
-    // All admin for products fall under ADMIN
-    // To change soon to only admin, permitAll for testing only
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
+
     @Override
-    // @PermitAll
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart("product") @Valid String productJson, @RequestPart("images") @Valid List<MultipartFile> imageFiles) throws IOException {
         log.info("ResponseEntity<ProductDTOApiResource> createProduct(@RequestPart(\"product\") @Valid String productJson, @RequestPart(\"images\") @Valid List<MultipartFile> imageFiles)");
@@ -71,8 +69,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PermitAll
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDTOApiResource> getProduct(
-            @PathVariable String id) {
+    public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id) {
         log.trace("public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id)");
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
@@ -130,7 +127,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     }
 
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/list", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOListApiResource> createListProduct(
             @RequestPart("product") @Valid String productJson,
@@ -148,10 +145,8 @@ public class ProductApIImpl extends API implements ProductAPI {
         );
     }
 
-    // @PreAuthorize("hasRole('ADMIN') || hasRole('USER')")
-    // @Secured({"USER"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> updateProduct(
             @PathVariable String productId,
@@ -170,13 +165,10 @@ public class ProductApIImpl extends API implements ProductAPI {
         );
     }
 
-    // @PreAuthorize("hasRole('ADMIN')")
-    // @Secured({"ADMIN"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/product/{productId}")
-    public ResponseEntity<ProductDTOApiResource> deleteProduct(
-            @PathVariable String productId) {
+    public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId) {
         log.trace("public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId)");
         productService.deleteProduct(productId);
         return ResponseEntity.ok(
@@ -189,10 +181,8 @@ public class ProductApIImpl extends API implements ProductAPI {
         );
     }
 
-    // @PreAuthorize("hasRole('ADMIN')")
-    // @Secured({"ADMIN"})
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/product")
     public ResponseEntity<ProductDTOApiResource> deleteAllProduct() {
         log.trace("public ResponseEntity<ProductDTOApiResource> deleteAllProduct()");

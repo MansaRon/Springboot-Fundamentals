@@ -71,7 +71,8 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         Optional<Checkout> existingCheckout = checkoutRepository.findByCartId(cart.getId());
         if (existingCheckout.isPresent() &&
-                CheckoutStatus.PENDING.equals(existingCheckout.get().getStatus())) {
+                CheckoutStatus.PENDING.equals(existingCheckout.get().getStatus()) ||
+        CheckoutStatus.FAILED.equals(existingCheckout.get().getStatus())) {
             log.info("Returning existing checkout for cart: {}", cart.getId());
             return CheckoutMapper.toDTO(existingCheckout.get());
         }
@@ -154,7 +155,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                         "User does not have any checked out items.",
                         HttpStatus.BAD_REQUEST.value()));
 
-        if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus()) &&
+        !CheckoutStatus.FAILED.equals(checkout.getStatus())) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
                     "Checkout cannot be updated as it is already " + checkout.getStatus().name().toLowerCase() + ".",
@@ -234,7 +236,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                         HttpStatus.NOT_FOUND.value()
                 ));
 
-        if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus()) &&
+        !CheckoutStatus.FAILED.equals(checkout.getStatus())) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
                     "Cannot confirm checkout. Current status: " + checkout.getStatus(),
@@ -267,7 +270,7 @@ public class CheckoutServiceImpl implements CheckoutService {
             checkout.setUpdatedAt(now());
             checkoutRepository.save(checkout);
 
-            cartService.clearCart(checkout.getCart());
+            cartService.deleteCart(checkout.getCart());
 
             log.info("✅ Order created successfully: {}", order.getTransactionId());
             return order;

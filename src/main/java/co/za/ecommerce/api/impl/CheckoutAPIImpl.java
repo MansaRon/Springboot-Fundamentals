@@ -13,6 +13,7 @@ import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -26,7 +27,7 @@ import static java.time.Instant.now;
 @RequestMapping("api/v1/checkout")
 public class CheckoutAPIImpl extends API implements CheckoutAPI {
 
-    @Secured({"ROLE_USER"})
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/{userId}/initiate-checkout")
     public ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId)");
@@ -42,7 +43,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
-    @Secured({"ROLE_USER"})
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/cart/{cartId}")
     public ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId)");
@@ -58,7 +59,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
-    @Secured({"ROLE_USER"})
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/status/{status}")
     public ResponseEntity<CheckoutDTOApiResource> getCheckoutsByStatus(@PathVariable String status) {
         log.info("ResponseEntity<CheckoutDTOApiResource> getCheckoutsByStatus(@PathVariable String status)");
@@ -73,7 +74,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
-    @Secured({"ROLE_USER"})
+    @PreAuthorize("hasRole('USER')")
     @PatchMapping("/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO) {
         log.info("ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO)");
@@ -90,7 +91,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @Secured({"ROLE_USER"})
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/{checkoutId}/confirm")
     public ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId) {
         log.info("ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId)");
@@ -106,7 +107,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @Secured({"ROLE_USER"})
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @GetMapping("/user/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId)");
@@ -123,7 +124,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @Secured({"ROLE_USER", "ROLE_ADMIN"})
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @DeleteMapping("/{checkoutId}")
     public ResponseEntity<ApiResource> cancelCheckout(@PathVariable ObjectId checkoutId) {
         log.info("ResponseEntity<ApiResource> cancelCheckout(@PathVariable ObjectId checkoutId)");
@@ -140,7 +141,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @Secured({"ROLE_USER", "ROLE_ADMIN"})
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @DeleteMapping("/user/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId)");

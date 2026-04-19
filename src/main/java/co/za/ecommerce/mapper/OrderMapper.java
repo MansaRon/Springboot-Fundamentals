@@ -6,6 +6,7 @@ import co.za.ecommerce.model.order.Address;
 import co.za.ecommerce.model.order.Order;
 import co.za.ecommerce.model.order.OrderItems;
 import co.za.ecommerce.model.order.PaymentDetails;
+import co.za.ecommerce.utils.DateUtil;
 
 import java.util.stream.Collectors;
 
@@ -16,7 +17,7 @@ public class OrderMapper {
 
         OrderDTO dto = new OrderDTO();
         dto.setId(order.getId() != null ? order.getId().toHexString() : null);
-        dto.setUpdatedAt(order.getUpdatedAt());
+        dto.setUpdatedAt(DateUtil.now());
         dto.setCreatedAt(order.getCreatedAt());
         dto.setCustomerInfo(toUserDTO(order.getCustomerInfo()));
         dto.setOrderItems(order.getOrderItems().stream().map(OrderMapper::mapToOrderItemsDTO).collect(Collectors.toList()));
@@ -64,6 +65,7 @@ public class OrderMapper {
     public static OrderItemsDTO mapToOrderItemsDTO(OrderItems orderItems) {
         if (orderItems == null) return null;
         OrderItemsDTO dto = new OrderItemsDTO();
+        dto.setId(orderItems.getId() != null ? orderItems.getId().toHexString() : null);
         dto.setCreatedAt(orderItems.getCreatedAt());
         dto.setUpdatedAt(orderItems.getUpdatedAt());
         dto.setProductTitle(orderItems.getProduct().getTitle());

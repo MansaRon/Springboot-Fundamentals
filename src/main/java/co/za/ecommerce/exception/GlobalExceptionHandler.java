@@ -1,6 +1,7 @@
 package co.za.ecommerce.exception;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
+import co.za.ecommerce.utils.DateUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -145,6 +146,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler({OrderException.class})
+    public ResponseEntity<GlobalApiErrorResponse> orderException(
+            final OrderException orderException,
+            final HttpServletRequest httpServletRequest) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(httpServletRequest))
+                        .status(orderException.getCode())
+                        .statusCode(orderException.getStatus())
+                        .message(orderException.getMessage())
+                        .timestamp(DateUtil.now())
+                        .build());
+    }
+
     @ExceptionHandler({ValidationException.class})
     public ResponseEntity<GlobalApiErrorResponse> validationException(
             final ValidationException validationException,
@@ -202,9 +217,89 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
-    // TODO
-    // Create exception for unknown URL's
-    // Add exception for handling 415 errors
+    @ExceptionHandler({org.springframework.security.access.AccessDeniedException.class})
+    public ResponseEntity<GlobalApiErrorResponse> handleAccessDeniedException(
+            final org.springframework.security.access.AccessDeniedException ex,
+            final HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(request))
+                        .status(HttpStatus.FORBIDDEN.toString())
+                        .statusCode(HttpStatus.FORBIDDEN.value())
+                        .message("Access denied. You do not have permission to access this resource.")
+                        .timestamp(DateUtil.now())
+                        .build()
+                );
+    }
+
+    @ExceptionHandler({org.springframework.security.core.AuthenticationException.class})
+    public ResponseEntity<GlobalApiErrorResponse> handleAuthenticationException(
+            final org.springframework.security.core.AuthenticationException ex,
+            final HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(request))
+                        .status(HttpStatus.UNAUTHORIZED.toString())
+                        .statusCode(HttpStatus.UNAUTHORIZED.value())
+                        .message("Authentication required. Please login to access this resource.")
+                        .timestamp(DateUtil.now())
+                        .build()
+                );
+    }
+
+    // 415 errors
+    public ResponseEntity<GlobalApiErrorResponse> handleHttpMediaTypeNotSupportedException(
+            final org.springframework.web.HttpMediaTypeNotSupportedException ex,
+            final HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(request))
+                        .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.toString())
+                        .statusCode(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
+                        .message("Unsupported media type: " + ex.getContentType()
+                                + ". Supported types are: " + ex.getSupportedMediaTypes())
+                        .timestamp(DateUtil.now())
+                        .build()
+                );
+    }
+
+    // 405 errors
+    public ResponseEntity<GlobalApiErrorResponse> handleMethodNotSupportedException(
+            final org.springframework.web.HttpRequestMethodNotSupportedException ex,
+            final HttpServletRequest request) {
+        String message = "HTTP method " + ex.getMethod() + " is not supported for this endpoint. Supported methods are: " + ex.getSupportedHttpMethods();
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(request))
+                        .status(HttpStatus.METHOD_NOT_ALLOWED.toString())
+                        .statusCode(HttpStatus.METHOD_NOT_ALLOWED.value())
+                        .message(message)
+                        .timestamp(DateUtil.now())
+                        .build()
+                );
+    }
+
+    // 400 error
+    public ResponseEntity<GlobalApiErrorResponse> handleMethodArgumentNotValidException(
+            final org.springframework.web.bind.MethodArgumentNotValidException ex,
+            final HttpServletRequest request) {
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(java.util.stream.Collectors.joining(", "));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiErrorResponse.builder()
+                        .path(getPath(request))
+                        .status(HttpStatus.BAD_REQUEST.toString())
+                        .statusCode(HttpStatus.BAD_REQUEST.value())
+                        .message(message)
+                        .timestamp(DateUtil.now())
+                        .build()
+                );
+    }
+
     private String getPath(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         return (path != null) ? path : "/UNKNOWN_PATH";

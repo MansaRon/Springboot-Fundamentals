@@ -148,6 +148,12 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
     }
 
+    @Override
+    public void deleteCart(Cart cart) {
+        log.info("Deleting cart: {}", cart.getId());
+        cartRepository.delete(cart);
+    }
+
     // TODO add method to remove specific product within cart
     private Cart createNewCartForUser(ObjectId userID) {
         Cart newCart = new Cart();

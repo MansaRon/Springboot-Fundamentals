@@ -17,7 +17,9 @@
 -  Fix the DTO returned for confirm user API
 -  Delete the delete field from the ProductDTOAPIResource class
 -  Checkout doesn't clear from the previous session and clashes with a new added checkout 
--  Add categories for products, making it clear to distinguish
+-  Add schema for categories for products, making it clear to distinguish
+-  Add schema for roles for users
+-  Add pagination to the wishlist API
 
 ---
 

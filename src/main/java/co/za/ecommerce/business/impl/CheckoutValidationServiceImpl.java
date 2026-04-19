@@ -68,7 +68,8 @@ public class CheckoutValidationServiceImpl implements CheckoutValidationService 
     }
 
     private void validateCheckoutStatus(Checkout checkout) {
-        if (!CheckoutStatus.PENDING.equals(checkout.getStatus())) {
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus()) &&
+                !CheckoutStatus.FAILED.equals(checkout.getStatus())) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),
                     "Cannot process checkout. Current status: " + checkout.getStatus(),
