@@ -9,6 +9,7 @@ import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.Wishlist;
 import co.za.ecommerce.repository.WishListRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import static co.za.ecommerce.utils.DateUtil.now;
 @Slf4j
 @Service
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class WishlistServiceImpl implements WishlistService {
 
     private final WishListRepository wishListRepository;

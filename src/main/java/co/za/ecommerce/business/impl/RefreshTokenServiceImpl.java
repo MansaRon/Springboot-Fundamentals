@@ -8,6 +8,7 @@ import co.za.ecommerce.repository.RefreshTokenRepository;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.security.JwtTokenProvider;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;

@@ -13,6 +13,7 @@ import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ import static co.za.ecommerce.utils.DateUtil.now;
 @Slf4j
 @Service
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
     private CartRepository cartRepository;

@@ -7,6 +7,7 @@ import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.order.OrderItems;
 import co.za.ecommerce.repository.ProductRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import static co.za.ecommerce.utils.DateUtil.now;
 @Slf4j
 @Service
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class InventoryServiceImpl implements InventoryService {
     private final ProductRepository productRepository;
 
