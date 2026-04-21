@@ -9,7 +9,6 @@
 -  Checkout service refactored (CheckoutMapper removed, clearCart delegated)
 -  Order service refactored (OrderMapper removed, statusHistory bug fixed)
 -  Payment service refactored (PaymentStatus enum, validatePaymentRequest wired)
--  @RequiredArgsConstructor enforced across all services
 -  NOT_FOUND vs BAD_REQUEST HTTP status codes corrected
 -  isOnlinePaymentMethod logic fixed (CREDIT_CARD only)
 -  Fix the DTO returned for confirm user API
