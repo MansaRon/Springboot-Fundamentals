@@ -2,6 +2,7 @@ package co.za.ecommerce.security;
 
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,6 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -26,10 +28,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User with " + username + " has not been found."));
 
+        log.info("Loading user: {} with roles: {}", username, user.getRoles());
+
         Set<GrantedAuthority> grantedAuthorities = user
                 .getRoles()
                 .stream()
-                .map((role) -> new SimpleGrantedAuthority(role)).collect(Collectors.toSet());
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet());
 
         return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), grantedAuthorities);
     }

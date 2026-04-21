@@ -23,6 +23,9 @@ public class JwtTokenProvider {
     @Value("${app.jwt-secret}")
     private String secretKey;
 
+    @Value("${app.jwt-expiration-ms}")
+    private long jwtExpirationMs;
+
     public String generateToken(String username) {
         return generateToken(new HashMap<>(), username);
     }
@@ -35,7 +38,7 @@ public class JwtTokenProvider {
                 .setClaims(extraClaims)
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

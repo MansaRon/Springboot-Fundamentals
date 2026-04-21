@@ -63,7 +63,7 @@ class UserApIImplTest {
                 .accessToken("eyJhbGciOiJIUzI1NiJ9.test.token")
                 .refreshToken("refresh-token-value")
                 .status("ACTIVE")
-                .role(Set.of("ROLE_USER"))
+                .roles(Set.of("ROLE_USER"))
                 .build();
 
         userCreateDTO = UserCreateDTO.builder()

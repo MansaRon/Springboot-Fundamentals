@@ -43,7 +43,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @GetMapping("/cart/{cartId}")
     public ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> getCheckoutByCart(@PathVariable ObjectId cartId)");
@@ -74,7 +74,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @PatchMapping("/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO) {
         log.info("ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO)");
@@ -91,7 +91,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @PostMapping("/{checkoutId}/confirm")
     public ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId) {
         log.info("ResponseEntity<OrderDTOApiResource> confirmCheckout(@PathVariable ObjectId checkoutId)");

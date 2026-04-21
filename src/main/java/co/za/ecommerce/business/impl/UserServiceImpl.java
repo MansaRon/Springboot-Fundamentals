@@ -14,6 +14,7 @@ import co.za.ecommerce.security.JwtTokenProvider;
 import co.za.ecommerce.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -90,7 +91,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .status(user.getStatus().name())
                 .phone(user.getPhone())
-                .role(user.getRoles())
+                .roles(user.getRoles())
                 .accessToken(jwtTokenProvider.generateToken(user.getEmail()))
                 .refreshToken(refreshTokenService.createRefreshToken(user.getId().toString()).getToken())
                 .build();
@@ -155,5 +156,66 @@ public class UserServiceImpl implements UserService {
             return;
         }
         refreshTokenRepository.deleteByToken(refreshToken);
+        log.info("====================User logged out=========================: ");
+    }
+
+    @Override
+    public UserDTO addRole(ObjectId userId, String role) {
+        log.info("============= Add role {} to user {} ===============", role, userId);
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new ClientException(HttpStatus.NOT_FOUND, "User not found."));
+
+        String normalizeRole = normalizeRole(role);
+
+        if (user.getRoles() != null && user.getRoles().contains(normalizeRole)) {
+            throw new ClientException(HttpStatus.BAD_REQUEST, "User already has role:" + normalizeRole);
+        }
+
+        user.addRoles(normalizeRole);
+        user.setUpdatedAt(DateUtil.now());
+        userRepository.save(user);
+
+        log.info("Role {} added to user {}", normalizeRole, user);
+        return objectMapper.mapObject().map(user, UserDTO.class);
+    }
+
+    @Override
+    public UserDTO removeRole(ObjectId userId, String role) {
+        log.info("============= Removing role {} from user {} ===============", role, userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ClientException(
+                        HttpStatus.NOT_FOUND, "User not found."));
+
+        String normalizedRole = normalizeRole(role);
+
+        if (user.getRoles() == null || !user.getRoles().contains(normalizedRole)) {
+            throw new ClientException(
+                    HttpStatus.BAD_REQUEST,
+                    "User does not have role: " + normalizedRole);
+        }
+
+        if (user.getRoles().size() == 1) {
+            throw new ClientException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot remove the last role from a user. Assign another role first.");
+        }
+
+        user.removeRoles(normalizedRole);
+        user.setUpdatedAt(DateUtil.now());
+        userRepository.save(user);
+
+        log.info("Role {} removed from user {}", normalizedRole, user);
+        return objectMapper.mapObject().map(user, UserDTO.class);
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            throw new ClientException(
+                    HttpStatus.BAD_REQUEST, "Role cannot be null or empty.");
+        }
+        return role.toUpperCase().startsWith("ROLE_")
+                ? role.toUpperCase()
+                : "ROLE_" + role.toUpperCase();
     }
 }

@@ -41,7 +41,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @GetMapping("/number/{orderNumber}")
     public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber) {
         return ResponseEntity.ok(

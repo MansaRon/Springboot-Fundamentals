@@ -12,3 +12,4 @@ aws:
 
 app:
   jwt-secret: ${JWT}
+  jwt-expiration-ms: 900000

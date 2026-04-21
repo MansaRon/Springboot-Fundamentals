@@ -6,12 +6,15 @@ import co.za.ecommerce.dto.api.TokenRefreshDTOApiResource;
 import co.za.ecommerce.dto.api.UserCreateDTOApiResource;
 import co.za.ecommerce.dto.api.UserDTOApiResource;
 import co.za.ecommerce.dto.user.*;
+import co.za.ecommerce.utils.DateUtil;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -116,7 +119,7 @@ public class UserApIImpl extends API implements UserAPI {
     }
 
     @Override
-    @PermitAll
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/refresh")
     public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest) {
         log.info("public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest)");
@@ -125,6 +128,38 @@ public class UserApIImpl extends API implements UserAPI {
                         .timestamp(Instant.now())
                         .data(refreshTokenService.refreshAccessToken(tokenRefreshRequest.getRefreshToken()))
                         .message("Token refreshed")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{userId}/roles/add/{role}")
+    public ResponseEntity<UserDTOApiResource> addRole(@PathVariable ObjectId userId, @PathVariable String role) {
+        log.info("public ResponseEntity<UserDTOApiResource> addRole(ObjectId userId, String role)");
+        return ResponseEntity.ok(
+                UserDTOApiResource.builder()
+                        .timestamp(DateUtil.instantNow())
+                        .data(userService.addRole(userId, role))
+                        .message("Role added")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{userId}/roles/remove/{role}")
+    public ResponseEntity<UserDTOApiResource> removeRole(@PathVariable ObjectId userId, @PathVariable String role) {
+        log.info("public ResponseEntity<UserDTOApiResource> removeRole(ObjectId userId, String role)");
+        return ResponseEntity.ok(
+                UserDTOApiResource.builder()
+                        .timestamp(DateUtil.instantNow())
+                        .data(userService.removeRole(userId, role))
+                        .message("Role removed")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

@@ -9,6 +9,7 @@ spring:
 
 app:
   jwt-secret: ${JWT}
+  jwt-expiration-ms: 86400000
 
 aws:
   s3:

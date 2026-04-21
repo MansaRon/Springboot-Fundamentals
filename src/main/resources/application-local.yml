@@ -15,6 +15,7 @@ spring:
 
 app:
   jwt-secret: ${JWT}
+  jwt-expiration-ms: 86400000
 
 logging.level.root: info
 logging.level.co.za.ecommerce: DEBUG

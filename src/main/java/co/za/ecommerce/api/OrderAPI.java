@@ -23,11 +23,11 @@ import org.springframework.web.bind.annotation.RequestBody;
  */
 public interface OrderAPI {
 
-    @Operation(tags = "Checkout", summary = "Get Order")
+    @Operation(tags = "Order", summary = "Get Order")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Order retrieved successfully",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
                     }),
@@ -74,11 +74,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId);
 
-    @Operation(tags = "Checkout", summary = "Track order by order number")
+    @Operation(tags = "Order", summary = "Track order by order number")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Order tracked successfully",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
                     }),
@@ -125,11 +125,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber);
 
-    @Operation(tags = "Checkout", summary = "Get order history")
+    @Operation(tags = "Order", summary = "Get order history")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Order history retrieved",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
                     }),
@@ -176,11 +176,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId);
 
-    @Operation(tags = "Checkout", summary = "Get user order by status")
+    @Operation(tags = "Order", summary = "Get user order by status")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Order By Status",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
                     }),
@@ -227,11 +227,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOListApiResource> getUserOrdersByStatus(@PathVariable ObjectId userId, @PathVariable String status);
 
-    @Operation(tags = "Checkout", summary = "Get all orders")
+    @Operation(tags = "Order", summary = "Get all orders")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "All Orders",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
                     }),
@@ -278,11 +278,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOListApiResource> getAllOrders();
 
-    @Operation(tags = "Checkout", summary = "Get orders by status")
+    @Operation(tags = "Order", summary = "Get orders by status")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Orders By Status",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
                     }),
@@ -329,11 +329,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(@PathVariable String status);
 
-    @Operation(tags = "Checkout", summary = "Update order status")
+    @Operation(tags = "Order", summary = "Update order status")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Order status",
                     content = {
                             @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
                     }),
@@ -380,11 +380,11 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOApiResource> updateOrderStatus(@PathVariable ObjectId orderId, @Valid @RequestBody OrderStatusUpdateRequest request);
 
-    @Operation(tags = "Checkout", summary = "Get order statistics")
+    @Operation(tags = "Order", summary = "Get order statistics")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Checkout created successfully",
+                    description = "Order statistics",
                     content = {
                             @Content(schema = @Schema(implementation = OrderStatisticsApiResource.class))
                     }),

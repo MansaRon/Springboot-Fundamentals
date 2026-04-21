@@ -48,5 +48,5 @@ public class UserDTO extends EntityDTO {
     /**
      * User roles
      */
-    private Set<String> role;
+    private Set<String> roles;
 }
