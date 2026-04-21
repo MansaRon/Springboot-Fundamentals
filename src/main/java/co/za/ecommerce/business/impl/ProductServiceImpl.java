@@ -9,7 +9,6 @@ import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Page;
@@ -29,7 +28,6 @@ import static co.za.ecommerce.utils.ValueUtil.*;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ObjectMapper objectMapper;
