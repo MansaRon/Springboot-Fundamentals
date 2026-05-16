@@ -71,8 +71,8 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         Optional<Checkout> existingCheckout = checkoutRepository.findByCartId(cart.getId());
         if (existingCheckout.isPresent() &&
-                CheckoutStatus.PENDING.equals(existingCheckout.get().getStatus()) ||
-        CheckoutStatus.FAILED.equals(existingCheckout.get().getStatus())) {
+                (CheckoutStatus.PENDING.equals(existingCheckout.get().getStatus()) ||
+                CheckoutStatus.FAILED.equals(existingCheckout.get().getStatus()))) {
             log.info("Returning existing checkout for cart: {}", cart.getId());
             return CheckoutMapper.toDTO(existingCheckout.get());
         }

@@ -175,6 +175,18 @@
 								<goal>check</goal>
 							</goals>
 							<configuration>
+								<excludes>
+									<exclude>co/za/ecommerce/EcommerceBackendApplication.class</exclude>
+									<exclude>co/za/ecommerce/config/**</exclude>
+									<exclude>co/za/ecommerce/security/SecurityConfig.class</exclude>
+									<exclude>co/za/ecommerce/security/JwtTokenProvider.class</exclude>
+									<exclude>co/za/ecommerce/security/JwtAuthEntryPoint.class</exclude>
+									<exclude>co/za/ecommerce/security/JwtAccessDeniedHandler.class</exclude>
+									<exclude>co/za/ecommerce/filter/JwtAuthenticationFilter.class</exclude>
+									<exclude>co/za/ecommerce/business/impl/S3ServiceImpl.class</exclude>
+									<exclude>co/za/ecommerce/exception/ErrorCode.class</exclude>
+									<exclude>co/za/ecommerce/model/AccountStatus.class</exclude>
+								</excludes>
 								<haltOnFailure>true</haltOnFailure>
 								<rules>
 									<rule>

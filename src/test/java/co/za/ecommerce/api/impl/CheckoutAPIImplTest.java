@@ -237,8 +237,7 @@ class CheckoutAPIImplTest {
     }
 
     @Nested
-    @Disabled
-    @DisplayName("PUT /api/v1/checkout/{userId}")
+    @DisplayName("PATCH /api/v1/checkout/{userId}")
     class UpdateCheckout {
 
         @Test
@@ -255,7 +254,7 @@ class CheckoutAPIImplTest {
             when(checkoutService.updateCheckout(eq(new ObjectId(USER_ID)), any(CheckoutDTO.class)))
                     .thenReturn(updatedDTO);
 
-            mockMvc.perform(put("/api/v1/checkout/{userId}", USER_ID)
+            mockMvc.perform(patch("/api/v1/checkout/{userId}", USER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {
@@ -292,7 +291,7 @@ class CheckoutAPIImplTest {
                             "Checkout cannot be updated as it is already completed.",
                             HttpStatus.BAD_REQUEST.value()));
 
-            mockMvc.perform(put("/api/v1/checkout/{userId}", USER_ID)
+            mockMvc.perform(patch("/api/v1/checkout/{userId}", USER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isBadRequest())

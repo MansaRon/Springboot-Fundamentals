@@ -150,7 +150,6 @@ class CheckoutServiceImplTest {
         }
 
         @Test
-        @Disabled
         @DisplayName("shouldCreateNewCheckoutWithCorrectStatusAndTotalsWhenNoneExists")
         void shouldCreateNewCheckoutWithCorrectStatusAndTotalsWhenNoneExists() {
             when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
