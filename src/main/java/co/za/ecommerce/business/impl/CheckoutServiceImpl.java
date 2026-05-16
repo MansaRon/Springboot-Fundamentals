@@ -48,6 +48,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final PaymentService paymentService;
     private final OrderService orderService;
     private final CartService cartService;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -305,6 +306,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setStatus(CheckoutStatus.FAILED);
         checkout.setUpdatedAt(now());
         checkoutRepository.save(checkout);
+        emailService.sendPaymentFailureEmail(checkout.getUser(), paymentResultDTO.getFailureReason());
     }
 
     private void validateCheckoutReferences(Checkout checkout) {

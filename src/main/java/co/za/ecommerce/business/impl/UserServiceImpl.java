@@ -1,5 +1,6 @@
 package co.za.ecommerce.business.impl;
 
+import co.za.ecommerce.business.EmailService;
 import co.za.ecommerce.business.OTPService;
 import co.za.ecommerce.business.RefreshTokenService;
 import co.za.ecommerce.business.UserService;
@@ -33,6 +34,7 @@ public class UserServiceImpl implements UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EmailService emailService;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -117,6 +119,7 @@ public class UserServiceImpl implements UserService {
         existingUser.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(existingUser);
+        emailService.sendWelcomeEmail(existingUser);
 
         log.info("============= User confirmation successful ===============");
         return objectMapper.mapObject().map(existingUser, UserDTO.class);

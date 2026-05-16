@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; }
+    .header { background: #1a1a2e; padding: 32px; text-align: center; }
+    .header h1 { color: #fff; margin: 0; font-size: 24px; }
+    .body { padding: 32px; color: #333; }
+    .body h2 { color: #1a1a2e; }
+    .order-meta { background: #f9f9f9; border-radius: 6px; padding: 16px; margin: 16px 0; }
+    .order-meta p { margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th { background: #1a1a2e; color: #fff; padding: 10px; text-align: left; font-size: 13px; }
+    td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+    .totals { margin-top: 16px; text-align: right; }
+    .totals p { margin: 4px 0; }
+    .totals .total { font-size: 18px; font-weight: bold; color: #1a1a2e; }
+    .footer { padding: 16px 32px; background: #f4f4f4; color: #999; font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Order Confirmed</h1>
+  </div>
+  <div class="body">
+    <h2>Hi <span th:text="${name}">Customer</span>,</h2>
+    <p>Thank you for your order! We've received your payment and will begin processing your order shortly.</p>
+
+    <div class="order-meta">
+      <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">ORD-XXXX</span></p>
+      <p><strong>Transaction ID:</strong> <span th:text="${order.transactionId}">TXN-XXXX</span></p>
+      <p><strong>Status:</strong> <span th:text="${order.orderStatus}">CONFIRMED</span></p>
+      <p><strong>Shipping Method:</strong> <span th:text="${order.shippingMethod}">DHL</span></p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="item : ${order.orderItems}">
+          <td th:text="${item.productTitle}">Product Name</td>
+          <td th:text="${item.quantity}">1</td>
+          <td th:text="'R' + ${item.totalPrice}">R0.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <p>Subtotal: <strong th:text="'R' + ${order.subtotal}">R0.00</strong></p>
+      <p>Tax: <strong th:text="'R' + ${order.tax}">R0.00</strong></p>
+      <p>Shipping: <strong th:text="'R' + ${order.shippingCost}">R0.00</strong></p>
+      <p class="total">Total: <strong th:text="'R' + ${order.totalAmount}">R0.00</strong></p>
+    </div>
+  </div>
+  <div class="footer">
+    &copy; 2026 Thendo Ecommerce. All rights reserved.
+  </div>
+</div>
+</body>
+</html>

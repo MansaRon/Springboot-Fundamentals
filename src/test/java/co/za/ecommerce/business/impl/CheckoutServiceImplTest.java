@@ -63,6 +63,8 @@ class CheckoutServiceImplTest {
     private CartService cartService;
     @Mock
     private ModelMapper modelMapper;
+    @Mock
+    private co.za.ecommerce.business.EmailService emailService;
     @InjectMocks
     private CheckoutServiceImpl checkoutService;
 

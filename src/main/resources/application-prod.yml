@@ -2,6 +2,17 @@ spring:
   data:
     mongodb:
       uri: ${DB_URI}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 management:
   endpoints:
@@ -22,3 +33,5 @@ aws:
 app:
   jwt-secret: ${JWT}
   jwt-expiration-ms: 900000
+  mail:
+    from: ${MAIL_FROM:noreply@thendo-ecommerce.co.za}

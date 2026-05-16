@@ -1,5 +1,6 @@
 package co.za.ecommerce.business.impl;
 
+import co.za.ecommerce.business.EmailService;
 import co.za.ecommerce.business.OTPService;
 import co.za.ecommerce.business.RefreshTokenService;
 import co.za.ecommerce.dto.user.*;
@@ -48,6 +49,7 @@ class UserServiceImplTest {
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private RefreshTokenService refreshTokenService;
     @Mock private RefreshTokenRepository refreshTokenRepository;
+    @Mock private EmailService emailService;
     @InjectMocks private UserServiceImpl userService;
 
     private User user;

@@ -1,5 +1,6 @@
 package co.za.ecommerce.business.impl;
 
+import co.za.ecommerce.business.EmailService;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.PaymentResultDTO;
@@ -36,6 +37,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final InventoryService inventoryService;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -81,7 +83,9 @@ public class OrderServiceImpl implements OrderService {
 
         inventoryService.reduceInventory(checkout.getItems());
 
-        return OrderMapper.mapToOrderDTO(savedOrder);
+        OrderDTO orderDTO = OrderMapper.mapToOrderDTO(savedOrder);
+        emailService.sendOrderConfirmationEmail(checkout.getUser(), orderDTO);
+        return orderDTO;
     }
 
     @Override
@@ -182,7 +186,11 @@ public class OrderServiceImpl implements OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated successfully");
 
-        return OrderMapper.mapToOrderDTO(updatedOrder);
+        OrderDTO updatedDTO = OrderMapper.mapToOrderDTO(updatedOrder);
+        if (newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.CANCELLED) {
+            emailService.sendOrderStatusUpdateEmail(updatedOrder.getCustomerInfo(), updatedDTO, newStatus);
+        }
+        return updatedDTO;
     }
 
     private Order findOrderById(ObjectId orderId) {

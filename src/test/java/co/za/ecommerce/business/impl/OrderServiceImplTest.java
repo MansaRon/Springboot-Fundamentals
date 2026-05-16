@@ -49,6 +49,7 @@ class OrderServiceImplTest {
 
     @Mock private OrderRepository orderRepository;
     @Mock private InventoryService inventoryService;
+    @Mock private co.za.ecommerce.business.EmailService emailService;
     @InjectMocks private OrderServiceImpl orderService;
 
     private ObjectId orderId;
