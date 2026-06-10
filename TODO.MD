@@ -22,6 +22,9 @@
 
 ### High Priority
 
+#### 0. Investigate why when checking out, checkout always takes the 1st checkout item status instead of all the items in the checkout.
+
+
 #### 1. Email Notifications
 - [ ] Order confirmation email
 - [ ] Order status update emails (shipped, delivered)
@@ -122,6 +125,9 @@
 - [ ] "Customers also bought" based on order history
 - [ ] Recently viewed products
 - **Estimate:** 10–12 hours
+
+#### 16. Add Rate Limiter (Or Cache)
+- [ ] Prevent admin from endlessly clicking and adding products
 
 ---
 
