@@ -205,6 +205,7 @@ public class OrderServiceImpl implements OrderService {
     private List<OrderItems> createOrderItems(List<CartItems> cartItems) {
         return cartItems.stream()
                 .map(cartItem -> OrderItems.builder()
+                        .id(new ObjectId())
                         .createdAt(DateUtil.now())
                         .updatedAt(DateUtil.now())
                         .product(cartItem.getProduct())

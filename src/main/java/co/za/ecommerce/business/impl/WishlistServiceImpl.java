@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import static co.za.ecommerce.utils.DateUtil.now;
 
+// what causes the retry to keep retrying until it times out
+
 @Slf4j
 @Service
 @AllArgsConstructor
