@@ -1,25 +1,5 @@
 # TODO: Features & Improvements
-
-## Current Status: Core E-Commerce Complete ✅
-
-### Completed in Current Session
--  OTP flow (generate, validate, resend, scheduled cleanup)
--  Product module refactored (AWS S3 image storage, Image collection removed)
--  Cart service refactored (ModelMapper, stock delta fix, builder pattern)
--  Checkout service refactored (CheckoutMapper removed, clearCart delegated)
--  Order service refactored (OrderMapper removed, statusHistory bug fixed)
--  Payment service refactored (PaymentStatus enum, validatePaymentRequest wired)
--  NOT_FOUND vs BAD_REQUEST HTTP status codes corrected
--  isOnlinePaymentMethod logic fixed (CREDIT_CARD only)
--  Fix the DTO returned for confirm user API
--  Add schema for categories for products, making it clear to distinguish
--  Add schema for roles for users
--  Add pagination to the wishlist API
-
----
-
 ## Features to Add
-
 ### High Priority
 
 #### 0. Investigate why when checking out, checkout always takes the 1st checkout item status instead of all the items in the checkout.
