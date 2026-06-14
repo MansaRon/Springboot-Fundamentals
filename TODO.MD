@@ -4,15 +4,6 @@
 
 #### 0. Investigate why when checking out, checkout always takes the 1st checkout item status instead of all the items in the checkout.
 
-
-#### 1. Email Notifications
-- [ ] Order confirmation email
-- [ ] Order status update emails (shipped, delivered)
-- [ ] Payment failure notification
-- [ ] Welcome email after OTP activation
-- **Tech:** Spring Mail + Thymeleaf templates
-- **Estimate:** 4–6 hours
-
 #### 2. Global Exception Handler
 - [ ] `@RestControllerAdvice` to catch all exceptions centrally
 - [ ] Map `ClientException`, `ProductException`, `CartException`, `CheckoutException`, `OrderException`, `OTPException`, `PaymentException` to consistent `GlobalApiResponse` error shape
