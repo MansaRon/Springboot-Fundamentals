@@ -87,7 +87,7 @@ class UserServiceImplTest {
             assertThat(result).isNotNull();
             assertThat(result.getEmail()).isEqualTo("thendo@example.com");
             verify(userRepository).save(any(User.class));
-            verify(otpService, times(2)).generateOTP("0821234567");
+            verify(otpService, times(1)).generateOTP("0821234567");
         }
 
         @Test

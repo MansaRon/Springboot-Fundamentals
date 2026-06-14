@@ -65,7 +65,6 @@ public class UserServiceImpl implements UserService {
 
         log.info("============= Generate OTP ===============");
         otpService.generateOTP(user.getPhone());
-        log.info("============= OTP {} ===============", otpService.generateOTP(user.getPhone()));
         return user;
     }
 

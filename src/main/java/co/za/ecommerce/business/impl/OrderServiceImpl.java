@@ -180,7 +180,7 @@ public class OrderServiceImpl implements OrderService {
 
         switch (newStatus) {
             case SHIPPED -> order.setShippedDate(DateUtil.now());
-            case DELIVERED -> order.setEstimatedDeliveryDate(DateUtil.now());
+            case DELIVERED -> order.setDeliveredDate(DateUtil.now());
         }
 
         Order updatedOrder = orderRepository.save(order);

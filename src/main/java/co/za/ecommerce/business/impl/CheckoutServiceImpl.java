@@ -356,7 +356,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         log.debug("Billing address checkout: {}", dto.getBillingAddress());
         if (dto.getBillingAddress() != null) {
             checkout.setBillingAddress(
-                    CheckoutMapper.toAddress(dto.getShippingAddress())
+                    CheckoutMapper.toAddress(dto.getBillingAddress())
             );
         }
     }

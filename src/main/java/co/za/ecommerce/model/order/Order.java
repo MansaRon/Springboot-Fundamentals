@@ -64,6 +64,11 @@ public class Order extends Entity {
     private LocalDateTime shippedDate;
 
     /**
+     * The date the order was actually delivered.
+     */
+    private LocalDateTime deliveredDate;
+
+    /**
      * Subtotal of the order.
      */
     private double subtotal;

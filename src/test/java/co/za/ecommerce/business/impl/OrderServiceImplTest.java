@@ -499,8 +499,8 @@ class OrderServiceImplTest {
         }
 
         @Test
-        @DisplayName("shouldSetEstimatedDeliveryDateWhenStatusIsUpdatedToDelivered")
-        void shouldSetEstimatedDeliveryDateWhenStatusIsUpdatedToDelivered() {
+        @DisplayName("shouldSetDeliveredDateWhenStatusIsUpdatedToDelivered")
+        void shouldSetDeliveredDateWhenStatusIsUpdatedToDelivered() {
             savedOrder.setOrderStatus(OrderStatus.SHIPPED);
             savedOrder.setStatusHistory(new ArrayList<>());
             when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
@@ -513,7 +513,8 @@ class OrderServiceImplTest {
 
                 ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
                 verify(orderRepository).save(captor.capture());
-                assertThat(captor.getValue().getEstimatedDeliveryDate()).isNotNull();
+                assertThat(captor.getValue().getDeliveredDate()).isNotNull();
+                assertThat(captor.getValue().getEstimatedDeliveryDate()).isNull();
             }
         }
 
