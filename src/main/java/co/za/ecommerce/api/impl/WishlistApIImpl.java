@@ -15,6 +15,7 @@ import static java.time.Instant.now;
 
 @Slf4j
 @RestController
+@CrossOrigin("*")
 @RequiredArgsConstructor
 @RequestMapping("api/v1/wishlist")
 public class WishlistApIImpl extends API implements WishlistAPI {

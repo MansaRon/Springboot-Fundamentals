@@ -4,11 +4,12 @@ import co.za.ecommerce.business.ProductService;
 import co.za.ecommerce.business.S3Service;
 import co.za.ecommerce.dto.product.GetAllProductsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
+import co.za.ecommerce.dto.product.RatingDTO;
 import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
+import co.za.ecommerce.model.Rating;
 import co.za.ecommerce.repository.ProductRepository;
-import co.za.ecommerce.utils.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,6 +57,7 @@ public class ProductServiceImpl implements ProductService {
                 .title(productDTO.getTitle())
                 .quantity(productDTO.getQuantity())
                 .imageUrls(!imageUrls.isEmpty() ? imageUrls : List.of())
+                .reviews(new ArrayList<>())
                 .build();
         Product savedProduct = productRepository.save(product);
         log.info("Product saved with id: {}", savedProduct.getId());
@@ -174,17 +177,19 @@ public class ProductServiceImpl implements ProductService {
             );
 
             List<String> imageUrls = uploadImages(productImages);
+            List<RatingDTO> ratings = new ArrayList<>();
 
             productsToSave.add(Product.builder()
                     .category(productDTO.getCategory())
-                    .createdAt(DateUtil.now())
-                    .updatedAt(DateUtil.now())
+                    .createdAt(now())
+                    .updatedAt(now())
                     .description(productDTO.getDescription())
                     .price(productDTO.getPrice())
                     .rate(productDTO.getRate())
                     .title(productDTO.getTitle())
                     .quantity(productDTO.getQuantity())
                     .imageUrls(imageUrls)
+                    .reviews(Collections.singletonList(objectMapper.mapObject().map(ratings, Rating.class)))
                     .build());
         }
 
@@ -253,6 +258,96 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.deleteAll(findAllProducts);
         return "All products and their associated images were deleted.";
+    }
+
+    @Override
+    public RatingDTO addRating(RatingDTO rating, String productId, String userId) {
+        Product foundProduct = findProductById(productId);
+
+        boolean alreadyReviewed = foundProduct.getReviews() != null && foundProduct.getReviews().stream().anyMatch(rate -> rate.getUserId().equals(userId));
+
+        if (alreadyReviewed) {
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "You have already reviewed this product.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        Rating ratingObj = Rating.builder()
+                .userId(userId)
+                .reviewDate(now())
+                .userName(rating.getUserName())
+                .comment(rating.getComment())
+                .rating(rating.getRating())
+                .build();
+
+        if (foundProduct.getReviews() == null) {
+            foundProduct.setReviews(new ArrayList<>());
+        }
+
+        foundProduct.getReviews().add(ratingObj);
+        productRepository.save(foundProduct);
+        return objectMapper.mapObject().map(ratingObj, RatingDTO.class);
+    }
+
+    @Override
+    public RatingDTO updateRating(RatingDTO rating, String productId, String userId) {
+        Product foundProduct = findProductById(productId);
+
+        if (foundProduct.getReviews() == null || foundProduct.getReviews().isEmpty()) {
+            throw new ProductException(
+                    HttpStatus.NOT_FOUND.toString(),
+                    "No reviews found for this product.",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        Rating existingRating = foundProduct.getReviews()
+                .stream()
+                .filter(rate -> rate.getUserId()
+                        .equals(userId)).findFirst()
+                        .orElseThrow(() -> new ProductException(
+                                HttpStatus.NOT_FOUND.toString(),
+                                "No review found for this user on this product.",
+                                HttpStatus.NO_CONTENT.value()
+                        ));
+
+        existingRating.setComment(rating.getComment());
+        existingRating.setRating(rating.getRating());
+        existingRating.setReviewDate(now());
+
+        productRepository.save(foundProduct);
+        return objectMapper.mapObject().map(existingRating, RatingDTO.class);
+    }
+
+    @Override
+    public void deleteRating(RatingDTO rating, String productId, String userId) {
+        Product foundProduct = findProductById(productId);
+
+        if (foundProduct.getReviews() == null || foundProduct.getReviews().isEmpty()) {
+            throw new ProductException(
+                    HttpStatus.NOT_FOUND.toString(),
+                    "No reviews found for this product.",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        boolean reviewExists = foundProduct.getReviews()
+                .stream()
+                .anyMatch(r -> r.getUserId().equals(userId));
+
+        if (!reviewExists) {
+            throw new ProductException(
+                    HttpStatus.NOT_FOUND.toString(),
+                    "No review found for this user on this product.",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        foundProduct.getReviews().removeIf(r -> r.getUserId().equals(userId));
+
+        productRepository.save(foundProduct);
     }
 
     private Product findProductById(String id) {

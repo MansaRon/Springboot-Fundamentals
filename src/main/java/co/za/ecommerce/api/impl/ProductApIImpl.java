@@ -25,6 +25,7 @@ import static java.time.Instant.now;
 
 @Slf4j
 @RestController
+@CrossOrigin("*")
 @RequiredArgsConstructor
 @RequestMapping("api/v1/products")
 public class ProductApIImpl extends API implements ProductAPI {

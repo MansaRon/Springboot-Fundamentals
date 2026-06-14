@@ -5,6 +5,7 @@ import co.za.ecommerce.utils.DateUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.HandlerMapping;
@@ -217,9 +218,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
-    @ExceptionHandler({org.springframework.security.access.AccessDeniedException.class})
+    @ExceptionHandler({AccessDeniedException.class})
     public ResponseEntity<GlobalApiErrorResponse> handleAccessDeniedException(
-            final org.springframework.security.access.AccessDeniedException ex,
+            final AccessDeniedException ex,
             final HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(GlobalApiErrorResponse.builder()

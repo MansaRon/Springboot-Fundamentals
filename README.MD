@@ -105,7 +105,7 @@ Ensure MongoDB is running and you have registered and activated a user. You'll n
 }
 ```
 
-User is created with status `AWAITING_CONFIRMATION`. An OTP is sent to the phone number.
+User ID created with status `AWAITING_CONFIRMATION`. An OTP is sent to the phone number.
 
 ---
 

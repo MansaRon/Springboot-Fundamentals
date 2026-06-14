@@ -2,6 +2,9 @@ package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.product.GetAllProductsDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
+import co.za.ecommerce.dto.product.RatingDTO;
+import co.za.ecommerce.model.Rating;
+import org.bson.types.ObjectId;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -19,4 +22,7 @@ public interface ProductService {
     ProductDTO updateProduct(String id, ProductDTO productDTO, List<MultipartFile> imageFiles) throws IOException;
     String deleteProduct(String id);
     String deleteAllProducts();
+    RatingDTO addRating(RatingDTO rating, String productId, String userId);
+    RatingDTO updateRating(RatingDTO rating, String productId, String userId);
+    void deleteRating(RatingDTO rating, String productId, String userId);
 }

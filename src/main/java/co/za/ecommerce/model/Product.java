@@ -1,8 +1,6 @@
 package co.za.ecommerce.model;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -59,6 +57,12 @@ public class Product extends Entity {
      * Number of items of product available.
      */
     @NotNull
-    @Size(min = 1, max = 20)
+    @Min(value = 0, message = "Quantity cannot be negative")
+    @Max(value = 10000, message = "Quantity cannot exceed 10000")
     private int quantity;
+
+    /**
+     * User ratings/reviews of the product
+     */
+    private List<Rating> reviews;
 }
