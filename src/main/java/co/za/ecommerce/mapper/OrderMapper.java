@@ -17,7 +17,7 @@ public class OrderMapper {
 
         OrderDTO dto = new OrderDTO();
         dto.setId(order.getId() != null ? order.getId().toHexString() : null);
-        dto.setUpdatedAt(DateUtil.now());
+        dto.setUpdatedAt(order.getUpdatedAt());
         dto.setCreatedAt(order.getCreatedAt());
         dto.setCustomerInfo(toUserDTO(order.getCustomerInfo()));
         dto.setOrderItems(order.getOrderItems().stream().map(OrderMapper::mapToOrderItemsDTO).collect(Collectors.toList()));
@@ -27,6 +27,7 @@ public class OrderMapper {
         dto.setOrderStatus(order.getOrderStatus().toString());
         dto.setShippingMethod(order.getShippingMethod());
         dto.setEstimatedDeliveryDate(order.getEstimatedDeliveryDate());
+        dto.setDeliveredDate(order.getDeliveredDate());
         dto.setSubtotal(order.getSubtotal());
         dto.setDiscount(order.getDiscount());
         dto.setTax(order.getTax());

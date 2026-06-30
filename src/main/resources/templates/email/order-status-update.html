@@ -28,9 +28,13 @@
 
     <div class="order-meta">
       <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">ORD-XXXX</span></p>
-      <p th:if="${order.estimatedDeliveryDate != null}">
+      <p th:if="${newStatus == 'SHIPPED' and order.estimatedDeliveryDate != null}">
         <strong>Estimated Delivery:</strong>
         <span th:text="${order.estimatedDeliveryDate}">2026-01-01</span>
+      </p>
+      <p th:if="${newStatus == 'DELIVERED' and order.deliveredDate != null}">
+        <strong>Delivered On:</strong>
+        <span th:text="${order.deliveredDate}">2026-01-01</span>
       </p>
     </div>
 

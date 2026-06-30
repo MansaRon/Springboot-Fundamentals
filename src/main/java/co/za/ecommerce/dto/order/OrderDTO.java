@@ -25,6 +25,7 @@ public class OrderDTO extends EntityDTO {
     private String orderStatus;
     private String shippingMethod;
     private LocalDateTime estimatedDeliveryDate;
+    private LocalDateTime deliveredDate;
     private double subtotal;
     private double discount;
     private double tax;
