@@ -104,12 +104,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public CheckoutDTO getCheckoutByUserId(ObjectId userId) {
-        Checkout retrieveCheckout = checkoutRepository.findFirstByUserId(userId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "User does not have any checked out items.",
-                        HttpStatus.BAD_REQUEST.value()));
-        return CheckoutMapper.toDTO(retrieveCheckout);
+        return CheckoutMapper.toDTO(findActiveCheckoutByUserId(userId));
     }
 
     @Override
@@ -150,11 +145,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public CheckoutDTO updateCheckout(ObjectId userId, CheckoutDTO checkoutDTO) {
-        Checkout checkout = checkoutRepository.findFirstByUserId(userId)
-                .orElseThrow(() -> new CheckoutException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "User does not have any checked out items.",
-                        HttpStatus.BAD_REQUEST.value()));
+        Checkout checkout = findActiveCheckoutByUserId(userId);
 
         if (!CheckoutStatus.PENDING.equals(checkout.getStatus()) &&
         !CheckoutStatus.FAILED.equals(checkout.getStatus())) {
@@ -292,7 +283,8 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     private Checkout findActiveCheckoutByUserId(ObjectId userId) {
-        return checkoutRepository.findFirstByUserId(userId)
+        return checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                        userId, List.of(CheckoutStatus.PENDING, CheckoutStatus.FAILED))
                 .orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
                         "No active checkout found for user.",

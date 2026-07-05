@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface CheckoutRepository extends MongoRepository<Checkout, ObjectId> {
     Optional<Checkout> findFirstByUserId(ObjectId userId);
+    Optional<Checkout> findFirstByUserIdAndStatusInOrderByCreatedAtDesc(ObjectId userId, List<CheckoutStatus> statuses);
     Optional<Checkout> findByCartId(ObjectId cartId);
     List<Checkout> findAllByStatus(CheckoutStatus status);
     void deleteByUserId(ObjectId userId);
