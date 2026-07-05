@@ -183,7 +183,8 @@ class CheckoutServiceImplTest {
         @Test
         @DisplayName("shouldReturnCheckoutDTOWhenCheckoutExists")
         void shouldReturnCheckoutDTOWhenCheckoutExists() {
-            when(checkoutRepository.findFirstByUserId(userId)).thenReturn(Optional.of(pendingCheckout));
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
 
             try (MockedStatic<CheckoutMapper> mapperMock = mockStatic(CheckoutMapper.class)) {
                 CheckoutDTO expected = CheckoutDTO.builder().status("PENDING").build();
@@ -199,11 +200,12 @@ class CheckoutServiceImplTest {
         @Test
         @DisplayName("shouldThrowCheckoutExceptionWhenNoCheckoutFoundForUser")
         void shouldThrowCheckoutExceptionWhenNoCheckoutFoundForUser() {
-            when(checkoutRepository.findFirstByUserId(userId)).thenReturn(Optional.empty());
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> checkoutService.getCheckoutByUserId(userId))
                     .isInstanceOf(CheckoutException.class)
-                    .hasMessageContaining("does not have any checked out items");
+                    .hasMessageContaining("No active checkout found for user");
         }
     }
 
