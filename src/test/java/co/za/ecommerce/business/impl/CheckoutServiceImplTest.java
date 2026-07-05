@@ -5,9 +5,12 @@ import co.za.ecommerce.business.CheckoutValidationService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.business.PaymentService;
 import co.za.ecommerce.dto.PaymentResultDTO;
+import co.za.ecommerce.dto.cart.CartItemsDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
+import co.za.ecommerce.dto.order.AddressDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
+import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.PaymentException;
 import co.za.ecommerce.mapper.CheckoutMapper;
@@ -18,6 +21,7 @@ import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.CheckoutStatus;
+import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
@@ -51,6 +55,8 @@ class CheckoutServiceImplTest {
     private CartRepository cartRepository;
     @Mock
     private CheckoutRepository checkoutRepository;
+    @Mock
+    private ProductRepository productRepository;
     @Mock
     private ObjectMapper objectMapper;
     @Mock
@@ -212,6 +218,27 @@ class CheckoutServiceImplTest {
     @Nested
     @DisplayName("GetCheckoutByCartId")
     class GetCheckoutByCartId {
+        @Test
+        @DisplayName("shouldReturnCheckoutWhenCartIdFound")
+        void shouldReturnCheckoutWhenCartIdFound() {
+            when(checkoutRepository.findByCartId(cartId)).thenReturn(Optional.of(pendingCheckout));
+
+            try (MockedStatic<CheckoutMapper> mapperMock = mockStatic(CheckoutMapper.class)) {
+                mapperMock.when(() -> CheckoutMapper.toDTO(pendingCheckout)).thenReturn(checkoutDTO);
+                CheckoutDTO result = checkoutService.getCheckoutByCartId(cartId);
+                assertThat(result).isNotNull();
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenNoCheckoutFoundForCartId")
+        void shouldThrowWhenNoCheckoutFoundForCartId() {
+            when(checkoutRepository.findByCartId(cartId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> checkoutService.getCheckoutByCartId(cartId))
+                    .isInstanceOf(CheckoutException.class)
+                    .hasMessageContaining("No checkout found for this cart");
+        }
     }
 
     @Nested
@@ -266,8 +293,147 @@ class CheckoutServiceImplTest {
         }
     }
 
-    @Test
-    void updateCheckout() {
+    @Nested
+    @DisplayName("UpdateCheckout")
+    class UpdateCheckout {
+
+        private AddressDTO address;
+
+        @BeforeEach
+        void setUpAddress() {
+            address = AddressDTO.builder()
+                    .streetAddress("14 Test St").city("JHB").state("GP")
+                    .country("SA").postalCode("2000").build();
+        }
+
+        @Test
+        @DisplayName("shouldUpdateAllFieldsAndSaveWhenCheckoutIsPending")
+        void shouldUpdateAllFieldsAndSaveWhenCheckoutIsPending() {
+            CheckoutDTO updateDTO = CheckoutDTO.builder()
+                    .paymentMethod(PaymentMethod.CASH_ON_DELIVERY)
+                    .shippingAddress(address)
+                    .billingAddress(address)
+                    .shippingMethod(DeliverMethod.Express)
+                    .build();
+
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+            when(checkoutRepository.save(any())).thenReturn(pendingCheckout);
+
+            try (MockedStatic<CheckoutMapper> mapperMock = mockStatic(CheckoutMapper.class)) {
+                mapperMock.when(() -> CheckoutMapper.toDTO(any())).thenReturn(checkoutDTO);
+                mapperMock.when(() -> CheckoutMapper.toAddress(address)).thenCallRealMethod();
+
+                CheckoutDTO result = checkoutService.updateCheckout(userId, updateDTO);
+
+                assertThat(result).isNotNull();
+                ArgumentCaptor<Checkout> captor = ArgumentCaptor.forClass(Checkout.class);
+                verify(checkoutRepository).save(captor.capture());
+                assertThat(captor.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.CASH_ON_DELIVERY);
+                assertThat(captor.getValue().getShippingMethod()).isEqualTo(DeliverMethod.Express);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenUserReferenceIsMissing")
+        void shouldThrowWhenUserReferenceIsMissing() {
+            pendingCheckout.setUser(null);
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+
+            assertThatThrownBy(() -> checkoutService.updateCheckout(userId, checkoutDTO))
+                    .isInstanceOf(CheckoutException.class)
+                    .hasMessageContaining("user reference is missing");
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenCartReferenceIsMissing")
+        void shouldThrowWhenCartReferenceIsMissing() {
+            pendingCheckout.setCart(null);
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+
+            assertThatThrownBy(() -> checkoutService.updateCheckout(userId, checkoutDTO))
+                    .isInstanceOf(CheckoutException.class)
+                    .hasMessageContaining("cart reference is missing");
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenAnItemHasNullProductReference")
+        void shouldThrowWhenAnItemHasNullProductReference() {
+            pendingCheckout.setItems(new ArrayList<>(List.of(CartItems.builder().product(null).build())));
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+
+            assertThatThrownBy(() -> checkoutService.updateCheckout(userId, checkoutDTO))
+                    .isInstanceOf(CheckoutException.class)
+                    .hasMessageContaining("missing a product reference");
+        }
+
+        @Test
+        @DisplayName("shouldReplaceItemsWhenDTOContainsValidItems")
+        void shouldReplaceItemsWhenDTOContainsValidItems() {
+            Product product = TestDataBuilder.buildProduct();
+            ProductDTO productDTO = ProductDTO.builder()
+                    .id(product.getId().toHexString())
+                    .price(product.getPrice())
+                    .title(product.getTitle())
+                    .build();
+            CartItemsDTO itemDTO = new CartItemsDTO(productDTO, 2, 0.0, 0.0, product.getPrice() * 2);
+            CheckoutDTO dtoWithItems = CheckoutDTO.builder()
+                    .items(new ArrayList<>(List.of(itemDTO))).build();
+
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+            when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+            when(checkoutRepository.save(any())).thenReturn(pendingCheckout);
+
+            try (MockedStatic<CheckoutMapper> mapperMock = mockStatic(CheckoutMapper.class)) {
+                mapperMock.when(() -> CheckoutMapper.toDTO(any())).thenReturn(checkoutDTO);
+
+                checkoutService.updateCheckout(userId, dtoWithItems);
+
+                ArgumentCaptor<Checkout> captor = ArgumentCaptor.forClass(Checkout.class);
+                verify(checkoutRepository).save(captor.capture());
+                assertThat(captor.getValue().getItems()).hasSize(1);
+                assertThat(captor.getValue().getItems().get(0).getProduct().getId())
+                        .isEqualTo(product.getId());
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenItemDTOHasNullProductDTO")
+        void shouldThrowWhenItemDTOHasNullProductDTO() {
+            CartItemsDTO nullProductItem = new CartItemsDTO(null, 1, 0.0, 0.0, 0.0);
+            CheckoutDTO dtoWithItems = CheckoutDTO.builder()
+                    .items(new ArrayList<>(List.of(nullProductItem))).build();
+
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+
+            assertThatThrownBy(() -> checkoutService.updateCheckout(userId, dtoWithItems))
+                    .isInstanceOf(CheckoutException.class)
+                    .hasMessageContaining("missing a product");
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenProductNotFoundDuringItemUpdate")
+        void shouldThrowWhenProductNotFoundDuringItemUpdate() {
+            Product product = TestDataBuilder.buildProduct();
+            ProductDTO productDTO = ProductDTO.builder()
+                    .id(product.getId().toHexString()).build();
+            CartItemsDTO itemDTO = new CartItemsDTO(productDTO, 1, 0.0, 0.0, product.getPrice());
+            CheckoutDTO dtoWithItems = CheckoutDTO.builder()
+                    .items(new ArrayList<>(List.of(itemDTO))).build();
+
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+            when(productRepository.findById(any(ObjectId.class))).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> checkoutService.updateCheckout(userId, dtoWithItems))
+                    .isInstanceOf(CheckoutException.class)
+                    .hasMessageContaining("Product not found");
+        }
     }
 
     @Nested
