@@ -3,6 +3,7 @@
 ### High Priority
 
 #### 0. Investigate why when checking out, checkout always takes the 1st checkout item status instead of all the items in the checkout.
+#### Adding caching and Idempotency on Write Operations
 
 #### 2. Global Exception Handler
 - [ ] `@RestControllerAdvice` to catch all exceptions centrally

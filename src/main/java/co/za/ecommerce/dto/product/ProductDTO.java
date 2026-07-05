@@ -35,5 +35,5 @@ public class ProductDTO extends EntityDTO {
 
     private List<String> imageUrls;
 
-    private List<RatingDTO> rating;
+    private List<RatingDTO> reviews;
 }

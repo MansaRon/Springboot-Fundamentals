@@ -5,7 +5,9 @@ import co.za.ecommerce.config.AppConstants;
 import co.za.ecommerce.dto.api.ProductDTOAllApiResource;
 import co.za.ecommerce.dto.api.ProductDTOApiResource;
 import co.za.ecommerce.dto.api.ProductDTOListApiResource;
+import co.za.ecommerce.dto.api.RatingDTOApiResource;
 import co.za.ecommerce.dto.product.ProductDTO;
+import co.za.ecommerce.dto.product.RatingDTO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
@@ -192,6 +194,70 @@ public class ProductApIImpl extends API implements ProductAPI {
                 ProductDTOApiResource.builder()
                         .timestamp(now())
                         .message("All products deleted.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PostMapping("/{productId}/reviews/{userId}")
+    public ResponseEntity<RatingDTOApiResource> addReview(RatingDTO rating, @PathVariable String productId, @PathVariable String userId) {
+        log.info("public ResponseEntity<RatingDTOApiResource> addReview(RatingDTO rating, @PathVariable String productId, @PathVariable String userId)");
+        return ResponseEntity.ok(
+                RatingDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.addRating(rating, productId, userId))
+                        .message("Review added.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PermitAll
+    @GetMapping("/{productId}/reviews")
+    public ResponseEntity<RatingDTOApiResource> getProductReviews(@PathVariable String productId) {
+        log.info("public ResponseEntity<RatingDTOApiResource> getProductReviews(@PathVariable String productId)");
+        return ResponseEntity.ok(
+                RatingDTOApiResource.builder()
+                        .timestamp(now())
+                        .reviews(productService.getProductReviews(productId))
+                        .message("Review retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PatchMapping("/{productId}/reviews")
+    public ResponseEntity<RatingDTOApiResource> updateRating(RatingDTO rating, @PathVariable String productId, @PathVariable String userId) {
+        log.info("public ResponseEntity<RatingDTOApiResource> updateRating(RatingDTO rating, @PathVariable String productId, @PathVariable String userId)");
+        return ResponseEntity.ok(
+                RatingDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(productService.updateRating(rating, productId, userId))
+                        .message("Review updated.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @DeleteMapping
+    public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable String productId, @PathVariable String userId) {
+        log.info("public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable String productId, @PathVariable String userId)");
+        productService.deleteRating(productId, userId);
+        return ResponseEntity.ok(
+                RatingDTOApiResource.builder()
+                        .timestamp(now())
+                        .message("Review deleted.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

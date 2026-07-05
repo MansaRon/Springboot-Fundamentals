@@ -212,6 +212,7 @@ public class ProductServiceImpl implements ProductService {
         productDB.setPrice(defaultIfNullOrZero(productDTO.getPrice(), productDB.getPrice()));
         productDB.setQuantity(defaultIfNullOrZero(productDTO.getQuantity(), productDB.getQuantity()));
         productDB.setCategory(defaultIfNullOrEmpty(productDTO.getCategory(), productDB.getCategory()));
+        productDB.setReviews(mapToRating(productDTO.getReviews()));
 
         if (imageFiles != null && !imageFiles.isEmpty()) {
             if (!productDB.getImageUrls().isEmpty()) {
@@ -322,7 +323,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void deleteRating(RatingDTO rating, String productId, String userId) {
+    public void deleteRating(String productId, String userId) {
         Product foundProduct = findProductById(productId);
 
         if (foundProduct.getReviews() == null || foundProduct.getReviews().isEmpty()) {
@@ -348,6 +349,16 @@ public class ProductServiceImpl implements ProductService {
         foundProduct.getReviews().removeIf(r -> r.getUserId().equals(userId));
 
         productRepository.save(foundProduct);
+    }
+
+    @Override
+    public List<RatingDTO> getProductReviews(String productId) {
+        Product foundProduct = findProductById(productId);
+
+        if (foundProduct.getReviews() != null) {
+            return mapToRatingDTO(foundProduct.getReviews());
+        }
+        return List.of();
     }
 
     private Product findProductById(String id) {
@@ -389,5 +400,23 @@ public class ProductServiceImpl implements ProductService {
 
     private boolean checkNullId(String Id) {
         return Id == null || !Id.matches("^[a-fA-F0-9]{24}$");
+    }
+
+    private List<RatingDTO> mapToRatingDTO(List<Rating> ratings) {
+        return ratings
+                .stream()
+                .map(rating -> objectMapper
+                        .mapObject()
+                        .map(rating, RatingDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    private List<Rating> mapToRating(List<RatingDTO> ratingsDTO) {
+        return ratingsDTO
+                .stream()
+                .map(rate -> objectMapper
+                        .mapObject()
+                        .map(rate, Rating.class))
+                .collect(Collectors.toList());
     }
 }
