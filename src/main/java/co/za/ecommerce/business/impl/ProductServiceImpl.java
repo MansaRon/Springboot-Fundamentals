@@ -12,6 +12,9 @@ import co.za.ecommerce.model.Rating;
 import co.za.ecommerce.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "product-list", allEntries = true)
     public ProductDTO addProduct(ProductDTO productDTO, List<MultipartFile> imageFiles) {
         List<String> imageUrls = uploadImages(imageFiles);
         Product product = Product.builder()
@@ -66,6 +70,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "product-list", key = "{#pageNo, #pageSize, #sortBy, #sortDir}")
     public GetAllProductsDTO getAllPosts(int pageNo,
                                          int pageSize,
                                          String sortBy,
@@ -89,11 +94,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "#id")
     public ProductDTO getProduct(String id) {
         return objectMapper.mapObject().map(findProductById(id), ProductDTO.class);
     }
 
     @Override
+    @Cacheable(value = "product-list", key = "{#category, #pageNo, #pageSize, #sortBy, #sortDir}")
     public GetAllProductsDTO getProductByCategory(String category,
                                                  int pageNo,
                                                  int pageSize,
@@ -122,6 +129,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "product-list", key = "{#title, #pageNo, #pageSize, #sortBy, #sortDir}")
     public GetAllProductsDTO getProductByTitle(String title,
                                                int pageNo,
                                                int pageSize,
@@ -201,6 +209,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
     public ProductDTO updateProduct(String id, ProductDTO productDTO, List<MultipartFile> imageFiles) {
         Product productDB = findProductById(id);
 
@@ -226,6 +238,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
     public String deleteProduct(String id) {
         Product product = productRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ProductException(
@@ -242,6 +258,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
     public String deleteAllProducts() {
         List<Product> findAllProducts = productRepository.findAll();
         if (findAllProducts.isEmpty()) {

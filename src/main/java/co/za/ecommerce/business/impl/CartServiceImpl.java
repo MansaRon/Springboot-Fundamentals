@@ -15,6 +15,8 @@ import co.za.ecommerce.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +36,7 @@ public class CartServiceImpl implements CartService {
 
     // TODO - check logic that adds none existing item to cart
     @Override
+    @CacheEvict(value = "carts", key = "#userId")
     public CartDTO addProductToCart(ObjectId userId, ObjectId productId, int quantity) {
         Cart cart = cartRepository
                 .findByUserId(userId).orElseGet(() -> createNewCartForUser(userId));
@@ -71,6 +74,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    @Cacheable(value = "carts", key = "#userId")
     public CartDTO getUserCartWithItems(ObjectId userId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> createNewCartForUser(userId));
@@ -79,6 +83,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    @CacheEvict(value = "carts", key = "#userId")
     public CartDTO updateProductInCart(ObjectId userId, ObjectId productId, int newQuantity) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartException(
@@ -115,6 +120,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    @CacheEvict(value = "carts", key = "#userId")
     public CartDTO deleteProductFromCart(ObjectId userId, ObjectId productId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new CartException(

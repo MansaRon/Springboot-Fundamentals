@@ -1,5 +1,6 @@
 package co.za.ecommerce.api.impl;
 
+import co.za.ecommerce.annotation.Idempotent;
 import co.za.ecommerce.api.CheckoutAPI;
 import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
@@ -27,6 +28,7 @@ import static java.time.Instant.now;
 @RequestMapping("api/v1/checkout")
 public class CheckoutAPIImpl extends API implements CheckoutAPI {
 
+    @Idempotent
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/{userId}/initiate-checkout")
     public ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId) {
@@ -74,6 +76,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
+    @Idempotent
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @PatchMapping("/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO) {
@@ -90,6 +93,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
         );
     }
 
+    @Idempotent
     @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @PostMapping("/{checkoutId}/confirm")

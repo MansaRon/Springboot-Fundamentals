@@ -19,6 +19,9 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "user-orders", key = "#checkout.user.id")
     public OrderDTO createOrderFromCheckout(Checkout checkout, PaymentResultDTO paymentResultDTO) {
         log.info("Creating order from checkout: {}", checkout.getId());
 
@@ -89,6 +93,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(value = "orders", key = "#orderId")
     public OrderDTO getOrderById(ObjectId orderId) {
         log.info("Fetching order by ID: {}", orderId);
 
@@ -116,6 +121,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(value = "user-orders", key = "#userId")
     public List<OrderDTO> getUserOrders(ObjectId userId) {
         log.info("Fetching orders for user: {}", userId);
 
@@ -157,6 +163,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "orders", key = "#orderId"),
+            @CacheEvict(value = "user-orders", allEntries = true)
+    })
     public OrderDTO updateOrderStatus(ObjectId orderId, OrderStatus newStatus, String notes) {
         log.info("Updating order {} status to: {}", orderId, newStatus);
 
