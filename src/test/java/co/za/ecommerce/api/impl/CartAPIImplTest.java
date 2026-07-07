@@ -141,7 +141,7 @@ class CartAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenProductNotFound")
+        @DisplayName("shouldReturn404WhenProductNotFound")
         void shouldReturn400WhenProductNotFound() throws Exception {
             when(cartService.addProductToCart(any(), any(), anyInt()))
                     .thenThrow(new ProductException(
@@ -151,7 +151,7 @@ class CartAPIImplTest {
 
             mockMvc.perform(post("/api/v1/cart/{userId}/add-item/{productId}", USER_ID, PRODUCT_ID)
                             .param("quantity", "1"))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Product not found."));
         }
     }
@@ -262,7 +262,7 @@ class CartAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenProductNotFoundInCart")
+        @DisplayName("shouldReturn404WhenProductNotFoundInCart")
         void shouldReturn400WhenProductNotFoundInCart() throws Exception {
             when(cartService.updateProductInCart(any(), any(), anyInt()))
                     .thenThrow(new CartException(
@@ -273,7 +273,7 @@ class CartAPIImplTest {
             mockMvc.perform(patch("/api/v1/cart/{userId}/update-item/{productId}",
                             USER_ID, PRODUCT_ID)
                             .param("newQuantity", "3"))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Product not found in cart."));
         }
     }
@@ -332,7 +332,7 @@ class CartAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenProductNotFoundInCart")
+        @DisplayName("shouldReturn404WhenProductNotFoundInCart")
         void shouldReturn400WhenProductNotFoundInCart() throws Exception {
             when(cartService.deleteProductFromCart(any(), any()))
                     .thenThrow(new CartException(
@@ -342,7 +342,7 @@ class CartAPIImplTest {
 
             mockMvc.perform(delete("/api/v1/cart/{userId}/delete-item/{productId}",
                             USER_ID, PRODUCT_ID))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Product not found in cart."));
         }
     }

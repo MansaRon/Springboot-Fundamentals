@@ -209,7 +209,7 @@ class WishlistApIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenWishlistItemNotFound")
+        @DisplayName("shouldReturn404WhenWishlistItemNotFound")
         void shouldReturn400WhenWishlistItemNotFound() throws Exception {
             when(wishlistService.delete(any(), any()))
                     .thenThrow(new WishlistException(
@@ -233,7 +233,7 @@ class WishlistApIImplTest {
                                       }
                                     }
                                     """.formatted(USER_ID, PRODUCT_ID)))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message")
                             .value("Wishlist item not found for the given user and product."));
         }

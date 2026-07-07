@@ -2,16 +2,6 @@
 ## Features to Add
 ### High Priority
 
-#### 1. Adding caching and Idempotency on Write Operations (Updating address, creating order)
-
-#### 2. Global Exception Handler
-- [ ] `@RestControllerAdvice` to catch all exceptions centrally
-- [ ] Map `ClientException`, `ProductException`, `CartException`, `CheckoutException`, `OrderException`, `OTPException`, `PaymentException` to consistent `GlobalApiResponse` error shape
-- [ ] Remove any remaining try-catch in service layer
-- [ ] Log all exceptions with correlation ID
-- **Priority:** High — needed before unit tests
-- **Estimate:** 3–4 hours
-
 #### 3. Coupon / Promo Code System
 - [ ] `Coupon` entity (code, discount %, expiry, usage limit)
 - [ ] Apply coupon at checkout

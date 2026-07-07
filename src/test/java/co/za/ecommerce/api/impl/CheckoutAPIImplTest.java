@@ -109,7 +109,7 @@ class CheckoutAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenCartNotFound")
+        @DisplayName("shouldReturn404WhenCartNotFound")
         void shouldReturn400WhenCartNotFound() throws Exception {
             when(checkoutService.createCheckoutFromCart(any()))
                     .thenThrow(new CheckoutException(
@@ -118,7 +118,7 @@ class CheckoutAPIImplTest {
                             HttpStatus.NOT_FOUND.value()));
 
             mockMvc.perform(post("/api/v1/checkout/{userId}/initiate-checkout", USER_ID))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("No active cart found for user."));
         }
 
@@ -188,7 +188,7 @@ class CheckoutAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenNoCheckoutFoundForCart")
+        @DisplayName("shouldReturn404WhenNoCheckoutFoundForCart")
         void shouldReturn400WhenNoCheckoutFoundForCart() throws Exception {
             when(checkoutService.getCheckoutByCartId(any()))
                     .thenThrow(new CheckoutException(
@@ -197,7 +197,7 @@ class CheckoutAPIImplTest {
                             HttpStatus.NOT_FOUND.value()));
 
             mockMvc.perform(get("/api/v1/checkout/cart/{cartId}", CART_ID))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("No checkout found for this cart."));
         }
     }
@@ -329,12 +329,12 @@ class CheckoutAPIImplTest {
                             HttpStatus.PAYMENT_REQUIRED.value()));
 
             mockMvc.perform(post("/api/v1/checkout/{checkoutId}/confirm", CHECKOUT_ID))
-                    .andExpect(status().is5xxServerError())
+                    .andExpect(status().isPaymentRequired())
                     .andExpect(jsonPath("$.message").value("Card declined."));
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenCheckoutNotFound")
+        @DisplayName("shouldReturn404WhenCheckoutNotFound")
         void shouldReturn400WhenCheckoutNotFound() throws Exception {
             when(checkoutService.confirmCheckout(any()))
                     .thenThrow(new CheckoutException(
@@ -343,7 +343,7 @@ class CheckoutAPIImplTest {
                             HttpStatus.NOT_FOUND.value()));
 
             mockMvc.perform(post("/api/v1/checkout/{checkoutId}/confirm", CHECKOUT_ID))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Checkout not found."));
         }
 
@@ -396,7 +396,7 @@ class CheckoutAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenCheckoutNotFound")
+        @DisplayName("shouldReturn404WhenCheckoutNotFound")
         void shouldReturn400WhenCheckoutNotFound() throws Exception {
             doThrow(new CheckoutException(
                     HttpStatus.NOT_FOUND.toString(),
@@ -405,7 +405,7 @@ class CheckoutAPIImplTest {
                     .when(checkoutService).cancelCheckout(any());
 
             mockMvc.perform(delete("/api/v1/checkout/{checkoutId}", CHECKOUT_ID))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Checkout not found."));
         }
     }
@@ -428,7 +428,7 @@ class CheckoutAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenNoPendingCheckoutsExist")
+        @DisplayName("shouldReturn404WhenNoPendingCheckoutsExist")
         void shouldReturn400WhenNoPendingCheckoutsExist() throws Exception {
             when(checkoutService.deleteCheckoutByUserId(any()))
                     .thenThrow(new CheckoutException(
@@ -437,7 +437,7 @@ class CheckoutAPIImplTest {
                             HttpStatus.NOT_FOUND.value()));
 
             mockMvc.perform(delete("/api/v1/checkout/user/{userId}", USER_ID))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("No pending checkouts found for user."));
         }
     }

@@ -4,6 +4,7 @@ import co.za.ecommerce.dto.GlobalApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.web.servlet.HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE;
 
-@DisplayName("GlobalExceptionHandler Tests")
+@DisplayName("GlobalExceptionHandler")
 class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
@@ -22,147 +23,241 @@ class GlobalExceptionHandlerTest {
     @BeforeEach
     void setUp() {
         handler = new GlobalExceptionHandler();
-
         request = mock(HttpServletRequest.class);
         when(request.getAttribute(PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE)).thenReturn("/api/v1/test");
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithCorrectBodyWhenClientExceptionThrown")
-    void handleClientException() {
-        ClientException ex = new ClientException(HttpStatus.BAD_REQUEST, "Email already exists.");
+    // ── Domain exceptions ────────────────────────────────────────────────────
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.handleClientException(ex, request);
+    @Nested
+    @DisplayName("ClientException")
+    class Client {
+        @Test
+        void returns400WithMessage() {
+            var ex = new ClientException(HttpStatus.BAD_REQUEST, "Email already exists.");
+            var response = handler.handleClientException(ex, request);
 
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Email already exists.");
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+            assertCommon(response, HttpStatus.BAD_REQUEST, "Email already exists.");
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithCorrectBodyWhenOTPExceptionThrown")
-    void handleOTPException() {
-        OTPException ex = new OTPException(HttpStatus.BAD_REQUEST, "Invalid OTP expired.");
+    @Nested
+    @DisplayName("OTPException")
+    class OTP {
+        @Test
+        void returns400WithMessage() {
+            var ex = new OTPException(HttpStatus.BAD_REQUEST, "Invalid OTP expired.");
+            var response = handler.handleOTPException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.handleOTPException(ex, request);
-
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Invalid OTP expired.");
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+            assertCommon(response, HttpStatus.BAD_REQUEST, "Invalid OTP expired.");
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithProductCodeAndStatusInBody")
-    void handleProductException() {
-        ProductException ex = new ProductException(HttpStatus.BAD_REQUEST.toString(), "Product not found.", HttpStatus.BAD_REQUEST.value());
+    @Nested
+    @DisplayName("ProductException")
+    class Product {
+        @Test
+        void returnsExceptionStatusWithBody() {
+            var ex = new ProductException(HttpStatus.BAD_REQUEST.toString(), "Product not found.", HttpStatus.BAD_REQUEST.value());
+            var response = handler.handleProductException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.handleProductException(ex, request);
-
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Product not found.");
-        assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.toString());
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+            assertCommon(response, HttpStatus.BAD_REQUEST, "Product not found.");
+            assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.toString());
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithCartCodeAndStatusInBody")
-    void handleWishlistException() {
-        CartException ex = new CartException(HttpStatus.NOT_FOUND.toString(), "Cart not found for user.", HttpStatus.NOT_FOUND.value());
+    @Nested
+    @DisplayName("CartException")
+    class Cart {
+        @Test
+        void returnsExceptionStatusNotHardcoded400() {
+            var ex = new CartException(HttpStatus.NOT_FOUND.toString(), "Cart not found for user.", HttpStatus.NOT_FOUND.value());
+            var response = handler.handleCartException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.handleCartException(ex, request);
-
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Cart not found for user.");
-        assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.NOT_FOUND.toString());
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
+            assertCommon(response, HttpStatus.NOT_FOUND, "Cart not found for user.");
+            assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.NOT_FOUND.toString());
+            assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithCheckoutCodeAndStatusInBody")
-    void handleCartException() {
-        CheckoutException ex = new CheckoutException(HttpStatus.BAD_REQUEST.toString(), "Cannot checkout with empty cart.", HttpStatus.BAD_REQUEST.value());
+    @Nested
+    @DisplayName("CheckoutException")
+    class Checkout {
+        @Test
+        void returns400ForBadRequestCheckout() {
+            var ex = new CheckoutException(HttpStatus.BAD_REQUEST.toString(), "Cannot checkout with empty cart.", HttpStatus.BAD_REQUEST.value());
+            var response = handler.checkoutException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.checkoutException(ex, request);
+            assertCommon(response, HttpStatus.BAD_REQUEST, "Cannot checkout with empty cart.");
+            assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        }
 
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Cannot checkout with empty cart.");
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        @Test
+        void returns404WhenCheckoutNotFound() {
+            var ex = new CheckoutException(HttpStatus.NOT_FOUND.toString(), "No active checkout found for user.", HttpStatus.NOT_FOUND.value());
+            var response = handler.checkoutException(ex, request);
+
+            assertCommon(response, HttpStatus.NOT_FOUND, "No active checkout found for user.");
+        }
     }
 
-    @Test
-    void resourceNotFoundExceptionException() {}
+    @Nested
+    @DisplayName("OrderException")
+    class Order {
+        @Test
+        void returnsExceptionStatus() {
+            var ex = new OrderException(HttpStatus.NOT_FOUND.toString(), "Order not found.", HttpStatus.NOT_FOUND.value());
+            var response = handler.orderException(ex, request);
 
-    @Test
-    @DisplayName("shouldReturn400WithUserNotFoundMessageInBody")
-    void userNotFoundExceptionException() {
-        UserNotFoundException ex = new UserNotFoundException(HttpStatus.NOT_FOUND.toString(), "User not found.", HttpStatus.NOT_FOUND.value());
+            assertCommon(response, HttpStatus.NOT_FOUND, "Order not found.");
+        }
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.userNotFoundExceptionException(ex, request);
+        @Test
+        void returns400ForInvalidStatusTransition() {
+            var ex = new OrderException(HttpStatus.BAD_REQUEST.toString(), "Cannot update cancelled order.", HttpStatus.BAD_REQUEST.value());
+            var response = handler.orderException(ex, request);
 
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "User not found.");
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
+            assertCommon(response, HttpStatus.BAD_REQUEST, "Cannot update cancelled order.");
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithCheckoutCodeAndStatusInBody")
-    void checkoutException() {
-        CheckoutException ex = new CheckoutException(HttpStatus.BAD_REQUEST.toString(), "Cannot checkout with empty cart.", HttpStatus.BAD_REQUEST.value());
+    @Nested
+    @DisplayName("UserNotFoundException")
+    class UserNotFound {
+        @Test
+        void returnsExceptionStatusNotHardcoded400() {
+            var ex = new UserNotFoundException(HttpStatus.NOT_FOUND.toString(), "User not found.", HttpStatus.NOT_FOUND.value());
+            var response = handler.userNotFoundExceptionException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.checkoutException(ex, request);
-
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Cannot checkout with empty cart.");
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+            assertCommon(response, HttpStatus.NOT_FOUND, "User not found.");
+            assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn400WithValidationMessageInBody")
-    void validationException() {
-        ValidationException ex = new ValidationException(HttpStatus.BAD_REQUEST.toString(), "Phone number must be 10 digits.", HttpStatus.BAD_REQUEST.value());
+    @Nested
+    @DisplayName("ValidationException")
+    class Validation {
+        @Test
+        void returns400WithValidationMessage() {
+            var ex = new ValidationException(HttpStatus.BAD_REQUEST.toString(), "Phone number must be 10 digits.", HttpStatus.BAD_REQUEST.value());
+            var response = handler.validationException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.validationException(ex, request);
-
-        assertCommonFields(response, HttpStatus.BAD_REQUEST, "Phone number must be 10 digits.");
-        assertThat(response.getBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+            assertCommon(response, HttpStatus.BAD_REQUEST, "Phone number must be 10 digits.");
+        }
     }
 
-    @Test
-    @DisplayName("handleNullPointerException")
-    void nullPointerException() {
-        NullPointerException ex = new NullPointerException("NULL_POINTER", "Null reference encountered.", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    @Nested
+    @DisplayName("InventoryException")
+    class Inventory {
+        @Test
+        void returnsExceptionStatus() {
+            var ex = new InventoryException(HttpStatus.CONFLICT.toString(), "Insufficient stock for product.", HttpStatus.CONFLICT.value());
+            var response = handler.handleInventoryException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.nullPointerException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessage()).isEqualTo("Null pointer exception occurred");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+            assertCommon(response, HttpStatus.CONFLICT, "Insufficient stock for product.");
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn500WithArrayOutOfBoundsMessageInBody")
-    void arrayIndexOutOfBoundsException() {
-        ArrayIndexOutOfBoundsException ex = new ArrayIndexOutOfBoundsException("ARRAY_OUT_OF_BOUNDS", "Index 5 out of bounds for length 3.", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    @Nested
+    @DisplayName("MethodNotAllowedException (custom)")
+    class CustomMethodNotAllowed {
+        @Test
+        void returnsExceptionStatus() {
+            var ex = new MethodNotAllowedException(HttpStatus.METHOD_NOT_ALLOWED.toString(), "Operation not permitted.", HttpStatus.METHOD_NOT_ALLOWED.value());
+            var response = handler.handleMethodNotAllowedException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.arrayIndexOutOfBoundsException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessage()).isEqualTo("Array out of bounds has occurred");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+            assertCommon(response, HttpStatus.METHOD_NOT_ALLOWED, "Operation not permitted.");
+        }
     }
 
-    @Test
-    @DisplayName("shouldReturn500WithPaymentFailedMessageInBody")
-    void handlePaymentException() {
-        PaymentException ex = new PaymentException("PAYMENT_FAILED", "Card declined.", HttpStatus.PAYMENT_REQUIRED.value());
+    @Nested
+    @DisplayName("PaymentException")
+    class Payment {
+        @Test
+        void returnsPaymentRequiredNotHardcoded500() {
+            var ex = new PaymentException("PAYMENT_FAILED", "Card declined.", HttpStatus.PAYMENT_REQUIRED.value());
+            var response = handler.handlePaymentException(ex, request);
 
-        ResponseEntity<GlobalApiErrorResponse> response = handler.handlePaymentException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessage()).isEqualTo("Card declined.");
-        assertThat(response.getBody().getTimestamp()).isNotNull();
-        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PAYMENT_REQUIRED);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getMessage()).isEqualTo("Card declined.");
+            assertThat(response.getBody().getTimestamp()).isNotNull();
+            assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+        }
     }
 
-    private void assertCommonFields(ResponseEntity<GlobalApiErrorResponse> response, HttpStatus expectedHttpStatus, String expectedMessage) {
+    @Nested
+    @DisplayName("NullPointerException (custom)")
+    class NullPointer {
+        @Test
+        void returns500WithGenericMessage() {
+            var ex = new NullPointerException("NULL_POINTER", "Null reference encountered.", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            var response = handler.nullPointerException(ex, request);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+            assertThat(response.getBody().getMessage()).isEqualTo("Null pointer exception occurred");
+            assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+        }
+    }
+
+    @Nested
+    @DisplayName("ArrayIndexOutOfBoundsException (custom)")
+    class ArrayOutOfBounds {
+        @Test
+        void returns500WithGenericMessage() {
+            var ex = new ArrayIndexOutOfBoundsException("ARRAY_OUT_OF_BOUNDS", "Index 5 out of bounds for length 3.", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            var response = handler.arrayIndexOutOfBoundsException(ex, request);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+            assertThat(response.getBody().getMessage()).isEqualTo("Array out of bounds has occurred");
+            assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+        }
+    }
+
+    @Nested
+    @DisplayName("Catch-all Exception")
+    class CatchAll {
+        @Test
+        void returns500WithGenericMessage() {
+            var ex = new java.io.IOException("unexpected failure");
+            var response = handler.handleUnexpectedException(ex, request);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+            assertThat(response.getBody().getMessage()).isEqualTo("An unexpected error occurred. Please try again later.");
+            assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+        }
+    }
+
+    @Nested
+    @DisplayName("Correlation ID")
+    class CorrelationId {
+        @Test
+        void propagatesClientSuppliedCorrelationId() {
+            when(request.getHeader("X-Correlation-ID")).thenReturn("client-req-123");
+            var ex = new ProductException(HttpStatus.BAD_REQUEST.toString(), "Not found.", HttpStatus.BAD_REQUEST.value());
+
+            var response = handler.handleProductException(ex, request);
+
+            assertThat(response.getHeaders().getFirst("X-Correlation-ID")).isEqualTo("client-req-123");
+        }
+
+        @Test
+        void generatesCorrelationIdWhenNotSupplied() {
+            when(request.getHeader("X-Correlation-ID")).thenReturn(null);
+            var ex = new ProductException(HttpStatus.BAD_REQUEST.toString(), "Not found.", HttpStatus.BAD_REQUEST.value());
+
+            var response = handler.handleProductException(ex, request);
+
+            assertThat(response.getHeaders().getFirst("X-Correlation-ID")).isNotBlank();
+        }
+    }
+
+    // ── Shared assertion ─────────────────────────────────────────────────────
+
+    private void assertCommon(ResponseEntity<GlobalApiErrorResponse> response,
+                              HttpStatus expectedStatus, String expectedMessage) {
         assertThat(response).isNotNull();
-        assertThat(response.getStatusCode()).isEqualTo(expectedHttpStatus);
+        assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
 
         GlobalApiErrorResponse body = response.getBody();
         assertThat(body).isNotNull();

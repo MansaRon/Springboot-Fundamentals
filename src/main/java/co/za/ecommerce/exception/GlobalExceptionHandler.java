@@ -1,308 +1,260 @@
 package co.za.ecommerce.exception;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
-import co.za.ecommerce.utils.DateUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import static co.za.ecommerce.utils.DateUtil.now;
 
-@ControllerAdvice
+@Slf4j
+@RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler({ClientException.class})
+    private static final String CORRELATION_HEADER = "X-Correlation-ID";
+    private static final String MDC_KEY = "correlationId";
+
+    // ── Domain exceptions ────────────────────────────────────────────────────
+
+    @ExceptionHandler(ClientException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleClientException(
-            final ClientException clientException,
-            final HttpServletRequest httpStatus) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(
-                        GlobalApiErrorResponse.builder()
-                                .path(clientException.getMessage())
-                                .status(HttpStatus.BAD_REQUEST.toString())
-                                .statusCode(HttpStatus.BAD_REQUEST.value())
-                                .path(getPath(httpStatus))
-                                .message(clientException.getMessage())
-                                .timestamp(now())
-                                .build()
-                );
+            final ClientException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] ClientException: {}", cid, ex.getMessage());
+        return build(ex.getCode().value(), ex.getCode().toString(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({OTPException.class})
+    @ExceptionHandler(OTPException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleOTPException(
-            final OTPException otpException,
-            final HttpServletRequest httpStatus) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(
-                        GlobalApiErrorResponse.builder()
-                                .path(otpException.getMessage())
-                                .status(HttpStatus.BAD_REQUEST.toString())
-                                .statusCode(HttpStatus.BAD_REQUEST.value())
-                                .path(getPath(httpStatus))
-                                .message(otpException.getMessage())
-                                .timestamp(now())
-                                .build()
-                );
+            final OTPException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] OTPException: {}", cid, ex.getMessage());
+        return build(ex.getCode().value(), ex.getCode().toString(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({ProductException.class})
+    @ExceptionHandler(ProductException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleProductException(
-            final ProductException productException,
-            final HttpServletRequest httpStatus) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpStatus))
-                        .status(productException.getCode())
-                        .statusCode(productException.getStatus())
-                        .message(productException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
+            final ProductException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] ProductException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({WishlistException.class})
-    public ResponseEntity<GlobalApiErrorResponse> handleWishlistException(
-            final WishlistException wishlistException,
-            final HttpServletRequest httpStatus
-    ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpStatus))
-                        .status(wishlistException.getCode())
-                        .statusCode(wishlistException.getStatus())
-                        .message(wishlistException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
-    }
-
-    @ExceptionHandler({CartException.class})
+    @ExceptionHandler(CartException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleCartException(
-            final CartException cartException,
-            final HttpServletRequest httpStatus
-    ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpStatus))
-                        .status(cartException.getCode())
-                        .statusCode(cartException.getStatus())
-                        .message(cartException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
+            final CartException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] CartException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({ResourceNotFoundException.class})
-    public ResponseEntity<GlobalApiErrorResponse> resourceNotFoundExceptionException(
-            final ResourceNotFoundException resourceNotFoundException,
-            final HttpServletRequest httpStatus
-    ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpStatus))
-                        .status(resourceNotFoundException.getCode())
-                        .statusCode(resourceNotFoundException.getStatus())
-                        .message(resourceNotFoundException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
+    @ExceptionHandler(WishlistException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleWishlistException(
+            final WishlistException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] WishlistException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({UserNotFoundException.class})
-    public ResponseEntity<GlobalApiErrorResponse> userNotFoundExceptionException(
-            final UserNotFoundException userNotFoundException,
-            final HttpServletRequest httpStatus
-    ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpStatus))
-                        .status(userNotFoundException.getCode())
-                        .statusCode(userNotFoundException.getStatus())
-                        .message(userNotFoundException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
-    }
-
-    @ExceptionHandler({CheckoutException.class})
+    @ExceptionHandler(CheckoutException.class)
     public ResponseEntity<GlobalApiErrorResponse> checkoutException(
-            final CheckoutException checkoutException,
-            final HttpServletRequest httpServletRequest
-    ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpServletRequest))
-                        .status(checkoutException.getCode())
-                        .statusCode(checkoutException.getStatus())
-                        .message(checkoutException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
+            final CheckoutException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] CheckoutException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({OrderException.class})
+    @ExceptionHandler(OrderException.class)
     public ResponseEntity<GlobalApiErrorResponse> orderException(
-            final OrderException orderException,
-            final HttpServletRequest httpServletRequest) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpServletRequest))
-                        .status(orderException.getCode())
-                        .statusCode(orderException.getStatus())
-                        .message(orderException.getMessage())
-                        .timestamp(DateUtil.now())
-                        .build());
-    }
-
-    @ExceptionHandler({ValidationException.class})
-    public ResponseEntity<GlobalApiErrorResponse> validationException(
-            final ValidationException validationException,
-            final HttpServletRequest httpServletRequest
-    ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpServletRequest))
-                        .status(validationException.getCode())
-                        .statusCode(validationException.getStatus())
-                        .message(validationException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
-    }
-
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<GlobalApiErrorResponse> nullPointerException(final NullPointerException npe, final HttpServletRequest httpServletRequest) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpServletRequest))
-                        .status(npe.getMessage())
-                        .statusCode(npe.getStatus())
-                        .message("Null pointer exception occurred")
-                        .timestamp(now())
-                        .build()
-                );
-    }
-
-    @ExceptionHandler(ArrayIndexOutOfBoundsException.class)
-    public ResponseEntity<GlobalApiErrorResponse> arrayIndexOutOfBoundsException(final ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException, final HttpServletRequest httpServletRequest) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpServletRequest))
-                        .status(arrayIndexOutOfBoundsException.getMessage())
-                        .statusCode(arrayIndexOutOfBoundsException.getStatus())
-                        .message("Array out of bounds has occurred")
-                        .timestamp(now())
-                        .build()
-                );
+            final OrderException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] OrderException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
     @ExceptionHandler(PaymentException.class)
     public ResponseEntity<GlobalApiErrorResponse> handlePaymentException(
-            final PaymentException paymentException,
-            final HttpServletRequest httpServletRequest) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(httpServletRequest))
-                        .status(paymentException.getMessage())
-                        .statusCode(paymentException.getStatus())
-                        .message(paymentException.getMessage())
-                        .timestamp(now())
-                        .build()
-                );
+            final PaymentException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.error("[{}] PaymentException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
-    @ExceptionHandler({AccessDeniedException.class})
+    @ExceptionHandler(InventoryException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleInventoryException(
+            final InventoryException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] InventoryException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
+    @ExceptionHandler(MethodNotAllowedException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleMethodNotAllowedException(
+            final MethodNotAllowedException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] MethodNotAllowedException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<GlobalApiErrorResponse> resourceNotFoundExceptionException(
+            final ResourceNotFoundException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] ResourceNotFoundException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<GlobalApiErrorResponse> userNotFoundExceptionException(
+            final UserNotFoundException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] UserNotFoundException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<GlobalApiErrorResponse> validationException(
+            final ValidationException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] ValidationException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<GlobalApiErrorResponse> nullPointerException(
+            final NullPointerException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.error("[{}] NullPointerException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getMessage(), "Null pointer exception occurred", path(request), cid);
+    }
+
+    @ExceptionHandler(ArrayIndexOutOfBoundsException.class)
+    public ResponseEntity<GlobalApiErrorResponse> arrayIndexOutOfBoundsException(
+            final ArrayIndexOutOfBoundsException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.error("[{}] ArrayIndexOutOfBoundsException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getMessage(), "Array out of bounds has occurred", path(request), cid);
+    }
+
+    // ── Security exceptions ──────────────────────────────────────────────────
+
+    @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleAccessDeniedException(
-            final AccessDeniedException ex,
-            final HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(request))
-                        .status(HttpStatus.FORBIDDEN.toString())
-                        .statusCode(HttpStatus.FORBIDDEN.value())
-                        .message("Access denied. You do not have permission to access this resource.")
-                        .timestamp(DateUtil.now())
-                        .build()
-                );
+            final AccessDeniedException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] AccessDeniedException: {}", cid, ex.getMessage());
+        return build(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.toString(),
+                "Access denied. You do not have permission to access this resource.", path(request), cid);
     }
 
-    @ExceptionHandler({org.springframework.security.core.AuthenticationException.class})
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleAuthenticationException(
             final org.springframework.security.core.AuthenticationException ex,
             final HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(request))
-                        .status(HttpStatus.UNAUTHORIZED.toString())
-                        .statusCode(HttpStatus.UNAUTHORIZED.value())
-                        .message("Authentication required. Please login to access this resource.")
-                        .timestamp(DateUtil.now())
-                        .build()
-                );
+        String cid = cid(request);
+        log.warn("[{}] AuthenticationException: {}", cid, ex.getMessage());
+        return build(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.toString(),
+                "Authentication required. Please login to access this resource.", path(request), cid);
     }
 
-    // 415 errors
-    public ResponseEntity<GlobalApiErrorResponse> handleHttpMediaTypeNotSupportedException(
-            final org.springframework.web.HttpMediaTypeNotSupportedException ex,
-            final HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(request))
-                        .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.toString())
-                        .statusCode(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
-                        .message("Unsupported media type: " + ex.getContentType()
-                                + ". Supported types are: " + ex.getSupportedMediaTypes())
-                        .timestamp(DateUtil.now())
-                        .build()
-                );
+    // ── Spring MVC framework exceptions (override parent) ───────────────────
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        HttpServletRequest httpReq = ((ServletWebRequest) request).getRequest();
+        String cid = cid(httpReq);
+        log.warn("[{}] MethodArgumentNotValid: {}", cid, message);
+        GlobalApiErrorResponse body = errorBody(status.value(), HttpStatus.BAD_REQUEST.toString(), message, path(httpReq));
+        return ResponseEntity.status(status).header(CORRELATION_HEADER, cid).body(body);
     }
 
-    // 405 errors
-    public ResponseEntity<GlobalApiErrorResponse> handleMethodNotSupportedException(
-            final org.springframework.web.HttpRequestMethodNotSupportedException ex,
-            final HttpServletRequest request) {
-        String message = "HTTP method " + ex.getMethod() + " is not supported for this endpoint. Supported methods are: " + ex.getSupportedHttpMethods();
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(request))
-                        .status(HttpStatus.METHOD_NOT_ALLOWED.toString())
-                        .statusCode(HttpStatus.METHOD_NOT_ALLOWED.value())
-                        .message(message)
-                        .timestamp(DateUtil.now())
-                        .build()
-                );
+    @Override
+    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String message = "HTTP method " + ex.getMethod() + " is not supported for this endpoint. "
+                + "Supported methods: " + ex.getSupportedHttpMethods();
+        HttpServletRequest httpReq = ((ServletWebRequest) request).getRequest();
+        String cid = cid(httpReq);
+        log.warn("[{}] MethodNotSupported: {}", cid, message);
+        GlobalApiErrorResponse body = errorBody(status.value(), HttpStatus.METHOD_NOT_ALLOWED.toString(), message, path(httpReq));
+        return ResponseEntity.status(status).header(CORRELATION_HEADER, cid).body(body);
     }
 
-    // 400 error
-    public ResponseEntity<GlobalApiErrorResponse> handleMethodArgumentNotValidException(
-            final org.springframework.web.bind.MethodArgumentNotValidException ex,
-            final HttpServletRequest request) {
-        String message = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(java.util.stream.Collectors.joining(", "));
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GlobalApiErrorResponse.builder()
-                        .path(getPath(request))
-                        .status(HttpStatus.BAD_REQUEST.toString())
-                        .statusCode(HttpStatus.BAD_REQUEST.value())
-                        .message(message)
-                        .timestamp(DateUtil.now())
-                        .build()
-                );
+    @Override
+    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(
+            org.springframework.web.HttpMediaTypeNotSupportedException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String message = "Unsupported media type: " + ex.getContentType()
+                + ". Supported types: " + ex.getSupportedMediaTypes();
+        HttpServletRequest httpReq = ((ServletWebRequest) request).getRequest();
+        String cid = cid(httpReq);
+        log.warn("[{}] MediaTypeNotSupported: {}", cid, message);
+        GlobalApiErrorResponse body = errorBody(status.value(), HttpStatus.UNSUPPORTED_MEDIA_TYPE.toString(), message, path(httpReq));
+        return ResponseEntity.status(status).header(CORRELATION_HEADER, cid).body(body);
     }
 
-    private String getPath(HttpServletRequest request) {
+    // ── Catch-all ────────────────────────────────────────────────────────────
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleUnexpectedException(
+            final Exception ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.error("[{}] Unhandled exception: {}", cid, ex.getMessage(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                "An unexpected error occurred. Please try again later.", path(request), cid);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private String cid(HttpServletRequest request) {
+        String id = request.getHeader(CORRELATION_HEADER);
+        if (id == null || id.isBlank()) id = UUID.randomUUID().toString();
+        MDC.put(MDC_KEY, id);
+        return id;
+    }
+
+    private ResponseEntity<GlobalApiErrorResponse> build(
+            int httpStatus, String code, String message, String path, String correlationId) {
+        MDC.remove(MDC_KEY);
+        return ResponseEntity
+                .status(httpStatus)
+                .header(CORRELATION_HEADER, correlationId)
+                .body(errorBody(httpStatus, code, message, path));
+    }
+
+    private GlobalApiErrorResponse errorBody(int httpStatus, String code, String message, String path) {
+        return GlobalApiErrorResponse.builder()
+                .path(path)
+                .status(code)
+                .statusCode(httpStatus)
+                .message(message)
+                .timestamp(now())
+                .build();
+    }
+
+    private String path(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-        return (path != null) ? path : "/UNKNOWN_PATH";
+        return (path != null && !path.isBlank()) ? path : request.getRequestURI();
     }
 }
