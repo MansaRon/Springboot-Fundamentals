@@ -112,7 +112,7 @@ public class UserApIImpl extends API implements UserAPI {
     @Override
     @PermitAll
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestBody LogoutDTO logoutDTO) {
+    public ResponseEntity<?> logout(@RequestBody @Valid LogoutDTO logoutDTO) {
         log.info("public ResponseEntity<?> logout(@RequestBody LogoutDTO logoutDTO)");
         userService.logout(logoutDTO.getRefreshToken());
         return ResponseEntity.ok().build();
@@ -121,7 +121,7 @@ public class UserApIImpl extends API implements UserAPI {
     @Override
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/refresh")
-    public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest) {
+    public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody @Valid TokenRefreshRequest tokenRefreshRequest) {
         log.info("public ResponseEntity<TokenRefreshDTOApiResource> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest)");
         return ResponseEntity.ok(
                 TokenRefreshDTOApiResource.builder()

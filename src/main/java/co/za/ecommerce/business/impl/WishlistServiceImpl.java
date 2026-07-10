@@ -52,10 +52,6 @@ public class WishlistServiceImpl implements WishlistService {
 
     @Override
     public String delete(String userId, WishlistDTO wishlistDTO) {
-        if (userId == null || !userId.matches("^[a-fA-F0-9]{24}$")) {
-            throw new IllegalArgumentException("Invalid user ID format. Must be a 24-character hexadecimal string.");
-        }
-
         ObjectId userObjectId = new ObjectId(userId);
 
         // Find the wishlist item to delete

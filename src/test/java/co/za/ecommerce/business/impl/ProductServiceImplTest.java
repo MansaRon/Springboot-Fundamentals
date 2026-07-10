@@ -268,15 +268,11 @@ class ProductServiceImplTest {
         @Test
         @DisplayName("shouldThrowProductExceptionWhenIdFormatIsInvalid")
         void shouldThrowProductExceptionWhenIdFormatIsInvalid() {
-            // Arrange — "invalid-id" fails the 24-char hex regex check.
-            // The service should throw immediately WITHOUT hitting the database.
-
-            // Act & Assert
+            // ID validation now happens at the controller layer via @ValidObjectId.
+            // The service passes the ID directly to ObjectId(), which throws IAE for invalid format.
             assertThatThrownBy(() -> productService.getProduct(INVALID_ID))
-                    .isInstanceOf(ProductException.class)
-                    .hasMessageContaining("Invalid ID format");
+                    .isInstanceOf(IllegalArgumentException.class);
 
-            // The repository must never be called — we validated and threw early
             verify(productRepository, never()).findById(any());
         }
 
@@ -295,10 +291,9 @@ class ProductServiceImplTest {
         @Test
         @DisplayName("shouldThrowProductExceptionWhenIdIsNull")
         void shouldThrowProductExceptionWhenIdIsNull() {
-            // Arrange — null ID should fail the regex check, not cause a NullPointerException
+            // ID validation happens at the controller layer. Null reaches ObjectId() which throws IAE.
             assertThatThrownBy(() -> productService.getProduct(null))
-                    .isInstanceOf(ProductException.class)
-                    .hasMessageContaining("Invalid ID format");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             verify(productRepository, never()).findById(any());
         }
@@ -489,8 +484,7 @@ class ProductServiceImplTest {
         void shouldThrowWhenIdIsInvalid() {
             assertThatThrownBy(() ->
                     productService.updateProduct(INVALID_ID, productDTO, List.of()))
-                    .isInstanceOf(ProductException.class)
-                    .hasMessageContaining("Invalid ID format");
+                    .isInstanceOf(IllegalArgumentException.class);
 
             verify(productRepository, never()).save(any());
         }

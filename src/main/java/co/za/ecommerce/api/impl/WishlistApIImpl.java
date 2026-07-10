@@ -4,6 +4,7 @@ import co.za.ecommerce.api.WishlistAPI;
 import co.za.ecommerce.dto.api.WishlistDTOApiResource;
 import co.za.ecommerce.dto.wishlist.WishlistDTO;
 import jakarta.annotation.security.PermitAll;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class WishlistApIImpl extends API implements WishlistAPI {
     @Override
     @PreAuthorize("hasRole('USER')")
     @PostMapping()
-    public ResponseEntity<WishlistDTOApiResource> addWishlist(@RequestBody WishlistDTO wishlistDTO) {
+    public ResponseEntity<WishlistDTOApiResource> addWishlist(@RequestBody @Valid WishlistDTO wishlistDTO) {
         log.trace("public ResponseEntity<WishlistDTOApiResource> addItemToWishlist(@RequestBody WishlistDTO wishlistDTO)");
         return ResponseEntity.ok(
                 WishlistDTOApiResource.builder()
@@ -56,7 +57,7 @@ public class WishlistApIImpl extends API implements WishlistAPI {
     @Override
     @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{userID}")
-    public ResponseEntity<WishlistDTOApiResource> deleteWishlist(@PathVariable String userID, @RequestBody WishlistDTO wishlistDTO) {
+    public ResponseEntity<WishlistDTOApiResource> deleteWishlist(@PathVariable String userID, @RequestBody @Valid WishlistDTO wishlistDTO) {
         log.trace("public ResponseEntity<WishlistDTOApiResource> deleteWishlist(@RequestBody String userID, @RequestBody WishlistDTO wishlistDTO)");
         return ResponseEntity.ok(
                 WishlistDTOApiResource.builder()

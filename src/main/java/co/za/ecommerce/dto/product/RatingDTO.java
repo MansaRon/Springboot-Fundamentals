@@ -1,7 +1,8 @@
 package co.za.ecommerce.dto.product;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,17 +18,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RatingDTO {
 
-    @NotNull
     private String userId;
 
-    @NotNull
     private LocalDateTime reviewDate;
 
-    @NotNull
+    @NotBlank(message = "Username is required")
     private String userName;
 
-    @NotNull
-    @Size(min = 1, max = 10)
+    @DecimalMin(value = "1.0", message = "Rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Rating must be at most 5.0")
     private double rating;
 
     private String comment;

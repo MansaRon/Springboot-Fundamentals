@@ -16,37 +16,20 @@ import java.util.List;
 @AllArgsConstructor
 public class UserCreateDTO extends EntityDTO {
 
-    /**
-     * User full name.
-     */
-    //@NonNull
-    //@Pattern(regexp = "^[a-zA-Z]*$", message = "First Name must not contain numbers or special characters")
+    @NotBlank(message = "Name is required")
     private String name;
 
-    /**
-     * User email address.
-     */
-    //@Email
-    //@NonNull
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
-    /**
-     * User phone number.
-     */
-    //@NonNull
-    //@Pattern(regexp = "^\\\\d{10}$")
-    //@Size(min = 10, max = 10, message = "Mobile number must be exactly 10 digits long")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^\\d{10}$", message = "Phone number must be exactly 10 digits")
     private String phone;
 
-    /**
-     * User password.
-     */
-    //@NonNull
-    //@Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&-+=()])(?=\\\\S+$).{8,20}$")
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
     private String pwd;
 
-    /**
-     * User roles
-     */
     private List<String> roles;
 }

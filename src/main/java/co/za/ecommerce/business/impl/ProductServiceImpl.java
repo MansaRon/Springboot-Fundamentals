@@ -382,18 +382,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product findProductById(String id) {
-        if (checkNullId(id)) {
-            throw new ProductException(
-                    HttpStatus.BAD_REQUEST.toString(),
-                    "Invalid ID format. ID must be a 24-character hexadecimal string.",
-                    HttpStatus.BAD_REQUEST.value()
-            );
-        }
         return productRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ProductException(
-                        HttpStatus.BAD_REQUEST.toString(),
+                        HttpStatus.NOT_FOUND.toString(),
                         "Product with ID " + id + " doesn't exist.",
-                        HttpStatus.BAD_REQUEST.value()
+                        HttpStatus.NOT_FOUND.value()
                 ));
     }
 
@@ -416,10 +409,6 @@ public class ProductServiceImpl implements ProductService {
                 .totalPages(page.getTotalPages())
                 .last(page.isLast())
                 .build();
-    }
-
-    private boolean checkNullId(String Id) {
-        return Id == null || !Id.matches("^[a-fA-F0-9]{24}$");
     }
 
     private List<RatingDTO> mapToRatingDTO(List<Rating> ratings) {

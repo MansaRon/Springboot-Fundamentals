@@ -2,6 +2,10 @@ package co.za.ecommerce.dto.order;
 
 import co.za.ecommerce.dto.base.EntityDTO;
 import co.za.ecommerce.model.checkout.PaymentMethod;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +28,11 @@ public class OrderDTO extends EntityDTO {
     private AddressDTO billingAddress;
     private String orderStatus;
     private String shippingMethod;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime estimatedDeliveryDate;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime deliveredDate;
     private double subtotal;
     private double discount;

@@ -8,6 +8,7 @@ import co.za.ecommerce.dto.api.ProductDTOListApiResource;
 import co.za.ecommerce.dto.api.RatingDTOApiResource;
 import co.za.ecommerce.dto.product.ProductDTO;
 import co.za.ecommerce.dto.product.RatingDTO;
+import co.za.ecommerce.validation.ValidObjectId;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
@@ -72,7 +73,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PermitAll
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id) {
+    public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable @ValidObjectId String id) {
         log.trace("public ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id)");
         return ResponseEntity.ok(
                 ProductDTOApiResource.builder()
@@ -152,7 +153,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTOApiResource> updateProduct(
-            @PathVariable String productId,
+            @PathVariable @ValidObjectId String productId,
             @RequestPart("product") @Valid String productJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) throws IOException {
         log.trace("public ResponseEntity<ProductDTOApiResource> updateProduct(@PathVariable String productId, @RequestPart product)");
@@ -171,7 +172,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/product/{productId}")
-    public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId) {
+    public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable @ValidObjectId String productId) {
         log.trace("public ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId)");
         productService.deleteProduct(productId);
         return ResponseEntity.ok(
@@ -203,7 +204,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @PostMapping("/{productId}/reviews/{userId}")
-    public ResponseEntity<RatingDTOApiResource> addReview(RatingDTO rating, @PathVariable String productId, @PathVariable String userId) {
+    public ResponseEntity<RatingDTOApiResource> addReview(@RequestBody @Valid RatingDTO rating, @PathVariable @ValidObjectId String productId, @PathVariable @ValidObjectId String userId) {
         log.info("public ResponseEntity<RatingDTOApiResource> addReview(RatingDTO rating, @PathVariable String productId, @PathVariable String userId)");
         return ResponseEntity.ok(
                 RatingDTOApiResource.builder()
@@ -219,7 +220,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PermitAll
     @GetMapping("/{productId}/reviews")
-    public ResponseEntity<RatingDTOApiResource> getProductReviews(@PathVariable String productId) {
+    public ResponseEntity<RatingDTOApiResource> getProductReviews(@PathVariable @ValidObjectId String productId) {
         log.info("public ResponseEntity<RatingDTOApiResource> getProductReviews(@PathVariable String productId)");
         return ResponseEntity.ok(
                 RatingDTOApiResource.builder()
@@ -235,7 +236,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @PatchMapping("/{productId}/reviews")
-    public ResponseEntity<RatingDTOApiResource> updateRating(RatingDTO rating, @PathVariable String productId, @PathVariable String userId) {
+    public ResponseEntity<RatingDTOApiResource> updateRating(@RequestBody @Valid RatingDTO rating, @PathVariable @ValidObjectId String productId, @PathVariable @ValidObjectId String userId) {
         log.info("public ResponseEntity<RatingDTOApiResource> updateRating(RatingDTO rating, @PathVariable String productId, @PathVariable String userId)");
         return ResponseEntity.ok(
                 RatingDTOApiResource.builder()
@@ -251,7 +252,7 @@ public class ProductApIImpl extends API implements ProductAPI {
     @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     @DeleteMapping
-    public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable String productId, @PathVariable String userId) {
+    public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable @ValidObjectId String productId, @PathVariable @ValidObjectId String userId) {
         log.info("public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable String productId, @PathVariable String userId)");
         productService.deleteRating(productId, userId);
         return ResponseEntity.ok(

@@ -14,8 +14,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.util.Objects;
+
+import jakarta.validation.ConstraintViolationException;
 
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -135,12 +140,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleConstraintViolation(
+            final ConstraintViolationException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        String message = ex.getConstraintViolations().stream()
+                .map(cv -> {
+                    String p = cv.getPropertyPath().toString();
+                    return (p.contains(".") ? p.substring(p.lastIndexOf('.') + 1) : p) + ": " + cv.getMessage();
+                })
+                .collect(Collectors.joining(", "));
+        log.warn("[{}] ConstraintViolationException: {}", cid, message);
+        return build(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.toString(), message, path(request), cid);
+    }
+
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<GlobalApiErrorResponse> nullPointerException(
             final NullPointerException ex, final HttpServletRequest request) {
         String cid = cid(request);
         log.error("[{}] NullPointerException: {}", cid, ex.getMessage());
-        return build(ex.getStatus(), ex.getMessage(), "Null pointer exception occurred", path(request), cid);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                "Null pointer exception occurred", path(request), cid);
     }
 
     @ExceptionHandler(ArrayIndexOutOfBoundsException.class)
@@ -148,10 +168,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             final ArrayIndexOutOfBoundsException ex, final HttpServletRequest request) {
         String cid = cid(request);
         log.error("[{}] ArrayIndexOutOfBoundsException: {}", cid, ex.getMessage());
-        return build(ex.getStatus(), ex.getMessage(), "Array out of bounds has occurred", path(request), cid);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                "Array out of bounds has occurred", path(request), cid);
     }
 
     // ── Security exceptions ──────────────────────────────────────────────────
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleExpiredJwtException(
+            final ExpiredJwtException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] ExpiredJwtException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleAccessDeniedException(
@@ -173,6 +202,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     // ── Spring MVC framework exceptions (override parent) ───────────────────
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        String message = ex.getAllErrors().stream()
+                .map(e -> e.getDefaultMessage())
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(", "));
+        HttpServletRequest httpReq = ((ServletWebRequest) request).getRequest();
+        String cid = cid(httpReq);
+        log.warn("[{}] HandlerMethodValidationException: {}", cid, message);
+        GlobalApiErrorResponse body = errorBody(status.value(), HttpStatus.BAD_REQUEST.toString(), message, path(httpReq));
+        return ResponseEntity.status(status).header(CORRELATION_HEADER, cid).body(body);
+    }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(

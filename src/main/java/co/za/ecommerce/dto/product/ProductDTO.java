@@ -1,8 +1,9 @@
 package co.za.ecommerce.dto.product;
 
 import co.za.ecommerce.dto.base.EntityDTO;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -15,22 +16,22 @@ import java.util.List;
 @AllArgsConstructor
 public class ProductDTO extends EntityDTO {
 
-    @NotNull
+    @NotBlank(message = "Description is required")
     private String description;
 
-    @NotNull
+    @NotBlank(message = "Category is required")
     private String category;
 
-    @PositiveOrZero
+    @Positive(message = "Price must be greater than zero")
     private double price;
 
-    @NotNull
+    @NotBlank(message = "Rate is required")
     private String rate;
 
-    @NotNull
+    @NotBlank(message = "Title is required")
     private String title;
 
-    @NotNull
+    @Min(value = 0, message = "Quantity cannot be negative")
     private int quantity;
 
     private List<String> imageUrls;

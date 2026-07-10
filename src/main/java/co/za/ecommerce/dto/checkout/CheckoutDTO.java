@@ -7,8 +7,8 @@ import co.za.ecommerce.dto.user.UserDTO;
 import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,10 +33,21 @@ public class CheckoutDTO extends EntityDTO {
     private double discount;
     private double tax;
     private double totalAmount;
+
+    @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
+
+    @Valid
+    @NotNull(message = "Shipping address is required")
     private AddressDTO shippingAddress;
+
+    @Valid
+    @NotNull(message = "Billing address is required")
     private AddressDTO billingAddress;
+
+    @NotNull(message = "Shipping method is required")
     private DeliverMethod shippingMethod;
+
     private LocalDate estimatedDeliveryDate;
     private String status;
 }

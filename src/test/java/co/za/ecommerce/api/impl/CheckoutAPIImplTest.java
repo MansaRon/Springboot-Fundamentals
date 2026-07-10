@@ -293,7 +293,26 @@ class CheckoutAPIImplTest {
 
             mockMvc.perform(patch("/api/v1/checkout/{userId}", USER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
+                            .content("""
+                                    {
+                                      "paymentMethod": "CREDIT_CARD",
+                                      "shippingMethod": "DHL",
+                                      "shippingAddress": {
+                                        "streetAddress": "51 Frank Ocean Street",
+                                        "city": "Johannesburg",
+                                        "state": "Gauteng",
+                                        "country": "South Africa",
+                                        "postalCode": "2003"
+                                      },
+                                      "billingAddress": {
+                                        "streetAddress": "51 Frank Ocean Street",
+                                        "city": "Johannesburg",
+                                        "state": "Gauteng",
+                                        "country": "South Africa",
+                                        "postalCode": "2003"
+                                      }
+                                    }
+                                    """))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message")
                             .value("Checkout cannot be updated as it is already completed."));

@@ -213,16 +213,11 @@ class ProductApIImplTest {
         @Test
         @DisplayName("shouldReturn400WhenIdFormatIsInvalid")
         void shouldReturn400WhenIdFormatIsInvalid() throws Exception {
-            when(productService.getProduct(eq("invalid-id")))
-                    .thenThrow(new ProductException(
-                            HttpStatus.BAD_REQUEST.toString(),
-                            "Invalid ID format. ID must be a 24-character hexadecimal string.",
-                            HttpStatus.BAD_REQUEST.value()));
-
+            // @ValidObjectId on the path variable fires before the service is called
             mockMvc.perform(get("/api/v1/products/{id}", "invalid-id"))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value(
-                            "Invalid ID format. ID must be a 24-character hexadecimal string."));
+                            "Invalid ID format. Must be a 24-character hexadecimal string"));
         }
     }
 

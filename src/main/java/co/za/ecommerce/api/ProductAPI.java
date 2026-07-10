@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import co.za.ecommerce.validation.ValidObjectId;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -187,7 +188,7 @@ public interface ProductAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable String id);
+    ResponseEntity<ProductDTOApiResource> getProduct(@PathVariable @ValidObjectId String id);
 
     @Operation(tags = "Product", summary = "Get Product By Category")
     @ApiResponses({
@@ -414,7 +415,7 @@ public interface ProductAPI {
                     })
     })
     ResponseEntity<ProductDTOApiResource> updateProduct(
-            @PathVariable String productId,
+            @PathVariable @ValidObjectId String productId,
             @RequestPart("product") @Valid String productJson,
             @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) throws IOException;
 
@@ -469,7 +470,7 @@ public interface ProductAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable String productId);
+    ResponseEntity<ProductDTOApiResource> deleteProduct(@PathVariable @ValidObjectId String productId);
 
     @Operation(tags = "Product", summary = "Delete All Products")
     @ApiResponses({
@@ -575,7 +576,7 @@ public interface ProductAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<RatingDTOApiResource> addReview(RatingDTO rating, String productId, String userId);
+    ResponseEntity<RatingDTOApiResource> addReview(@Valid RatingDTO rating, @ValidObjectId String productId, @ValidObjectId String userId);
 
     @Operation(tags = "Product Reviews", summary = "Get all reviews for a product")
     @ApiResponses({
@@ -628,7 +629,7 @@ public interface ProductAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<RatingDTOApiResource> getProductReviews(String productId);
+    ResponseEntity<RatingDTOApiResource> getProductReviews(@ValidObjectId String productId);
 
     @Operation(tags = "Product Reviews", summary = "Update a review for a product")
     @ApiResponses({
@@ -681,7 +682,7 @@ public interface ProductAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<RatingDTOApiResource> updateRating(RatingDTO rating, String productId, String userId);
+    ResponseEntity<RatingDTOApiResource> updateRating(@Valid RatingDTO rating, @ValidObjectId String productId, @ValidObjectId String userId);
 
     @Operation(tags = "Product Reviews", summary = "Delete a review for a product")
     @ApiResponses({
@@ -734,5 +735,5 @@ public interface ProductAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<RatingDTOApiResource> deleteRating(String productId, String userId);
+    ResponseEntity<RatingDTOApiResource> deleteRating(@ValidObjectId String productId, @ValidObjectId String userId);
 }
