@@ -96,13 +96,6 @@
 
 ### High Priority
 
-#### 1. Input Validation Enhancement
-- [ ] Ensure `@Valid` on all controller request bodies
-- [ ] Custom validator for `ObjectId` format (replace manual regex checks)
-- [ ] Validate price is positive, quantity is within range
-- [ ] Phone number format validation on registration
-- **Estimate:** 3–4 hours
-
 #### 2. API Security with @PreAuthorize
 - [ ] Enable `@EnableMethodSecurity` in security config
 - [ ] Admin-only: product create/update/delete, deleteAllProducts, updateOrderStatus
