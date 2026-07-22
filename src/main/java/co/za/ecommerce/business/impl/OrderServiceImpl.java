@@ -13,9 +13,7 @@ import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.OrderRepository;
-import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -201,6 +199,19 @@ public class OrderServiceImpl implements OrderService {
             emailService.sendOrderStatusUpdateEmail(updatedOrder.getCustomerInfo(), updatedDTO, newStatus);
         }
         return updatedDTO;
+    }
+
+    @Override
+    public OrderDTO getOrderByIdAndCustomerId(ObjectId customerId, ObjectId orderId) {
+        log.info("Fetching order by customerId and orderId: {} / {} ", orderId, customerId);
+        Order order = orderRepository.findByIdAndCustomerInfoId(customerId, orderId)
+                .orElseThrow(() -> new OrderException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Order not found",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+
+        return OrderMapper.mapToOrderDTO(order);
     }
 
     private Order findOrderById(ObjectId orderId) {

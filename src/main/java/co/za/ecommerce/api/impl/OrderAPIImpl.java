@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -155,6 +154,24 @@ public class OrderAPIImpl extends API implements OrderAPI {
                         .timestamp(Instant.now())
                         .data(stats)
                         .message("Order statistics retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @GetMapping("/{customerId}/{orderId}")
+    @Override
+    public ResponseEntity<OrderDTOApiResource> getOrderByIdAndCustomerId(
+            @PathVariable ObjectId customerId,
+            @PathVariable ObjectId orderId) {
+        log.info("public ResponseEntity<OrderDTOApiResource> getOrderByIdAndCustomerId(@PathVariable ObjectId customerId, @PathVariable ObjectId orderId)");
+        return ResponseEntity.ok(
+                OrderDTOApiResource.builder()
+                        .timestamp(Instant.now())
+                        .data(orderService.getOrderByIdAndCustomerId(customerId, orderId))
+                        .message("Order retrieved successfully.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()
