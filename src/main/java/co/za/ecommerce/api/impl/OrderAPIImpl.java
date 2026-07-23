@@ -54,7 +54,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @GetMapping("/user/{userId}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId) {
         return ResponseEntity.ok(
@@ -160,7 +160,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #customerId.toString() == authentication.principal.id.toString()")
     @GetMapping("/{customerId}/{orderId}")
     @Override
     public ResponseEntity<OrderDTOApiResource> getOrderByIdAndCustomerId(

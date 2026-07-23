@@ -2,7 +2,6 @@ package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.api.CartAPI;
 import co.za.ecommerce.dto.api.CartDTOApiResource;
-import jakarta.annotation.security.PermitAll;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -20,7 +19,7 @@ import static java.time.Instant.now;
 public class CartAPIImpl extends API implements CartAPI {
 
     @Override
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @PostMapping("/{userId}/add-item/{productId}")
     public ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity) {
         log.trace("public ResponseEntity<CartDTOApiResource> addProductToCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int quantity)");
@@ -36,7 +35,7 @@ public class CartAPIImpl extends API implements CartAPI {
     }
 
     @Override
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @GetMapping("/{userId}")
     public ResponseEntity<CartDTOApiResource> getUserCartWithItems(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CartDTOApiResource> getUserCartWithItems(@PathVariable ObjectId userId)");
@@ -52,7 +51,7 @@ public class CartAPIImpl extends API implements CartAPI {
     }
 
     @Override
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @PatchMapping("/{userId}/update-item/{productId}")
     public ResponseEntity<CartDTOApiResource> updateProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int newQuantity) {
         log.info("ResponseEntity<CartDTOApiResource> updateProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId, @RequestParam int newQuantity)");
@@ -68,7 +67,7 @@ public class CartAPIImpl extends API implements CartAPI {
     }
 
     @Override
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @DeleteMapping("/{userId}/delete-item/{productId}")
     public ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId) {
         log.info("ResponseEntity<CartDTOApiResource> deleteProductInCart(@PathVariable ObjectId userId, @PathVariable ObjectId productId)");

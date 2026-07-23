@@ -6,14 +6,12 @@ import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
-import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +27,7 @@ import static java.time.Instant.now;
 public class CheckoutAPIImpl extends API implements CheckoutAPI {
 
     @Idempotent
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @PostMapping("/{userId}/initiate-checkout")
     public ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> initiateCheckout(@PathVariable ObjectId userId)");
@@ -77,7 +75,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Idempotent
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @PatchMapping("/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO) {
         log.info("ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO)");
@@ -111,7 +109,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @GetMapping("/user/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> getUserCheckout(@PathVariable ObjectId userId)");
@@ -145,7 +143,7 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
     }
 
     @Override
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
     @DeleteMapping("/user/{userId}")
     public ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId) {
         log.info("ResponseEntity<CheckoutDTOApiResource> deleteUserCheckouts(@PathVariable ObjectId userId)");
