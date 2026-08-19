@@ -249,11 +249,9 @@ public class ProductServiceImpl implements ProductService {
                         "Product with id '" + id + "' not found.",
                         HttpStatus.BAD_REQUEST.value()));
 
-        if (product.getImageUrls() != null && !product.getImageUrls().isEmpty()) {
-            product.getImageUrls().forEach(s3Service::deleteFile);
-        }
-
-        productRepository.delete(product);
+        product.setDeleted(true);
+        product.setDeletedAt(java.time.LocalDateTime.now());
+        productRepository.save(product);
         return "Item with ID " + id + " was deleted.";
     }
 
@@ -271,14 +269,13 @@ public class ProductServiceImpl implements ProductService {
                     HttpStatus.BAD_REQUEST.value());
         }
 
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
         findAllProducts.forEach(product -> {
-            if (product.getImageUrls() != null) {
-                product.getImageUrls().forEach(s3Service::deleteFile);
-            }
+            product.setDeleted(true);
+            product.setDeletedAt(now);
         });
-
-        productRepository.deleteAll(findAllProducts);
-        return "All products and their associated images were deleted.";
+        productRepository.saveAll(findAllProducts);
+        return "All products were soft-deleted.";
     }
 
     @Override

@@ -21,49 +21,27 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
 
     @Override
     public Page<Product> findByCategoryIgnoreCase(String category, Pageable pageable) {
-        // Build the query
         Query query = new Query();
-
-        // Add category filter (case-insensitive match)
-        query.addCriteria(Criteria.where("category")
-                .regex("^" + category + "$", "i"));
-
-        // Set pagination
+        query.addCriteria(Criteria.where("category").regex("^" + category + "$", "i")
+                .and("deleted").ne(true));
         query.with(pageable);
 
-        // Execute the query to fetch products
-        List<Product> products = mongoTemplate
-                .find(query, Product.class, "products");
+        List<Product> products = mongoTemplate.find(query, Product.class, "products");
+        long total = mongoTemplate.count(query.skip(-1).limit(-1), Product.class, "products");
 
-        // Count total documents for pagination metadata
-        long total = mongoTemplate
-                .count(query.skip(-1).limit(-1), Product.class, "products");
-
-        // Return results as a Page object
         return new PageImpl<>(products, pageable, total);
     }
 
     @Override
     public Page<Product> findByTitleIgnoreCase(String title, Pageable pageable) {
-        // Build the query
         Query query = new Query();
-
-        // Add category filter (case-insensitive match)
-        query.addCriteria(Criteria.where("title")
-                .regex("^" + title + "$", "i"));
-
-        // Set pagination
+        query.addCriteria(Criteria.where("title").regex("^" + title + "$", "i")
+                .and("deleted").ne(true));
         query.with(pageable);
 
-        // Execute the query to fetch products
-        List<Product> products = mongoTemplate
-                .find(query, Product.class, "products");
+        List<Product> products = mongoTemplate.find(query, Product.class, "products");
+        long total = mongoTemplate.count(query.skip(-1).limit(-1), Product.class, "products");
 
-        // Count total documents for pagination metadata
-        long total = mongoTemplate
-                .count(query.skip(-1).limit(-1), Product.class, "products");
-
-        // Return results as a Page object
         return new PageImpl<>(products, pageable, total);
     }
 }

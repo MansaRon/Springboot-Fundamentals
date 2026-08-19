@@ -1,5 +1,6 @@
 package co.za.ecommerce.model;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,21 +18,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class Entity extends Persistable {
 
-    /**
-     * Unique identifier, optimized for database queries and referencing.
-     */
     @Id
     private ObjectId id;
 
-    /**
-     * Timestamp when the record was created in the database.
-     */
     @CreatedDate
     private LocalDateTime createdAt;
 
-    /**
-     * Timestamp when the record was last updated in the database.
-     */
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Builder.Default
+    private boolean deleted = false;
+
+    private LocalDateTime deletedAt;
 }
