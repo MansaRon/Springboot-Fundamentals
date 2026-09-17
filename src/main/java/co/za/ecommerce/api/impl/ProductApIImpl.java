@@ -235,7 +235,7 @@ public class ProductApIImpl extends API implements ProductAPI {
 
     @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
-    @PatchMapping("/{productId}/reviews")
+    @PatchMapping("/{productId}/reviews/{userId}")
     public ResponseEntity<RatingDTOApiResource> updateRating(@RequestBody @Valid RatingDTO rating, @PathVariable @ValidObjectId String productId, @PathVariable @ValidObjectId String userId) {
         log.info("public ResponseEntity<RatingDTOApiResource> updateRating(RatingDTO rating, @PathVariable String productId, @PathVariable String userId)");
         return ResponseEntity.ok(
@@ -251,7 +251,7 @@ public class ProductApIImpl extends API implements ProductAPI {
 
     @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
-    @DeleteMapping
+    @DeleteMapping("/{productId}/reviews/{userId}")
     public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable @ValidObjectId String productId, @PathVariable @ValidObjectId String userId) {
         log.info("public ResponseEntity<RatingDTOApiResource> deleteRating(@PathVariable String productId, @PathVariable String userId)");
         productService.deleteRating(productId, userId);

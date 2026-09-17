@@ -337,6 +337,7 @@ public class ProductServiceImpl implements ProductService {
         existingRating.setComment(rating.getComment());
         existingRating.setRating(rating.getRating());
         existingRating.setReviewDate(now());
+        foundProduct.setUpdatedAt(now());
 
         productRepository.save(foundProduct);
         return objectMapper.mapObject().map(existingRating, RatingDTO.class);
