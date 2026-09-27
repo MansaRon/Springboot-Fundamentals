@@ -40,8 +40,8 @@ public class WishlistApIImpl extends API implements WishlistAPI {
     // TODO to refactor to have pagination
     @Override
     @PreAuthorize("hasRole('USER')")
-    @GetMapping()
-    public ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID) {
+    @GetMapping("/{userID}")
+    public ResponseEntity<WishlistDTOApiResource> getWishlist(@PathVariable String userID) {
         log.trace("public ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID)");
         return ResponseEntity.ok(
                 WishlistDTOApiResource.builder()

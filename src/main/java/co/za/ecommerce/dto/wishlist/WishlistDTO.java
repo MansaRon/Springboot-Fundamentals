@@ -2,15 +2,12 @@ package co.za.ecommerce.dto.wishlist;
 
 import co.za.ecommerce.dto.base.EntityDTO;
 import co.za.ecommerce.dto.product.ProductDTO;
-import co.za.ecommerce.model.Product;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 
 @Getter
 @Setter
@@ -19,12 +16,11 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 @AllArgsConstructor
 public class WishlistDTO extends EntityDTO {
 
-    @NotNull
-    private ObjectId userID;
+    @NotBlank
+    private String userID;
 
-    @NotNull
-    private ObjectId productID;
+    @NotBlank
+    private String productID;
 
-    @NotNull
     private ProductDTO productDTO;
 }

@@ -123,7 +123,7 @@ public interface WishlistAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<WishlistDTOApiResource> getWishlist(@RequestBody String userID);
+    ResponseEntity<WishlistDTOApiResource> getWishlist(@PathVariable String userID);
 
     @Operation(tags = "Wishlist", summary = "Removal of items inside wishlist")
     @ApiResponses({

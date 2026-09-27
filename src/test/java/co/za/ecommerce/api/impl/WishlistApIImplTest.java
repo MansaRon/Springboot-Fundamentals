@@ -71,15 +71,15 @@ class WishlistApIImplTest {
                 .build();
 
         wishlistDTO = WishlistDTO.builder()
-                .userID(new ObjectId(USER_ID))
-                .productID(new ObjectId(PRODUCT_ID))
+                .userID(USER_ID)
+                .productID(PRODUCT_ID)
                 .productDTO(productDTO)
                 .build();
 
         savedWishlistDTO = WishlistDTO.builder()
                 .id("507f1f77bcf86cd799439099")
-                .userID(new ObjectId(USER_ID))
-                .productID(new ObjectId(PRODUCT_ID))
+                .userID(USER_ID)
+                .productID(PRODUCT_ID)
                 .productDTO(productDTO)
                 .build();
     }

@@ -12,9 +12,9 @@ RUN mvn clean package -DskipTests -B
 WORKDIR /app/extracted
 RUN java -Djarmode=layertools -jar /app/target/*.jar extract
 
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:17-jre AS runtime
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 WORKDIR /app
 
