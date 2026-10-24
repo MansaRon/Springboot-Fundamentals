@@ -66,12 +66,13 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(
+                                "/",
                                 "/api/v1/auth/**",
                                 "/api/v1/otp/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/health",
-                                "api/v1/wishlist/**"
+                                "/api/v1/wishlist/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**")
                         .permitAll()
