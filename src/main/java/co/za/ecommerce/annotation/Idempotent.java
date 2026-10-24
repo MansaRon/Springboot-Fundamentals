@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a controller method as idempotent.
  * Clients must supply an {@code Idempotency-Key} header (UUID).
- * The first successful (2xx) response is cached in Redis for {@link #ttlHours()} hours;
+ * The first successful (2xx) response is cached in-memory (Caffeine) for {@link #ttlHours()} hours;
  * any retry carrying the same key receives the cached response without re-executing the logic.
  */
 @Target(ElementType.METHOD)

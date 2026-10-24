@@ -2,15 +2,8 @@ spring:
   data:
     mongodb:
       uri: ${DB_URI}
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      username: ${REDIS_USERNAME:default}
-      password: ${REDIS_PASSWORD}
-      ssl:
-        enabled: ${REDIS_SSL:false}
   cache:
-    type: redis
+    type: caffeine
   config:
     import: optional:file:env.properties
   application:
