@@ -193,10 +193,10 @@
 
 #### 7. Caching Strategy
 - [ ] Cache product catalog
-- [ ] Cache user cart (Redis)
+- [ ] Cache user cart (Caffeine)
 - [ ] Cache frequently accessed data
 - [ ] Cache invalidation strategy
-- **Tech:** Spring Cache + Redis
+- **Tech:** Spring Cache + Caffeine
 - **Estimate:** 5-6 hours
 
 #### 8. Rate Limiting
