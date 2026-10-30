@@ -32,11 +32,13 @@ public class CacheConfig {
     }
 
     private static final List<CacheSpec> CACHE_SPECS = List.of(
-            new CacheSpec("products",     Duration.ofMinutes(10), 1_000),
-            new CacheSpec("product-list", Duration.ofMinutes(5),  500),
-            new CacheSpec("carts",        Duration.ofMinutes(2),  1_000),
-            new CacheSpec("orders",       Duration.ofMinutes(30), 1_000),
-            new CacheSpec("user-orders",  Duration.ofMinutes(5),  1_000)
+            new CacheSpec("products",        Duration.ofMinutes(10), 1_000),
+            new CacheSpec("product-list",    Duration.ofMinutes(5),  500),
+            new CacheSpec("product-reviews", Duration.ofMinutes(10), 1_000),
+            new CacheSpec("carts",           Duration.ofMinutes(2),  1_000),
+            new CacheSpec("orders",          Duration.ofMinutes(30), 1_000),
+            new CacheSpec("user-orders",     Duration.ofMinutes(5),  1_000),
+            new CacheSpec("wishlist",        Duration.ofMinutes(5),  1_000)
     );
 
     @Bean

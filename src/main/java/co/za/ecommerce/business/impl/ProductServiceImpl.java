@@ -282,6 +282,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "product-reviews", key = "#productId"),
+            @CacheEvict(value = "products", key = "#productId"),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
     public RatingDTO addRating(RatingDTO rating, String productId, String userId) {
         Product foundProduct = findProductById(productId);
 
@@ -313,6 +318,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "product-reviews", key = "#productId"),
+            @CacheEvict(value = "products", key = "#productId"),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
     public RatingDTO updateRating(RatingDTO rating, String productId, String userId) {
         Product foundProduct = findProductById(productId);
 
@@ -344,6 +354,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "product-reviews", key = "#productId"),
+            @CacheEvict(value = "products", key = "#productId"),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
     public void deleteRating(String productId, String userId) {
         Product foundProduct = findProductById(productId);
 
@@ -373,6 +388,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "product-reviews", key = "#productId")
     public List<RatingDTO> getProductReviews(String productId) {
         Product foundProduct = findProductById(productId);
 
