@@ -95,7 +95,6 @@ class WishlistServiceImplTest {
             when(productRepository.findById(productObjectId)).thenReturn(Optional.of(product));
             when(wishListRepository.save(any(Wishlist.class))).thenReturn(savedWishlist);
             when(objectMapper.mapObject()).thenReturn(modelMapper);
-            when(modelMapper.map(any(Wishlist.class), eq(WishlistDTO.class))).thenReturn(wishlistDTO);
             when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(wishlistDTO.getProductDTO());
 
             // Act
@@ -126,7 +125,6 @@ class WishlistServiceImplTest {
             when(productRepository.findById(productObjectId)).thenReturn(Optional.of(product));
             when(wishListRepository.save(any(Wishlist.class))).thenReturn(savedWishlist);
             when(objectMapper.mapObject()).thenReturn(modelMapper);
-            when(modelMapper.map(any(Wishlist.class), eq(WishlistDTO.class))).thenReturn(wishlistDTO);
             when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(wishlistDTO.getProductDTO());
 
             // Act

@@ -60,9 +60,7 @@ public class WishlistServiceImpl implements WishlistService {
                 .build();
 
         Wishlist saved = wishListRepository.save(wishlist);
-        WishlistDTO dto = objectMapper.mapObject().map(saved, WishlistDTO.class);
-        dto.setProductDTO(objectMapper.mapObject().map(saved.getProduct(), ProductDTO.class));
-        return dto;
+        return toDto(saved);
     }
 
     @Override
@@ -71,12 +69,25 @@ public class WishlistServiceImpl implements WishlistService {
         List<Wishlist> items = wishListRepository
                 .findAllByUserIdOrderByCreatedAtDesc(new ObjectId(userId));
         return items.stream()
-                .map(w -> {
-                    WishlistDTO dto = objectMapper.mapObject().map(w, WishlistDTO.class);
-                    dto.setProductDTO(objectMapper.mapObject().map(w.getProduct(), ProductDTO.class));
-                    return dto;
-                })
+                .map(this::toDto)
                 .toList();
+    }
+
+    /**
+     * Builds the response DTO explicitly rather than via ModelMapper: {@code productID}
+     * matches both {@link Wishlist#getProductId()} and the embedded product's id
+     * ({@code product.id}), an ambiguity ModelMapper cannot resolve. The embedded product
+     * is still mapped with ModelMapper, which handles it cleanly.
+     */
+    private WishlistDTO toDto(Wishlist wishlist) {
+        return WishlistDTO.builder()
+                .id(wishlist.getId() != null ? wishlist.getId().toString() : null)
+                .createdAt(wishlist.getCreatedAt())
+                .updatedAt(wishlist.getUpdatedAt())
+                .userID(wishlist.getUserId().toString())
+                .productID(wishlist.getProductId().toString())
+                .productDTO(objectMapper.mapObject().map(wishlist.getProduct(), ProductDTO.class))
+                .build();
     }
 
     @Override
