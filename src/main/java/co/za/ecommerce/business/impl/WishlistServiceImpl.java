@@ -13,6 +13,8 @@ import co.za.ecommerce.repository.WishListRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,7 @@ public class WishlistServiceImpl implements WishlistService {
     private final ObjectMapper objectMapper;
 
     @Override
+    @CacheEvict(value = "wishlist", key = "#wishlistDTO.userID")
     public WishlistDTO add(WishlistDTO wishlistDTO) {
         ObjectId productId = new ObjectId(wishlistDTO.getProductID());
         ObjectId userId = new ObjectId(wishlistDTO.getUserID());
@@ -63,6 +66,7 @@ public class WishlistServiceImpl implements WishlistService {
     }
 
     @Override
+    @Cacheable(value = "wishlist", key = "#userId")
     public List<WishlistDTO> findAll(String userId) {
         List<Wishlist> items = wishListRepository
                 .findAllByUserIdOrderByCreatedAtDesc(new ObjectId(userId));
@@ -76,6 +80,7 @@ public class WishlistServiceImpl implements WishlistService {
     }
 
     @Override
+    @CacheEvict(value = "wishlist", key = "#userId")
     public String delete(String userId, WishlistDTO wishlistDTO) {
         ObjectId userObjectId = new ObjectId(userId);
 
