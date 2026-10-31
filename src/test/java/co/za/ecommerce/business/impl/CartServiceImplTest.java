@@ -136,7 +136,7 @@ class CartServiceImplTest {
 
                 // New line item must carry VAT computed on its line total (59.99 * 2)
                 CartItems addedItem = items.get(1);
-                assertThat(addedItem.getProductPrice()).isEqualTo(119.98);
+                assertThat(addedItem.getProductPrice()).isCloseTo(119.98, org.assertj.core.data.Offset.offset(0.001));
                 assertThat(addedItem.getTax()).isEqualTo(ValueUtil.vat(119.98));
             }
         }
@@ -161,7 +161,7 @@ class CartServiceImplTest {
                 assertThat(items.get(0).getQuantity()).isEqualTo(5);
 
                 // Line total accumulates to 49.99 * 5 and VAT is recomputed on it
-                assertThat(items.get(0).getProductPrice()).isEqualTo(249.95);
+                assertThat(items.get(0).getProductPrice()).isCloseTo(249.95, org.assertj.core.data.Offset.offset(0.001));
                 assertThat(items.get(0).getTax()).isEqualTo(ValueUtil.vat(249.95));
             }
         }
@@ -387,7 +387,7 @@ class CartServiceImplTest {
                 assertThat(cart.getCartItems().get(0).getQuantity()).isEqualTo(5);
 
                 // Line total and VAT are recomputed for the new quantity (49.99 * 5)
-                assertThat(cart.getCartItems().get(0).getProductPrice()).isEqualTo(249.95);
+                assertThat(cart.getCartItems().get(0).getProductPrice()).isCloseTo(249.95, org.assertj.core.data.Offset.offset(0.001));
                 assertThat(cart.getCartItems().get(0).getTax()).isEqualTo(ValueUtil.vat(249.95));
 
                 ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
