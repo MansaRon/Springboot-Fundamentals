@@ -12,6 +12,7 @@ import co.za.ecommerce.model.order.Address;
 import co.za.ecommerce.model.order.Order;
 import co.za.ecommerce.model.order.OrderStatus;
 import co.za.ecommerce.utils.DateUtil;
+import co.za.ecommerce.utils.ValueUtil;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
@@ -97,22 +98,17 @@ public class TestDataBuilder {
     }
 
     public static CartItems buildCartItem(Product product) {
-        return CartItems.builder()
-                .product(product)
-                .quantity(2)
-                .discount(0)
-                .tax(0)
-                .productPrice(product.getPrice() * 2)
-                .build();
+        return buildCartItem(product, 2);
     }
 
     public static CartItems buildCartItem(Product product, int quantity) {
+        double productPrice = product.getPrice() * quantity;
         return CartItems.builder()
                 .product(product)
                 .quantity(quantity)
                 .discount(0)
-                .tax(0)
-                .productPrice(product.getPrice() * quantity)
+                .tax(ValueUtil.vat(productPrice))
+                .productPrice(productPrice)
                 .build();
     }
 
@@ -162,8 +158,8 @@ public class TestDataBuilder {
         checkout.setBillingAddress(buildAddress());
         checkout.setSubtotal(99.98);
         checkout.setDiscount(0);
-        checkout.setTax(9.998);
-        checkout.setTotalAmount(109.978);
+        checkout.setTax(15.0);
+        checkout.setTotalAmount(114.98);
         checkout.setCurrency("ZAR");
         checkout.setCreatedAt(DateUtil.now());
         checkout.setUpdatedAt(DateUtil.now());
@@ -183,10 +179,10 @@ public class TestDataBuilder {
                 .orderStatus(OrderStatus.CONFIRMED)
                 .customerInfo(user)
                 .subtotal(99.98)
-                .tax(9.998)
+                .tax(15.0)
                 .discount(0)
                 .shippingCost(15.99)
-                .totalAmount(125.968)
+                .totalAmount(130.97)
                 .paymentMethod(PaymentMethod.CREDIT_CARD)
                 .shippingMethod(DeliverMethod.DHL.name())
                 .shippingAddress(buildAddress())

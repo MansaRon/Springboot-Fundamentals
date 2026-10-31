@@ -57,8 +57,8 @@ class CheckoutValidationServiceImplTest {
         validCheckout.setBillingAddress(TestDataBuilder.buildAddress());
         validCheckout.setSubtotal(99.98);
         validCheckout.setDiscount(0);
-        validCheckout.setTax(9.998);
-        validCheckout.setTotalAmount(109.978);
+        validCheckout.setTax(15.0);
+        validCheckout.setTotalAmount(114.98);
         validCheckout.setItems(List.of(cartItem));
     }
 

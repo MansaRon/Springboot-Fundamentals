@@ -13,6 +13,7 @@ import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.utils.DateUtil;
+import co.za.ecommerce.utils.ValueUtil;
 import factory.TestDataBuilder;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -130,7 +131,13 @@ class CartServiceImplTest {
 
                 ArgumentCaptor<Cart> cartCaptor = ArgumentCaptor.forClass(Cart.class);
                 verify(cartRepository).save(cartCaptor.capture());
-                assertThat(cartCaptor.getValue().getCartItems()).hasSize(2);
+                List<CartItems> items = cartCaptor.getValue().getCartItems();
+                assertThat(items).hasSize(2);
+
+                // New line item must carry VAT computed on its line total (59.99 * 2)
+                CartItems addedItem = items.get(1);
+                assertThat(addedItem.getProductPrice()).isEqualTo(119.98);
+                assertThat(addedItem.getTax()).isEqualTo(ValueUtil.vat(119.98));
             }
         }
 
@@ -152,6 +159,10 @@ class CartServiceImplTest {
                 List<CartItems> items = cartCaptor.getValue().getCartItems();
                 assertThat(items).hasSize(1);
                 assertThat(items.get(0).getQuantity()).isEqualTo(5);
+
+                // Line total accumulates to 49.99 * 5 and VAT is recomputed on it
+                assertThat(items.get(0).getProductPrice()).isEqualTo(249.95);
+                assertThat(items.get(0).getTax()).isEqualTo(ValueUtil.vat(249.95));
             }
         }
 
@@ -375,6 +386,10 @@ class CartServiceImplTest {
 
                 assertThat(cart.getCartItems().get(0).getQuantity()).isEqualTo(5);
 
+                // Line total and VAT are recomputed for the new quantity (49.99 * 5)
+                assertThat(cart.getCartItems().get(0).getProductPrice()).isEqualTo(249.95);
+                assertThat(cart.getCartItems().get(0).getTax()).isEqualTo(ValueUtil.vat(249.95));
+
                 ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
                 verify(productRepository).save(productCaptor.capture());
                 assertThat(productCaptor.getValue().getQuantity()).isEqualTo(22);
@@ -433,6 +448,48 @@ class CartServiceImplTest {
             when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> cartService.deleteProductFromCart(userId, productId))
+                    .isInstanceOf(CartException.class)
+                    .hasMessageContaining("Cart not found");
+
+            verify(productRepository, never()).save(any());
+            verify(cartRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("clearCart(userId)")
+    class ClearCartByUserId {
+        @Test
+        @DisplayName("shouldClearItemsRestoreStockUpdateTotalAndSaveCart")
+        void shouldClearItemsRestoreStockUpdateTotalAndSaveCart() {
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+            when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
+                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+
+                CartDTO result = cartService.clearCart(userId);
+
+                assertThat(result).isNotNull();
+                assertThat(cart.getCartItems()).isEmpty();
+                assertThat(cart.getTotalPrice()).isZero();
+
+                // Stock held by the cart (qty 2) is returned to the product (25 -> 27)
+                ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+                verify(productRepository).save(productCaptor.capture());
+                assertThat(productCaptor.getValue().getQuantity()).isEqualTo(27);
+
+                verify(cartRepository).save(cart);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowCartExceptionWhenCartNotFound")
+        void shouldThrowCartExceptionWhenCartNotFound() {
+            when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> cartService.clearCart(userId))
                     .isInstanceOf(CartException.class)
                     .hasMessageContaining("Cart not found");
 

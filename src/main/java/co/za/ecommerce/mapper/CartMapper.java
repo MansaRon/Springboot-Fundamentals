@@ -22,6 +22,7 @@ public class CartMapper {
                     .map(CartMapper::toCartItemsDTO)
                     .collect(Collectors.toList()));
         }
+        dto.setTotalPrice(cart.getTotalPrice());
         return dto;
     }
 

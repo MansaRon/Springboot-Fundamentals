@@ -115,7 +115,7 @@ class OrderServiceImplTest {
                 assertThat(captured.getSubtotal()).isEqualTo(99.98);
                 assertThat(captured.getDiscount()).isEqualTo(0);
                 assertThat(captured.getShippingCost()).isEqualTo(15.99);
-                assertThat(captured.getTotalAmount()).isEqualTo(109.978 + 15.99, org.assertj.core.data.Offset.offset(0.001));
+                assertThat(captured.getTotalAmount()).isEqualTo(114.98 + 15.99, org.assertj.core.data.Offset.offset(0.001));
             }
         }
 

@@ -68,6 +68,7 @@ class CartAPIImplTest {
 
         cartDTO = CartDTO.builder()
                 .cartItems(List.of(item))
+                .totalPrice(99.98)
                 .build();
     }
 
@@ -344,6 +345,54 @@ class CartAPIImplTest {
                             USER_ID, PRODUCT_ID))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Product not found in cart."));
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/v1/cart/{userId}/clear")
+    class ClearCart {
+        @Test
+        @DisplayName("shouldReturn200WithEmptyCartWhenCartCleared")
+        void shouldReturn200WithEmptyCartWhenCartCleared() throws Exception {
+            CartDTO clearedCart = CartDTO.builder()
+                    .cartItems(List.of())
+                    .totalPrice(0.0)
+                    .build();
+
+            when(cartService.clearCart(eq(new ObjectId(USER_ID)))).thenReturn(clearedCart);
+
+            mockMvc.perform(delete("/api/v1/cart/{userId}/clear", USER_ID)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message")
+                            .value("Cart with user ID " + USER_ID + " cleared."))
+                    .andExpect(jsonPath("$.data.cartItems").isEmpty())
+                    .andExpect(jsonPath("$.data.totalPrice").value(0.0));
+        }
+
+        @Test
+        @DisplayName("shouldPassCorrectUserIdToService")
+        void shouldPassCorrectUserIdToService() throws Exception {
+            when(cartService.clearCart(any(ObjectId.class))).thenReturn(cartDTO);
+
+            mockMvc.perform(delete("/api/v1/cart/{userId}/clear", USER_ID));
+
+            verify(cartService).clearCart(eq(new ObjectId(USER_ID)));
+        }
+
+        @Test
+        @DisplayName("shouldReturn400WhenCartNotFound")
+        void shouldReturn400WhenCartNotFound() throws Exception {
+            when(cartService.clearCart(any(ObjectId.class)))
+                    .thenThrow(new CartException(
+                            HttpStatus.BAD_REQUEST.toString(),
+                            "Cart not found for user",
+                            HttpStatus.BAD_REQUEST.value()));
+
+            mockMvc.perform(delete("/api/v1/cart/{userId}/clear", USER_ID))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Cart not found for user"));
         }
     }
 }
