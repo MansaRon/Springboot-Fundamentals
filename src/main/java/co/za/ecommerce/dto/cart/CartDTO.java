@@ -15,5 +15,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CartDTO {
     private List<CartItemsDTO> cartItems;
+    // TODO add in the tax variable here so the overall object reflects what's on the UI
     private double totalPrice;
 }
