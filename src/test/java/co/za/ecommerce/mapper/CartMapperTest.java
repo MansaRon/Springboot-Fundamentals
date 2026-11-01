@@ -40,6 +40,7 @@ class CartMapperTest {
 
             assertThat(dto).isNotNull();
             assertThat(dto.getCartItems()).hasSize(1);
+            assertThat(dto.getTotalPrice()).isEqualTo(cart.getTotalPrice());
             CartItemsDTO itemDTO = dto.getCartItems().get(0);
             assertThat(itemDTO.getQuantity()).isEqualTo(2);
             assertThat(itemDTO.getProductDTO()).isNotNull();

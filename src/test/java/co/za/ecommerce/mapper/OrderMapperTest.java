@@ -42,7 +42,7 @@ class OrderMapperTest {
             assertThat(dto.getOrderNumber()).isEqualTo("ORD-20260314-483920");
             assertThat(dto.getOrderStatus()).isEqualTo("CONFIRMED");
             assertThat(dto.getSubtotal()).isEqualTo(99.98);
-            assertThat(dto.getTotalAmount()).isEqualTo(125.968);
+            assertThat(dto.getTotalAmount()).isEqualTo(130.97);
         }
 
         @Test

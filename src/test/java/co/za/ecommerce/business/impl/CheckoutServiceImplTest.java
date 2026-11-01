@@ -599,8 +599,8 @@ class CheckoutServiceImplTest {
 
             // Order must NEVER be created when payment fails
             verify(orderService, never()).createOrderFromCheckout(any(), any());
-            // Cart must NEVER be cleared when payment fails
-            verify(cartService, never()).clearCart(any());
+            // Cart must NEVER be deleted when payment fails
+            verify(cartService, never()).deleteCart(any());
         }
 
         @Test

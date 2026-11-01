@@ -404,13 +404,13 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
         double discount = checkout.getDiscount();
-        double tax = subTotal * 0.10;
+        double tax = ValueUtil.vat(subTotal);
         double totalAmount = (subTotal - discount) + tax;
 
         checkout.setSubtotal(subTotal);
         checkout.setDiscount(discount);
         // TODO remove util method and utilise BigDecimal for precise numbers
-        checkout.setTax(ValueUtil.round(tax, 2));
+        checkout.setTax(tax);
         checkout.setTotalAmount(ValueUtil.round(totalAmount, 2));
 
         log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Total=R{}",

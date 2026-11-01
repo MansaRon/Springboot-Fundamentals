@@ -9,6 +9,6 @@ public interface CartService {
     CartDTO getUserCartWithItems(ObjectId userId);
     CartDTO updateProductInCart(ObjectId userId, ObjectId productId, int newQuantity);
     CartDTO deleteProductFromCart(ObjectId userId, ObjectId productId);
-    void clearCart(Cart cart);
+    CartDTO clearCart(ObjectId userId);
     void deleteCart(Cart cart);
 }

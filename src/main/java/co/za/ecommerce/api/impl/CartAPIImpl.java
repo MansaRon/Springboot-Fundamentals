@@ -81,4 +81,20 @@ public class CartAPIImpl extends API implements CartAPI {
                         .build()
         );
     }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
+    @DeleteMapping("/{userId}/clear")
+    public ResponseEntity<CartDTOApiResource> clearCart(@PathVariable ObjectId userId) {
+        log.info("ResponseEntity<CartDTOApiResource> clearCart(@PathVariable ObjectId userId)");
+        return ResponseEntity.ok(
+                CartDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(cartService.clearCart(userId))
+                        .message("Cart with user ID " + userId + " cleared.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
 }

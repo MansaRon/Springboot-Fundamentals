@@ -12,6 +12,7 @@ import co.za.ecommerce.model.Product;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.repository.UserRepository;
+import co.za.ecommerce.utils.ValueUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -52,13 +53,15 @@ public class CartServiceImpl implements CartService {
             validateProductStock(product, item.getQuantity() + quantity);
             item.setQuantity(item.getQuantity() + quantity);
             item.setProductPrice(item.getProductPrice() + (product.getPrice() * quantity));
+            item.setTax(ValueUtil.vat(item.getProductPrice()));
         } else {
+            double productPrice = product.getPrice() * quantity;
             CartItems newCartItem = CartItems.builder()
                     .product(product)
                     .quantity(quantity)
                     .discount(0)
-                    .tax(0)
-                    .productPrice(product.getPrice() * quantity)
+                    .tax(ValueUtil.vat(productPrice))
+                    .productPrice(productPrice)
                     .build();
             cart.getCartItems().add(newCartItem);
         }
@@ -109,6 +112,7 @@ public class CartServiceImpl implements CartService {
 
                 cartItem.setQuantity(newQuantity);
                 cartItem.setProductPrice(product.getPrice() * newQuantity);
+                cartItem.setTax(ValueUtil.vat(cartItem.getProductPrice()));
                 product.setQuantity(updatedStock);
             }
 
@@ -147,11 +151,28 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public void clearCart(Cart cart) {
-        log.info("Clearing cart: {}", cart.getId());
+    @CacheEvict(value = "carts", key = "#userId")
+    public CartDTO clearCart(ObjectId userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new CartException(
+                        HttpStatus.BAD_REQUEST.toString(),
+                        "Cart not found for user",
+                        HttpStatus.BAD_REQUEST.value()));
+
+        log.info("Clearing cart for user: {}", userId);
+
+        cart.getCartItems().forEach(item -> {
+            Product product = item.getProduct();
+            product.setQuantity(product.getQuantity() + item.getQuantity());
+            productRepository.save(product);
+        });
+
         cart.getCartItems().clear();
         cart.updateTotal();
-        cartRepository.save(cart);
+
+        Cart updatedCart = cartRepository.save(cart);
+
+        return CartMapper.toDTO(updatedCart);
     }
 
     @Override

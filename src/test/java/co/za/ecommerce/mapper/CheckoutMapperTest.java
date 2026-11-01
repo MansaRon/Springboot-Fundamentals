@@ -41,7 +41,7 @@ class CheckoutMapperTest {
             assertThat(dto.getId()).isEqualTo(checkout.getId().toHexString());
             assertThat(dto.getStatus()).isEqualTo("PENDING");
             assertThat(dto.getSubtotal()).isEqualTo(99.98);
-            assertThat(dto.getTotalAmount()).isEqualTo(109.978);
+            assertThat(dto.getTotalAmount()).isEqualTo(114.98);
             assertThat(dto.getUser()).isNotNull();
             assertThat(dto.getUser().getEmail()).isEqualTo("email@example.com");
         }

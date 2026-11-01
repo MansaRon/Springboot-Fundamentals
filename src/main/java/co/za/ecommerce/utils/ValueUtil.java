@@ -6,7 +6,23 @@ import java.util.List;
 
 public final class ValueUtil {
 
+    /**
+     * Standard South African VAT rate (15%). Single source of truth for tax applied
+     * to cart line items and checkout totals so the two never drift apart.
+     */
+    public static final double VAT_RATE = 0.15;
+
     private ValueUtil() {
+    }
+
+    /**
+     * Computes VAT ({@link #VAT_RATE}) on the given amount, rounded to 2 decimals.
+     *
+     * @param amount The pre-tax amount to apply VAT to
+     * @return The VAT portion, rounded to 2 decimal places
+     */
+    public static double vat(double amount) {
+        return round(amount * VAT_RATE, 2);
     }
 
     /**
