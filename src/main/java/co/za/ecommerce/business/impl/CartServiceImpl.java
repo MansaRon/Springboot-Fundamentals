@@ -176,14 +176,6 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public void clearCart(Cart cart) {
-        log.info("Clearing cart: {}", cart.getId());
-        cart.getCartItems().clear();
-        cart.updateTotal();
-        cartRepository.save(cart);
-    }
-
-    @Override
     public void deleteCart(Cart cart) {
         log.info("Deleting cart: {}", cart.getId());
         cartRepository.delete(cart);

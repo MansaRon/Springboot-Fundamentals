@@ -498,37 +498,4 @@ class CartServiceImplTest {
         }
     }
 
-    @Nested
-    @DisplayName("clearCart")
-    class ClearCart {
-        @Test
-        @DisplayName("shouldClearItemsUpdateTotalAndSaveCart")
-        void shouldClearItemsUpdateTotalAndSaveCart() {
-            assertThat(cart.getCartItems()).isNotEmpty();
-
-            // Act
-            cartService.clearCart(cart);
-
-            // Assert
-            assertThat(cart.getCartItems()).isEmpty();
-            assertThat(cart.getTotalPrice()).isZero();
-            verify(cartRepository).save(cart);
-        }
-
-        @Test
-        @DisplayName("shouldSaveCartEvenWhenCartIsAlreadyEmpty")
-        void shouldSaveCartEvenWhenCartIsAlreadyEmpty() {
-            Cart emptyCart = Cart.builder()
-                    .id(new ObjectId())
-                    .user(user)
-                    .cartItems(new ArrayList<>())
-                    .totalPrice(0.0)
-                    .build();
-
-            cartService.clearCart(emptyCart);
-
-            assertThat(emptyCart.getCartItems()).isEmpty();
-            verify(cartRepository).save(emptyCart);
-        }
-    }
 }
