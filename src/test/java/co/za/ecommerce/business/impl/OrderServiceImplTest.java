@@ -111,11 +111,12 @@ class OrderServiceImplTest {
                 Order captured = orderCaptor.getValue();
                 assertThat(captured.getCustomerInfo()).isEqualTo(user);
                 assertThat(captured.getPaymentMethod()).isEqualTo(PaymentMethod.CREDIT_CARD);
-                assertThat(captured.getShippingMethod()).isEqualTo(DeliverMethod.DHL.name());
+                assertThat(captured.getShippingMethod()).isEqualTo(DeliverMethod.STANDARD.name());
                 assertThat(captured.getSubtotal()).isEqualTo(99.98);
                 assertThat(captured.getDiscount()).isEqualTo(0);
-                assertThat(captured.getShippingCost()).isEqualTo(15.99);
-                assertThat(captured.getTotalAmount()).isEqualTo(114.98 + 15.99, org.assertj.core.data.Offset.offset(0.001));
+                // Order now carries the checkout's already-priced shipping (STANDARD = R0) and total.
+                assertThat(captured.getShippingCost()).isEqualTo(0.0);
+                assertThat(captured.getTotalAmount()).isEqualTo(114.98, org.assertj.core.data.Offset.offset(0.001));
             }
         }
 
@@ -184,16 +185,12 @@ class OrderServiceImplTest {
         @EnumSource(DeliverMethod.class)
         @DisplayName("shouldCalculateCorrectShippingCostForEachDeliverMethod")
         void shouldCalculateCorrectShippingCostForEachDeliverMethod(DeliverMethod deliverMethod) {
+            // recalculateTotals (in CheckoutService) prices shipping off the enum and
+            // stores it on the checkout; the order simply carries that value through.
             checkout.setShippingMethod(deliverMethod);
+            checkout.setShippingCost(deliverMethod.getPrice());
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
             doNothing().when(inventoryService).reduceInventory(any());
-
-            double expectedCost = switch (deliverMethod) {
-                case DHL -> 15.99;
-                case FedEx -> 12.99;
-                case Express -> 10.99;
-                case FREE -> 0.0;
-            };
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 mapperMock.when(() -> OrderMapper.mapToOrderDTO(any(Order.class))).thenReturn(orderDTO);
@@ -202,7 +199,7 @@ class OrderServiceImplTest {
 
                 ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
                 verify(orderRepository).save(captor.capture());
-                assertThat(captor.getValue().getShippingCost()).isEqualTo(expectedCost);
+                assertThat(captor.getValue().getShippingCost()).isEqualTo(deliverMethod.getPrice());
             }
         }
     }

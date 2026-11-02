@@ -12,6 +12,18 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class AddressDTO {
 
+    /**
+     * Contact details captured by the frontend shipping form. Kept optional at
+     * the validation layer so existing callers that only send the postal fields
+     * keep working; tighten to @NotBlank once the frontend always supplies them.
+     */
+    private String fullName;
+    private String phoneNumber;
+    private String email;
+
+    /** Optional apartment / unit / complex detail. */
+    private String apartment;
+
     @NotBlank(message = "Street address is required")
     private String streetAddress;
 

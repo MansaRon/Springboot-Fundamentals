@@ -10,7 +10,6 @@ import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
 import co.za.ecommerce.model.CartItems;
 import co.za.ecommerce.model.checkout.Checkout;
-import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.OrderRepository;
 import co.za.ecommerce.utils.DateUtil;
@@ -46,7 +45,9 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO createOrderFromCheckout(Checkout checkout, PaymentResultDTO paymentResultDTO) {
         log.info("Creating order from checkout: {}", checkout.getId());
 
-        double shippingCost = calculateShippingCost(checkout.getShippingMethod());
+        // Shipping was already priced and folded into the checkout total during
+        // recalculateTotals — reuse it here rather than re-deriving (and re-adding) it.
+        double shippingCost = checkout.getShippingCost();
 
         OrderStatus initialStatus = PaymentStatus.COMPLETED.equals(paymentResultDTO.getPaymentStatus())
                 ? OrderStatus.CONFIRMED
@@ -73,7 +74,7 @@ public class OrderServiceImpl implements OrderService {
                 .discount(checkout.getDiscount())
                 .tax(checkout.getTax())
                 .shippingCost(shippingCost)
-                .totalAmount(checkout.getTotalAmount() + shippingCost)
+                .totalAmount(checkout.getTotalAmount())
                 .paymentMethod(checkout.getPaymentMethod())
                 .orderStatus(initialStatus)
                 .statusHistory(new ArrayList<>(statusHistory))
@@ -246,15 +247,6 @@ public class OrderServiceImpl implements OrderService {
                 .paymentDate(DateUtil.now())
                 .transactionId(paymentResult.getTransactionId())
                 .build();
-    }
-
-    private double calculateShippingCost(DeliverMethod deliverMethod) {
-        return switch (deliverMethod) {
-            case DHL -> 15.99;
-            case FedEx -> 12.99;
-            case Express -> 10.99;
-            case FREE -> 0.0;
-        };
     }
 
     private void validateStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {

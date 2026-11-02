@@ -7,6 +7,7 @@ import co.za.ecommerce.business.PaymentService;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.cart.CartItemsDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
+import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
 import co.za.ecommerce.dto.order.AddressDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
@@ -294,6 +295,27 @@ class CheckoutServiceImplTest {
     }
 
     @Nested
+    @DisplayName("getDeliveryOptions")
+    class GetDeliveryOptions {
+        @Test
+        @DisplayName("shouldReturnSelectableOptionsExcludingFreeWithEnumPricing")
+        void shouldReturnSelectableOptionsExcludingFreeWithEnumPricing() {
+            List<DeliveryOptionDTO> options = checkoutService.getDeliveryOptions();
+
+            assertThat(options).extracting(DeliveryOptionDTO::getCode)
+                    .containsExactlyInAnyOrder("STANDARD", "EXPRESS", "OVERNIGHT")
+                    .doesNotContain("FREE");
+
+            DeliveryOptionDTO express = options.stream()
+                    .filter(option -> option.getCode().equals("EXPRESS"))
+                    .findFirst().orElseThrow();
+            assertThat(express.getLabel()).isEqualTo("Express Delivery");
+            assertThat(express.getPrice()).isEqualTo(50.0);
+            assertThat(express.getEstimatedDays()).isEqualTo(2);
+        }
+    }
+
+    @Nested
     @DisplayName("UpdateCheckout")
     class UpdateCheckout {
 
@@ -313,7 +335,7 @@ class CheckoutServiceImplTest {
                     .paymentMethod(PaymentMethod.CASH_ON_DELIVERY)
                     .shippingAddress(address)
                     .billingAddress(address)
-                    .shippingMethod(DeliverMethod.Express)
+                    .shippingMethod(DeliverMethod.EXPRESS)
                     .build();
 
             when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
@@ -330,7 +352,41 @@ class CheckoutServiceImplTest {
                 ArgumentCaptor<Checkout> captor = ArgumentCaptor.forClass(Checkout.class);
                 verify(checkoutRepository).save(captor.capture());
                 assertThat(captor.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.CASH_ON_DELIVERY);
-                assertThat(captor.getValue().getShippingMethod()).isEqualTo(DeliverMethod.Express);
+                assertThat(captor.getValue().getShippingMethod()).isEqualTo(DeliverMethod.EXPRESS);
+                // Shipping (EXPRESS = R50) is priced and folded into the checkout total:
+                // subtotal 99.98 + VAT 15.00 + shipping 50.00 = 164.98
+                assertThat(captor.getValue().getShippingCost()).isEqualTo(50.0);
+                assertThat(captor.getValue().getTotalAmount()).isEqualTo(164.98);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldDefaultBillingAddressToShippingWhenBillingNotProvided")
+        void shouldDefaultBillingAddressToShippingWhenBillingNotProvided() {
+            CheckoutDTO updateDTO = CheckoutDTO.builder()
+                    .paymentMethod(PaymentMethod.CREDIT_CARD)
+                    .shippingAddress(address)
+                    .shippingMethod(DeliverMethod.STANDARD)
+                    .build(); // no billing address supplied
+
+            // Clear the fixture's billing so the default-to-shipping path runs.
+            pendingCheckout.setBillingAddress(null);
+
+            when(checkoutRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+                    eq(userId), anyList())).thenReturn(Optional.of(pendingCheckout));
+            when(checkoutRepository.save(any())).thenReturn(pendingCheckout);
+
+            try (MockedStatic<CheckoutMapper> mapperMock = mockStatic(CheckoutMapper.class)) {
+                mapperMock.when(() -> CheckoutMapper.toDTO(any())).thenReturn(checkoutDTO);
+                mapperMock.when(() -> CheckoutMapper.toAddress(address)).thenCallRealMethod();
+
+                checkoutService.updateCheckout(userId, updateDTO);
+
+                ArgumentCaptor<Checkout> captor = ArgumentCaptor.forClass(Checkout.class);
+                verify(checkoutRepository).save(captor.capture());
+                Checkout saved = captor.getValue();
+                assertThat(saved.getBillingAddress()).isNotNull();
+                assertThat(saved.getBillingAddress()).isSameAs(saved.getShippingAddress());
             }
         }
 

@@ -29,6 +29,7 @@ public class CheckoutMapper {
         dto.setSubtotal(checkout.getSubtotal());
         dto.setDiscount(checkout.getDiscount());
         dto.setTax(checkout.getTax());
+        dto.setShippingCost(checkout.getShippingCost());
         dto.setTotalAmount(checkout.getTotalAmount());
         dto.setPaymentMethod(checkout.getPaymentMethod());
         dto.setShippingAddress(toAddressDTO(checkout.getShippingAddress()));
@@ -58,6 +59,10 @@ public class CheckoutMapper {
     private static AddressDTO toAddressDTO(Address address) {
         if (address == null) return null;
         AddressDTO dto = new AddressDTO();
+        dto.setFullName(address.getFullName());
+        dto.setPhoneNumber(address.getPhoneNumber());
+        dto.setEmail(address.getEmail());
+        dto.setApartment(address.getApartment());
         dto.setStreetAddress(address.getStreetAddress());
         dto.setCity(address.getCity());
         dto.setState(address.getState());
@@ -69,6 +74,10 @@ public class CheckoutMapper {
     public static Address toAddress(AddressDTO addressDTO) {
         if (addressDTO == null) return null;
         return Address.builder()
+                .fullName(addressDTO.getFullName())
+                .phoneNumber(addressDTO.getPhoneNumber())
+                .email(addressDTO.getEmail())
+                .apartment(addressDTO.getApartment())
                 .city(addressDTO.getCity())
                 .state(addressDTO.getState())
                 .streetAddress(addressDTO.getStreetAddress())

@@ -127,5 +127,27 @@ class CheckoutMapperTest {
             assertThat(address.getCity()).isEqualTo("Johannesburg");
             assertThat(address.getPostalCode()).isEqualTo("2003");
         }
+
+        @Test
+        @DisplayName("shouldMapContactFieldsInBothDirections")
+        void shouldMapContactFieldsInBothDirections() {
+            AddressDTO dto = new AddressDTO();
+            dto.setFullName("Frank Ocean");
+            dto.setPhoneNumber("0821234567");
+            dto.setEmail("frank@example.com");
+            dto.setApartment("Unit 4B");
+            dto.setStreetAddress("51 Frank Ocean Street");
+            dto.setCity("Johannesburg");
+            dto.setState("Gauteng");
+            dto.setCountry("South Africa");
+            dto.setPostalCode("2003");
+
+            Address address = CheckoutMapper.toAddress(dto);
+
+            assertThat(address.getFullName()).isEqualTo("Frank Ocean");
+            assertThat(address.getPhoneNumber()).isEqualTo("0821234567");
+            assertThat(address.getEmail()).isEqualTo("frank@example.com");
+            assertThat(address.getApartment()).isEqualTo("Unit 4B");
+        }
     }
 }

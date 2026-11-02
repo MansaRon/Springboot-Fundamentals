@@ -4,6 +4,7 @@ import co.za.ecommerce.annotation.Idempotent;
 import co.za.ecommerce.api.CheckoutAPI;
 import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
+import co.za.ecommerce.dto.api.DeliveryOptionsApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import jakarta.validation.Valid;
@@ -37,6 +38,21 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
                         .data(checkoutService.createCheckoutFromCart(userId))
                         .dataList(new ArrayList<>())
                         .message("Checkout initiated.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @GetMapping("/delivery-options")
+    public ResponseEntity<DeliveryOptionsApiResource> getDeliveryOptions() {
+        log.info("ResponseEntity<DeliveryOptionsApiResource> getDeliveryOptions()");
+        return ResponseEntity.ok(
+                DeliveryOptionsApiResource.builder()
+                        .timestamp(now())
+                        .dataList(checkoutService.getDeliveryOptions())
+                        .message("Delivery options retrieved.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

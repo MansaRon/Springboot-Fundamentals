@@ -1,6 +1,7 @@
 package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
+import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import org.bson.types.ObjectId;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 public interface CheckoutService {
     CheckoutDTO createCheckoutFromCart(ObjectId userId);
+    List<DeliveryOptionDTO> getDeliveryOptions();
     CheckoutDTO getCheckoutByUserId(ObjectId userId);
     CheckoutDTO getCheckoutByCartId(ObjectId cartId);
     List<CheckoutDTO> getCheckoutsByStatus(String status);
