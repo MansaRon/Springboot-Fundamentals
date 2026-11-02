@@ -260,7 +260,7 @@ class CheckoutAPIImplTest {
                             .content("""
                                     {
                                       "paymentMethod": "CREDIT_CARD",
-                                      "shippingMethod": "DHL",
+                                      "shippingMethod": "STANDARD",
                                       "shippingAddress": {
                                         "streetAddress": "51 Frank Ocean Street",
                                         "city": "Johannesburg",
@@ -297,7 +297,7 @@ class CheckoutAPIImplTest {
                             .content("""
                                     {
                                       "paymentMethod": "CREDIT_CARD",
-                                      "shippingMethod": "DHL",
+                                      "shippingMethod": "STANDARD",
                                       "shippingAddress": {
                                         "streetAddress": "51 Frank Ocean Street",
                                         "city": "Johannesburg",
