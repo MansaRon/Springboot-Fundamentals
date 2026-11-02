@@ -153,12 +153,13 @@ public class TestDataBuilder {
         checkout.setItems(new ArrayList<>(cart.getCartItems()));
         checkout.setStatus(CheckoutStatus.PENDING);
         checkout.setPaymentMethod(PaymentMethod.CREDIT_CARD);
-        checkout.setShippingMethod(DeliverMethod.DHL);
+        checkout.setShippingMethod(DeliverMethod.STANDARD);
         checkout.setShippingAddress(buildAddress());
         checkout.setBillingAddress(buildAddress());
         checkout.setSubtotal(99.98);
         checkout.setDiscount(0);
         checkout.setTax(15.0);
+        checkout.setShippingCost(0.0);
         checkout.setTotalAmount(114.98);
         checkout.setCurrency("ZAR");
         checkout.setCreatedAt(DateUtil.now());
@@ -181,10 +182,10 @@ public class TestDataBuilder {
                 .subtotal(99.98)
                 .tax(15.0)
                 .discount(0)
-                .shippingCost(15.99)
-                .totalAmount(130.97)
+                .shippingCost(50.0)
+                .totalAmount(164.98)
                 .paymentMethod(PaymentMethod.CREDIT_CARD)
-                .shippingMethod(DeliverMethod.DHL.name())
+                .shippingMethod(DeliverMethod.EXPRESS.name())
                 .shippingAddress(buildAddress())
                 .billingAddress(buildAddress())
                 .orderItems(new ArrayList<>())

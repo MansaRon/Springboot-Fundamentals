@@ -162,7 +162,8 @@ public class CheckoutValidationServiceImpl implements CheckoutValidationService 
             );
         }
 
-        double expectedTotal = checkout.getSubtotal() - checkout.getDiscount() + checkout.getTax();
+        double expectedTotal = checkout.getSubtotal() - checkout.getDiscount()
+                + checkout.getTax() + checkout.getShippingCost();
         if (Math.abs(expectedTotal - checkout.getTotalAmount()) > 0.01) {
             throw new CheckoutException(
                     HttpStatus.BAD_REQUEST.toString(),

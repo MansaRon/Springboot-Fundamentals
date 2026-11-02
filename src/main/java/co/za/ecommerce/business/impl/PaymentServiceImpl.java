@@ -45,6 +45,10 @@ public class PaymentServiceImpl implements PaymentService {
             return createSuccessResult(checkout, PaymentStatus.PENDING);
         }
 
+        if (PaymentMethod.EFT.equals(checkout.getPaymentMethod())) {
+            return createEftPendingResult(checkout);
+        }
+
         boolean isSuccess = random.nextInt(100) < 70;
 
         return isSuccess
@@ -66,6 +70,28 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentMethod(checkout.getPaymentMethod().toString())
                 .updatedAt(DateUtil.now())
                 .message("Payment processed successfully")
+                .build();
+    }
+
+    /**
+     * EFT / bank transfer is handled manually: the order is placed in a PENDING
+     * (awaiting-payment) state and the customer is given a reference and bank
+     * details to complete the transfer offline. No automated reconciliation yet.
+     */
+    private PaymentResultDTO createEftPendingResult(Checkout checkout) {
+        String reference = GenerateUtil.generateTransactionId();
+
+        log.info("EFT selected — awaiting manual bank transfer. Reference: {}", reference);
+
+        return PaymentResultDTO.builder()
+                .success(true)
+                .transactionId(reference)
+                .paymentStatus(PaymentStatus.PENDING)
+                .amountProcessed(checkout.getTotalAmount())
+                .paymentMethod(checkout.getPaymentMethod().toString())
+                .updatedAt(DateUtil.now())
+                .message("Awaiting EFT payment. Please transfer R" + checkout.getTotalAmount()
+                        + " using reference " + reference + ". Bank details are shown on your order confirmation.")
                 .build();
     }
 

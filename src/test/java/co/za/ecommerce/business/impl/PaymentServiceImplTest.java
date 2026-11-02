@@ -125,6 +125,29 @@ class PaymentServiceImplTest {
     }
 
     @Nested
+    @DisplayName("processPayment - EFT")
+    class ProcessPaymentEFT {
+        @BeforeEach
+        void setUp() {
+            doNothing().when(paymentService).simulateProcessingDelay();
+            validCheckout.setPaymentMethod(PaymentMethod.EFT);
+        }
+
+        @Test
+        @DisplayName("shouldReturnPendingSuccessWithReferenceForEft")
+        void shouldReturnPendingSuccessWithReferenceForEft() {
+            PaymentResultDTO result = paymentService.processPayment(validCheckout);
+
+            // EFT is manual: order is placed PENDING with a transfer reference.
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+            assertThat(result.getTransactionId()).isNotNull().isNotEmpty();
+            assertThat(result.getAmountProcessed()).isEqualTo(validCheckout.getTotalAmount());
+            assertThat(result.getMessage()).contains("EFT").contains("reference");
+        }
+    }
+
+    @Nested
     @DisplayName("simulateProcessingDelay")
     class SimulateProcessingDelay {
         @Test

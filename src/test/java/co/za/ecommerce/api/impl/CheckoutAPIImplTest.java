@@ -2,6 +2,7 @@ package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.business.*;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
+import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.GlobalExceptionHandler;
@@ -259,7 +260,7 @@ class CheckoutAPIImplTest {
                             .content("""
                                     {
                                       "paymentMethod": "CREDIT_CARD",
-                                      "shippingMethod": "DHL",
+                                      "shippingMethod": "STANDARD",
                                       "shippingAddress": {
                                         "streetAddress": "51 Frank Ocean Street",
                                         "city": "Johannesburg",
@@ -296,7 +297,7 @@ class CheckoutAPIImplTest {
                             .content("""
                                     {
                                       "paymentMethod": "CREDIT_CARD",
-                                      "shippingMethod": "DHL",
+                                      "shippingMethod": "STANDARD",
                                       "shippingAddress": {
                                         "streetAddress": "51 Frank Ocean Street",
                                         "city": "Johannesburg",
@@ -458,6 +459,29 @@ class CheckoutAPIImplTest {
             mockMvc.perform(delete("/api/v1/checkout/user/{userId}", USER_ID))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("No pending checkouts found for user."));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/checkout/delivery-options")
+    class GetDeliveryOptions {
+
+        @Test
+        @DisplayName("shouldReturn200WithDeliveryOptions")
+        void shouldReturn200WithDeliveryOptions() throws Exception {
+            DeliveryOptionDTO express = DeliveryOptionDTO.builder()
+                    .code("EXPRESS").label("Express Delivery").price(50.0).estimatedDays(2)
+                    .build();
+
+            when(checkoutService.getDeliveryOptions()).thenReturn(List.of(express));
+
+            mockMvc.perform(get("/api/v1/checkout/delivery-options"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message").value("Delivery options retrieved."))
+                    .andExpect(jsonPath("$.dataList[0].code").value("EXPRESS"))
+                    .andExpect(jsonPath("$.dataList[0].price").value(50.0))
+                    .andExpect(jsonPath("$.dataList[0].estimatedDays").value(2));
         }
     }
 }

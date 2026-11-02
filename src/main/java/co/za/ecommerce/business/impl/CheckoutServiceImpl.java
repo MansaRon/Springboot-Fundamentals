@@ -3,6 +3,7 @@ package co.za.ecommerce.business.impl;
 import co.za.ecommerce.business.*;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
+import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.PaymentException;
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -105,6 +107,21 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Override
     public CheckoutDTO getCheckoutByUserId(ObjectId userId) {
         return CheckoutMapper.toDTO(findActiveCheckoutByUserId(userId));
+    }
+
+    @Override
+    public List<DeliveryOptionDTO> getDeliveryOptions() {
+        // FREE is an internal default for a freshly-created checkout, not a
+        // user-selectable option, so it's excluded from what the frontend renders.
+        return Arrays.stream(DeliverMethod.values())
+                .filter(method -> method != DeliverMethod.FREE)
+                .map(method -> DeliveryOptionDTO.builder()
+                        .code(method.name())
+                        .label(method.getLabel())
+                        .price(method.getPrice())
+                        .estimatedDays(method.getEstimatedDays())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -350,6 +367,10 @@ public class CheckoutServiceImpl implements CheckoutService {
             checkout.setBillingAddress(
                     CheckoutMapper.toAddress(dto.getBillingAddress())
             );
+        } else if (checkout.getBillingAddress() == null) {
+            // No separate billing address collected — default it to shipping
+            // (runs after updateShippingAddress, so shipping is already set).
+            checkout.setBillingAddress(checkout.getShippingAddress());
         }
     }
 
@@ -405,16 +426,20 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .sum();
         double discount = checkout.getDiscount();
         double tax = ValueUtil.vat(subTotal);
-        double totalAmount = (subTotal - discount) + tax;
+        double shippingCost = checkout.getShippingMethod() != null
+                ? checkout.getShippingMethod().getPrice()
+                : 0.0;
+        double totalAmount = (subTotal - discount) + tax + shippingCost;
 
         checkout.setSubtotal(subTotal);
         checkout.setDiscount(discount);
         // TODO remove util method and utilise BigDecimal for precise numbers
         checkout.setTax(tax);
+        checkout.setShippingCost(shippingCost);
         checkout.setTotalAmount(ValueUtil.round(totalAmount, 2));
 
-        log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Total=R{}",
-                subTotal, discount, tax, totalAmount);
+        log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Shipping=R{}, Total=R{}",
+                subTotal, discount, tax, shippingCost, totalAmount);
     }
 
 }

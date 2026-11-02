@@ -32,6 +32,7 @@ public class CheckoutDTO extends EntityDTO {
     private double subtotal;
     private double discount;
     private double tax;
+    private double shippingCost;
     private double totalAmount;
 
     @NotNull(message = "Payment method is required")
@@ -41,8 +42,9 @@ public class CheckoutDTO extends EntityDTO {
     @NotNull(message = "Shipping address is required")
     private AddressDTO shippingAddress;
 
+    // Optional: when the frontend has no separate billing step, the backend
+    // defaults billing to the shipping address during updateCheckout.
     @Valid
-    @NotNull(message = "Billing address is required")
     private AddressDTO billingAddress;
 
     @NotNull(message = "Shipping method is required")

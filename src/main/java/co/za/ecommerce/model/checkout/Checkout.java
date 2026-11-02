@@ -65,6 +65,12 @@ public class Checkout extends Entity {
     private double tax;
 
     /**
+     * The delivery cost derived from the selected shipping method.
+     */
+    @PositiveOrZero
+    private double shippingCost;
+
+    /**
      * The final total amount to be paid.
      */
     @PositiveOrZero

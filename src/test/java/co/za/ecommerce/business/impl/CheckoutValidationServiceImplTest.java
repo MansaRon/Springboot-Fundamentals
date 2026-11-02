@@ -52,7 +52,7 @@ class CheckoutValidationServiceImplTest {
         validCheckout = TestDataBuilder.buildPendingCheckout(user, cart);
         validCheckout.setStatus(CheckoutStatus.PENDING);
         validCheckout.setPaymentMethod(PaymentMethod.CREDIT_CARD);
-        validCheckout.setShippingMethod(DeliverMethod.DHL);
+        validCheckout.setShippingMethod(DeliverMethod.STANDARD);
         validCheckout.setShippingAddress(TestDataBuilder.buildAddress());
         validCheckout.setBillingAddress(TestDataBuilder.buildAddress());
         validCheckout.setSubtotal(99.98);
