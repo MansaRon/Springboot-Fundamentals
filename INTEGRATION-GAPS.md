@@ -117,3 +117,66 @@ or add a tolerant deserializer. No migration needed for fresh/empty databases.
   transfer and move the order from `PENDING` to `CONFIRMED`. Currently manual.
 - [ ] **VAT on shipping** — tax is charged on subtotal only; shipping is added
   post-tax. Revisit if shipping should be VAT-inclusive.
+
+---
+
+## Order Integration
+
+Gaps found while wiring up the order views on the frontend. All resolved on the
+integration branch (not yet merged).
+
+- [x] **Gap 1 — `OrderMapper.toAddressDTO` dropped contact fields**
+  - **Done:** Maps `fullName`, `phoneNumber`, `email`, `apartment` (the `Address`
+    model already carried them from the checkout work).
+
+- [x] **Gap 2 — `OrderMapper.mapToOrderItemsDTO` returned 0s + duplicate `setId`**
+  - **Done:** Maps `unitPrice`, `discount`, `tax` (previously never set, always 0)
+    and removed the duplicate `dto.setId(...)` call.
+
+- [x] **Gap 3 — `GET /order/{orderId}` had no ownership enforcement**
+  - **Done:** Split by audience instead of branching in the controller —
+    `GET /order/{orderId}` is now **ADMIN-only** (`@PreAuthorize("hasRole('ADMIN')")`,
+    plain one-liner body), and a regular USER fetches a single order via the existing
+    `GET /order/{customerId}/{orderId}`, where ownership is enforced **declaratively**
+    (`#customerId == principal.id`). Each endpoint's audience is commented in
+    `OrderAPIImpl`. **Also fixed a related bug:** the service called
+    `findByIdAndCustomerInfoId(customerId, orderId)` with arguments swapped vs the
+    repo's `(orderId, customerId)`, so the ownership-scoped query (and the
+    `/{customerId}/{orderId}` endpoint) never matched. Corrected the order.
+  - **FE impact:** fetch a single order by id via `/order/{customerId}/{orderId}`,
+    not `/order/{orderId}` (which is now admin-only).
+
+- [x] **Gap 4 — `getUserOrders` ran the query twice**
+  - **Done:** Fetches the list once and reuses it for both `data` and the count in
+    the response message (was calling `getUserOrders(userId)` again just for `.size()`).
+
+---
+
+## Access Control (cross-cutting)
+
+Policy going forward: **one audience per endpoint** — admin endpoints are
+`hasRole('ADMIN')` only; customer endpoints are owner-scoped
+(`#userId == authentication.principal.id`) only. A wrong-audience call returns
+403 via `JwtAccessDeniedHandler`. This is already applied to the **Order** module.
+
+- [ ] **Tighten Cart & Checkout authorization**
+  - **What:** `CartAPIImpl` and `CheckoutAPIImpl` endpoints currently use
+    `@PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")`.
+    The `hasRole('ADMIN') or` part was a **testing convenience** (so any logged-in
+    user on hand could exercise the flow), **not** a deliberate authorization design.
+  - **Fix:** Apply the same strict separation used in Order — customer-facing
+    cart/checkout endpoints become owner-only (`#userId == principal.id`), and any
+    genuinely admin operation moves to an explicit `/admin/...` endpoint.
+
+- [ ] **Deliberate admin override / intervention capability**
+  - **What:** Separate from the testing escape hatch above, admins legitimately need
+    to act on a specific customer's cart/checkout/order when that customer is **stuck
+    mid-flow** — e.g. a wedged checkout that won't confirm or cancel, an item that
+    can't be removed, a cart that won't clear, or a payment stuck in `PENDING`.
+  - **Fix:** Provide this through **explicit, purpose-built admin endpoints** that
+    take the target `userId`/`orderId` (e.g. under `/admin/...`), rather than the
+    implicit `hasRole('ADMIN') or owner` shortcut. That keeps the override
+    intentional, clearly separated from customer self-service, and auditable
+    (admin acting on behalf of a user should be logged). Examples to consider:
+    admin force-cancel/reset a checkout, admin clear/adjust a user's cart,
+    admin list a specific customer's orders (`GET /order/admin/user/{userId}`).

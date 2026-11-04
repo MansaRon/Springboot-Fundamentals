@@ -205,7 +205,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDTO getOrderByIdAndCustomerId(ObjectId customerId, ObjectId orderId) {
         log.info("Fetching order by customerId and orderId: {} / {} ", orderId, customerId);
-        Order order = orderRepository.findByIdAndCustomerInfoId(customerId, orderId)
+        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",

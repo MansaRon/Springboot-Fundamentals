@@ -77,6 +77,8 @@ class OrderAPIImplTest {
                 .build();
     }
 
+    // ADMIN-only endpoint. Ownership-scoped single-order fetch for a regular user is
+    // covered by GET /{customerId}/{orderId} (see GetOrderByIdAndCustomerId below).
     @Nested
     @DisplayName("GET /api/v1/order/{orderId}")
     class GetOrderById {
@@ -104,6 +106,28 @@ class OrderAPIImplTest {
             mockMvc.perform(get("/api/v1/order/{orderId}", ORDER_ID)).andExpect(status().isOk());
 
             verify(orderService).getOrderById(eq(new ObjectId(ORDER_ID)));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/order/{customerId}/{orderId}")
+    class GetOrderByIdAndCustomerId {
+
+        @Test
+        @DisplayName("shouldReturn200WithOrderForOwnerScopedLookup")
+        void shouldReturn200WithOrderForOwnerScopedLookup() throws Exception {
+            when(orderService.getOrderByIdAndCustomerId(
+                    eq(new ObjectId(USER_ID)), eq(new ObjectId(ORDER_ID))))
+                    .thenReturn(orderDTO);
+
+            mockMvc.perform(get("/api/v1/order/{customerId}/{orderId}", USER_ID, ORDER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message").value("Order retrieved successfully."))
+                    .andExpect(jsonPath("$.data.orderNumber").value(ORDER_NUMBER));
+
+            verify(orderService).getOrderByIdAndCustomerId(
+                    eq(new ObjectId(USER_ID)), eq(new ObjectId(ORDER_ID)));
         }
     }
 
@@ -142,6 +166,9 @@ class OrderAPIImplTest {
                     .andExpect(jsonPath("$.data").isArray())
                     .andExpect(jsonPath("$.data.length()").value(2))
                     .andExpect(jsonPath("$.data[0].orderNumber").value(ORDER_NUMBER));
+
+            // The handler must query orders only once (message reuses the fetched list).
+            verify(orderService, times(1)).getUserOrders(eq(new ObjectId(USER_ID)));
         }
 
         @Test

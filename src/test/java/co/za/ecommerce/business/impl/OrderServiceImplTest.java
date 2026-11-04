@@ -234,6 +234,38 @@ class OrderServiceImplTest {
     }
 
     @Nested
+    @DisplayName("getOrderByIdAndCustomerId")
+    class GetOrderByIdAndCustomerId {
+        @Test
+        @DisplayName("shouldQueryRepositoryWithOrderIdThenCustomerId")
+        void shouldQueryRepositoryWithOrderIdThenCustomerId() {
+            // Repo signature is findByIdAndCustomerInfoId(orderId, customerId) — order matters.
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.of(savedOrder));
+
+            try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
+                mapperMock.when(() -> OrderMapper.mapToOrderDTO(savedOrder)).thenReturn(orderDTO);
+
+                OrderDTO result = orderService.getOrderByIdAndCustomerId(userId, orderId);
+
+                assertThat(result).isNotNull();
+                verify(orderRepository).findByIdAndCustomerInfoId(orderId, userId);
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowOrderExceptionWhenOrderNotOwnedOrMissing")
+        void shouldThrowOrderExceptionWhenOrderNotOwnedOrMissing() {
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.getOrderByIdAndCustomerId(userId, orderId))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("Order not found");
+        }
+    }
+
+    @Nested
     @DisplayName("getOrderByOrderNumber")
     class GetOrderByOrderNumber {
         @Test
