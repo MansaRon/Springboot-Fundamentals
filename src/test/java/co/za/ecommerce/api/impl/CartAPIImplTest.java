@@ -51,6 +51,7 @@ class CartAPIImplTest {
     @MockBean private ObjectMapper objectMapper;
     @MockBean private JwtTokenProvider jwtTokenProvider;
     @MockBean private CustomUserDetailsService customUserDetailsService;
+    @MockBean private LookupService lookupService;
 
     private static final String USER_ID = "507f1f77bcf86cd799439011";
     private static final String PRODUCT_ID = "507f1f77bcf86cd799439022";

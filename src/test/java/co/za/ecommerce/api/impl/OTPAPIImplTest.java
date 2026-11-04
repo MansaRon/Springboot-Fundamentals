@@ -47,6 +47,7 @@ class OTPAPIImplTest {
     @MockBean private ObjectMapper objectMapper;
     @MockBean private JwtTokenProvider jwtTokenProvider;
     @MockBean private CustomUserDetailsService customUserDetailsService;
+    @MockBean private LookupService lookupService;
     // @MockBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private OTPResponseDTO generateResponseDTO;
