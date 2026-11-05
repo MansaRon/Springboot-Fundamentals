@@ -43,24 +43,17 @@ public class LookupDataSeeder implements CommandLineRunner {
     }
 
     private List<LookupValue> provinces() {
-        String[][] rows = {
-                {"EASTERN_CAPE", "Eastern Cape"},
-                {"FREE_STATE", "Free State"},
-                {"GAUTENG", "Gauteng"},
-                {"KWAZULU_NATAL", "KwaZulu-Natal"},
-                {"LIMPOPO", "Limpopo"},
-                {"MPUMALANGA", "Mpumalanga"},
-                {"NORTH_WEST", "North West"},
-                {"NORTHERN_CAPE", "Northern Cape"},
-                {"WESTERN_CAPE", "Western Cape"}
+        // Province code mirrors the label (matches the values the frontend hardcoded).
+        String[] names = {
+                "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo",
+                "Mpumalanga", "Northern Cape", "North West", "Western Cape"
         };
         List<LookupValue> values = new ArrayList<>();
-        for (int i = 0; i < rows.length; i++) {
+        for (int i = 0; i < names.length; i++) {
             values.add(LookupValue.builder()
                     .type(LookupType.PROVINCE)
-                    .code(rows[i][0])
-                    .label(rows[i][1])
-                    .metadata(Map.of())
+                    .code(names[i])
+                    .label(names[i])
                     .active(true)
                     .sortOrder(i + 1)
                     .build());
@@ -72,30 +65,43 @@ public class LookupDataSeeder implements CommandLineRunner {
         return List.of(
                 LookupValue.builder().type(LookupType.DELIVERY_OPTION)
                         .code("STANDARD").label("Standard Delivery")
-                        .metadata(Map.of("price", 0.0, "estimatedDays", 5))
+                        .metadata(Map.of(
+                                "description", "Delivered within 5-7 business days",
+                                "estimatedDays", "5-7 days",
+                                "price", 0))
                         .active(true).sortOrder(1).build(),
                 LookupValue.builder().type(LookupType.DELIVERY_OPTION)
                         .code("EXPRESS").label("Express Delivery")
-                        .metadata(Map.of("price", 50.0, "estimatedDays", 2))
+                        .metadata(Map.of(
+                                "description", "Delivered within 2-3 business days",
+                                "estimatedDays", "2-3 days",
+                                "price", 50))
                         .active(true).sortOrder(2).build(),
                 LookupValue.builder().type(LookupType.DELIVERY_OPTION)
                         .code("OVERNIGHT").label("Overnight Delivery")
-                        .metadata(Map.of("price", 150.0, "estimatedDays", 1))
+                        .metadata(Map.of(
+                                "description", "Delivered next business day",
+                                "estimatedDays", "Next day",
+                                "price", 150))
                         .active(true).sortOrder(3).build()
         );
     }
 
     private List<LookupValue> paymentMethods() {
+        // iconType drives the frontend's icon component selection.
         return List.of(
                 LookupValue.builder().type(LookupType.PAYMENT_METHOD)
-                        .code("CREDIT_CARD").label("Credit Card")
-                        .metadata(Map.of()).active(true).sortOrder(1).build(),
+                        .code("CREDIT_CARD").label("Credit/Debit Card")
+                        .metadata(Map.of("iconType", "card"))
+                        .active(true).sortOrder(1).build(),
+                LookupValue.builder().type(LookupType.PAYMENT_METHOD)
+                        .code("EFT").label("EFT/Bank Transfer")
+                        .metadata(Map.of("iconType", "eft"))
+                        .active(true).sortOrder(2).build(),
                 LookupValue.builder().type(LookupType.PAYMENT_METHOD)
                         .code("CASH_ON_DELIVERY").label("Cash on Delivery")
-                        .metadata(Map.of()).active(true).sortOrder(2).build(),
-                LookupValue.builder().type(LookupType.PAYMENT_METHOD)
-                        .code("EFT").label("EFT / Bank Transfer")
-                        .metadata(Map.of()).active(true).sortOrder(3).build()
+                        .metadata(Map.of("iconType", "cash"))
+                        .active(true).sortOrder(3).build()
         );
     }
 }
