@@ -87,7 +87,10 @@ public class CheckoutValidationServiceImpl implements CheckoutValidationService 
             );
         }
 
-        if (PaymentMethod.CASH_ON_DELIVERY.equals(checkout.getPaymentMethod())) {
+        // CASH_ON_DELIVERY and EFT settle out-of-band (handled as PENDING by the
+        // payment service); CREDIT_CARD is the online method. All are valid selections.
+        if (PaymentMethod.CASH_ON_DELIVERY.equals(checkout.getPaymentMethod())
+                || PaymentMethod.EFT.equals(checkout.getPaymentMethod())) {
             return;
         }
 

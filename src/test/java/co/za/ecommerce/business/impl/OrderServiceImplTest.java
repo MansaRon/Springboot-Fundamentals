@@ -300,7 +300,8 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnOrderListWhenUserHasOrders")
         void shouldReturnOrderListWhenUserHasOrders() {
-            when(orderRepository.findByCustomerInfoId(userId)).thenReturn(List.of(savedOrder));
+            when(orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId))
+                    .thenReturn(List.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 mapperMock.when(() -> OrderMapper.mapToOrderDTO(savedOrder)).thenReturn(orderDTO);
@@ -315,7 +316,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnEmptyListWhenUserHasNoOrders")
         void shouldReturnEmptyListWhenUserHasNoOrders() {
-            when(orderRepository.findByCustomerInfoId(userId)).thenReturn(List.of());
+            when(orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId)).thenReturn(List.of());
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 List<OrderDTO> results = orderService.getUserOrders(userId);

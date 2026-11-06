@@ -124,7 +124,9 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getUserOrders(ObjectId userId) {
         log.info("Fetching orders for user: {}", userId);
 
-        return orderRepository.findByCustomerInfoId(userId)
+        // Newest first so the frontend's order history / "latest order" shows the
+        // just-placed order at the top rather than buried at the end.
+        return orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
