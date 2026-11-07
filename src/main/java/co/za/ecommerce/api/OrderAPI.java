@@ -4,6 +4,8 @@ import co.za.ecommerce.dto.GlobalApiErrorResponse;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
+import co.za.ecommerce.dto.api.OrderTrackingApiResource;
+import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -481,4 +483,36 @@ public interface OrderAPI {
                     })
     })
     ResponseEntity<OrderDTOApiResource> getOrderByIdAndCustomerId(@PathVariable ObjectId orderId, @PathVariable ObjectId customerId);
+
+    @Operation(tags = "Order", summary = "Track a customer's own order (status + timeline)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order tracking retrieved",
+                    content = @Content(schema = @Schema(implementation = OrderTrackingApiResource.class))),
+            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<OrderTrackingApiResource> trackOrder(@PathVariable ObjectId customerId, @PathVariable ObjectId orderId);
+
+    @Operation(tags = "Order", summary = "Cancel a customer's own order within the cancellation window")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order cancelled",
+                    content = @Content(schema = @Schema(implementation = OrderDTOApiResource.class))),
+            @ApiResponse(responseCode = "400", description = "Not cancellable (window passed or status not cancellable)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<OrderDTOApiResource> cancelOrder(
+            @PathVariable ObjectId customerId,
+            @PathVariable ObjectId orderId,
+            @Valid @RequestBody(required = false) OrderCancellationRequest request);
 }

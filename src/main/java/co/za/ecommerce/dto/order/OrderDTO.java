@@ -33,6 +33,9 @@ public class OrderDTO extends EntityDTO {
     private LocalDateTime estimatedDeliveryDate;
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    private LocalDateTime shippedDate;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime deliveredDate;
     private double subtotal;
     private double discount;
@@ -42,4 +45,5 @@ public class OrderDTO extends EntityDTO {
     private PaymentMethod paymentMethod;
     private double shippingCost;
     private String orderNumber;
+    private List<OrderStatusHistoryDTO> statusHistory;
 }

@@ -5,6 +5,7 @@ import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
@@ -16,6 +17,7 @@ import co.za.ecommerce.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -23,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +41,14 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final InventoryService inventoryService;
     private final EmailService emailService;
+
+    /**
+     * How long after placement a customer may cancel their own order. Configurable
+     * via {@code order.cancellation.window-hours} (defaults to 72h); the field
+     * initialiser keeps unit tests working without Spring property injection.
+     */
+    @Value("${order.cancellation.window-hours:72}")
+    private long cancellationWindowHours = 72;
 
     @Override
     @Transactional
@@ -215,6 +226,99 @@ public class OrderServiceImpl implements OrderService {
                 ));
 
         return OrderMapper.mapToOrderDTO(order);
+    }
+
+    @Override
+    public OrderTrackingDTO trackOrder(ObjectId customerId, ObjectId orderId) {
+        log.info("Tracking order {} for customer {}", orderId, customerId);
+        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
+                .orElseThrow(() -> new OrderException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Order not found",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+        OrderTrackingDTO tracking = OrderMapper.toTrackingDTO(order);
+        // Compute cancellability server-side (status + window) so the frontend can
+        // show/hide the Cancel action without a failed round-trip.
+        tracking.setCancellable(isCancellable(order.getOrderStatus()) && !isCancellationWindowExpired(order));
+        return tracking;
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "orders", key = "#orderId"),
+            @CacheEvict(value = "user-orders", allEntries = true)
+    })
+    public OrderDTO cancelOrder(ObjectId customerId, ObjectId orderId, String reason) {
+        log.info("Customer {} requested cancellation of order {}", customerId, orderId);
+
+        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
+                .orElseThrow(() -> new OrderException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "Order not found",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+
+        if (!isCancellable(order.getOrderStatus())) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Order cannot be cancelled while it is " + order.getOrderStatus() + ".",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        if (isCancellationWindowExpired(order)) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "The " + cancellationWindowHours + "-hour cancellation window for this order has passed. Please reach out to our support staff for assistance.",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        OrderStatus previousStatus = order.getOrderStatus();
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setUpdatedAt(now());
+
+        if (order.getStatusHistory() == null) {
+            order.setStatusHistory(new ArrayList<>());
+        }
+        String note = (reason != null && !reason.isBlank())
+                ? "Cancelled by customer: " + reason.trim()
+                : "Cancelled by customer";
+        order.getStatusHistory().add(OrderStatusHistory.builder()
+                .status(OrderStatus.CANCELLED)
+                .timestamp(now())
+                .notes(note)
+                .updatedBy("customer:" + customerId.toHexString())
+                .build());
+
+        // Return the reserved stock to inventory on cancellation.
+        if (order.getOrderItems() != null) {
+            inventoryService.restoreInventory(order.getOrderItems());
+        }
+
+        Order saved = orderRepository.save(order);
+        log.info("Order {} cancelled (previous status: {})", orderId, previousStatus);
+
+        OrderDTO dto = OrderMapper.mapToOrderDTO(saved);
+        emailService.sendOrderStatusUpdateEmail(saved.getCustomerInfo(), dto, OrderStatus.CANCELLED);
+        return dto;
+    }
+
+    private boolean isCancellable(OrderStatus status) {
+        // Cancellable only before dispatch; SHIPPED/DELIVERED/CANCELLED/REFUNDED are terminal here.
+        return status == OrderStatus.PENDING
+                || status == OrderStatus.CONFIRMED
+                || status == OrderStatus.PROCESSING;
+    }
+
+    private boolean isCancellationWindowExpired(Order order) {
+        if (order.getCreatedAt() == null) {
+            return false;
+        }
+        long hoursSincePlaced = Duration.between(order.getCreatedAt(), now()).toHours();
+        return hoursSincePlaced >= cancellationWindowHours;
     }
 
     private Order findOrderById(ObjectId orderId) {

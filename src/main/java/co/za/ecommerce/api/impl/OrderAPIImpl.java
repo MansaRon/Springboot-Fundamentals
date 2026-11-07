@@ -4,6 +4,8 @@ import co.za.ecommerce.api.OrderAPI;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
+import co.za.ecommerce.dto.api.OrderTrackingApiResource;
+import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
@@ -17,8 +19,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
+
+import static co.za.ecommerce.utils.DateUtil.instantNow;
 
 @Slf4j
 @RestController
@@ -34,7 +37,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
     public ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orderService.getOrderById(orderId))
                         .message("Order retrieved successfully.")
                         .status(String.valueOf(HttpStatus.OK))
@@ -49,7 +52,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
     public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orderService.getOrderByOrderNumber(orderNumber))
                         .message("Order retrieved successfully.")
                         .status(String.valueOf(HttpStatus.OK))
@@ -65,7 +68,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         List<OrderDTO> orders = orderService.getUserOrders(userId);
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orders)
                         .message(String.format("Retrieved %d orders.", orders.size()))
                         .status(String.valueOf(HttpStatus.OK))
@@ -84,7 +87,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         List<OrderDTO> orders = orderService.getUserOrdersByStatus(userId, orderStatus);
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orders)
                         .message(String.format("Retrieved %d %s orders.", orders.size(), status))
                         .status(String.valueOf(HttpStatus.OK))
@@ -99,7 +102,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
     public ResponseEntity<OrderDTOListApiResource> getAllOrders() {
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orderService.getAllOrders())
                         .message(String.format("Retrieved %d total orders.", orderService.getAllOrders().size()))
                         .status(String.valueOf(HttpStatus.OK))
@@ -116,7 +119,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         List<OrderDTO> orders = orderService.getOrdersByStatus(orderStatus);
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orders)
                         .message(String.format("Retrieved %d %s orders.", orders.size(), status))
                         .status(String.valueOf(HttpStatus.OK))
@@ -133,7 +136,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
             @Valid @RequestBody OrderStatusUpdateRequest request) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orderService.updateOrderStatus(
                                 orderId,
                                 request.getNewStatus(),
@@ -150,6 +153,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics")
     public ResponseEntity<OrderStatisticsApiResource> getOrderStatistics() {
+        // TODO find a better means of handling these stats
         OrderStatisticsDTO stats = OrderStatisticsDTO.builder()
                 .totalOrders(orderService.getAllOrders().size())
                 .pendingOrders(orderService.getOrdersByStatus(OrderStatus.PENDING).size())
@@ -162,7 +166,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
 
         return ResponseEntity.ok(
                 OrderStatisticsApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(stats)
                         .message("Order statistics retrieved.")
                         .status(String.valueOf(HttpStatus.OK))
@@ -182,9 +186,49 @@ public class OrderAPIImpl extends API implements OrderAPI {
         log.info("public ResponseEntity<OrderDTOApiResource> getOrderByIdAndCustomerId(@PathVariable ObjectId customerId, @PathVariable ObjectId orderId)");
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
-                        .timestamp(Instant.now())
+                        .timestamp(instantNow())
                         .data(orderService.getOrderByIdAndCustomerId(customerId, orderId))
                         .message("Order retrieved successfully.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // CUSTOMER only — tracking timeline for the caller's own order.
+    @PreAuthorize("#customerId.toString() == authentication.principal.id.toString()")
+    @GetMapping("/{customerId}/{orderId}/track")
+    @Override
+    public ResponseEntity<OrderTrackingApiResource> trackOrder(
+            @PathVariable ObjectId customerId,
+            @PathVariable ObjectId orderId) {
+        log.info("ResponseEntity<OrderTrackingApiResource> trackOrder(@PathVariable ObjectId customerId, @PathVariable ObjectId orderId)");
+        return ResponseEntity.ok(
+                OrderTrackingApiResource.builder()
+                        .timestamp(instantNow())
+                        .data(orderService.trackOrder(customerId, orderId))
+                        .message("Order tracking retrieved successfully.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // CUSTOMER only — cancel the caller's own order (within the cancellation window).
+    @PreAuthorize("#customerId.toString() == authentication.principal.id.toString()")
+    @PostMapping("/{customerId}/{orderId}/cancel")
+    @Override
+    public ResponseEntity<OrderDTOApiResource> cancelOrder(
+            @PathVariable ObjectId customerId,
+            @PathVariable ObjectId orderId,
+            @Valid @RequestBody(required = false) OrderCancellationRequest request) {
+        log.info("ResponseEntity<OrderDTOApiResource> cancelOrder(@PathVariable ObjectId customerId, @PathVariable ObjectId orderId)");
+        String reason = request != null ? request.getReason() : null;
+        return ResponseEntity.ok(
+                OrderDTOApiResource.builder()
+                        .timestamp(instantNow())
+                        .data(orderService.cancelOrder(customerId, orderId, reason))
+                        .message("Order cancelled successfully.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()
