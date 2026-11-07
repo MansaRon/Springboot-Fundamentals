@@ -26,7 +26,10 @@ import java.util.List;
 @RequestMapping("api/v1/order")
 public class OrderAPIImpl extends API implements OrderAPI {
 
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    // ADMIN only. By order id alone we can't tell who owns the order, so ownership
+    // can't be enforced declaratively here — regular users fetch their own orders
+    // via the ownership-scoped GET /{customerId}/{orderId} below.
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
@@ -40,7 +43,8 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    // ADMIN only — a non-admin caller is rejected with 403 before the method runs.
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/number/{orderNumber}")
     public ResponseEntity<OrderDTOApiResource> getOrderByOrderNumber(@PathVariable String orderNumber) {
         return ResponseEntity.ok(
@@ -54,21 +58,24 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #userId.toString() == authentication.principal.id.toString()")
+    // CUSTOMER only — the caller's own order history (userId must match the principal).
+    @PreAuthorize("#userId.toString() == authentication.principal.id.toString()")
     @GetMapping("/user/{userId}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrders(@PathVariable ObjectId userId) {
+        List<OrderDTO> orders = orderService.getUserOrders(userId);
         return ResponseEntity.ok(
                 OrderDTOListApiResource.builder()
                         .timestamp(Instant.now())
-                        .data(orderService.getUserOrders(userId))
-                        .message(String.format("Retrieved %d orders.", orderService.getUserOrders(userId).size()))
+                        .data(orders)
+                        .message(String.format("Retrieved %d orders.", orders.size()))
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()
         );
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // CUSTOMER only — the caller filtering their own orders by status.
+    @PreAuthorize("#userId.toString() == authentication.principal.id.toString()")
     @GetMapping("/user/{userId}/status/{status}")
     public ResponseEntity<OrderDTOListApiResource> getUserOrdersByStatus(
             @PathVariable ObjectId userId,
@@ -86,6 +93,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
+    // ADMIN only.
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/all")
     public ResponseEntity<OrderDTOListApiResource> getAllOrders() {
@@ -100,6 +108,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
+    // ADMIN only.
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/status/{status}")
     public ResponseEntity<OrderDTOListApiResource> getOrdersByStatus(@PathVariable String status) {
@@ -116,6 +125,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
+    // ADMIN only — order status transitions.
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{orderId}/status")
     public ResponseEntity<OrderDTOApiResource> updateOrderStatus(
@@ -136,6 +146,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
+    // ADMIN only.
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics")
     public ResponseEntity<OrderStatisticsApiResource> getOrderStatistics() {
@@ -160,7 +171,9 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
-    @PreAuthorize("hasRole('ADMIN') or #customerId.toString() == authentication.principal.id.toString()")
+    // CUSTOMER only — the path a regular user uses to fetch one of their own orders;
+    // ownership is enforced declaratively via the customerId in the path.
+    @PreAuthorize("#customerId.toString() == authentication.principal.id.toString()")
     @GetMapping("/{customerId}/{orderId}")
     @Override
     public ResponseEntity<OrderDTOApiResource> getOrderByIdAndCustomerId(

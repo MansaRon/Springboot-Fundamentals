@@ -37,4 +37,7 @@ public abstract class API {
 
     @Autowired
     protected OTPService otpService;
+
+    @Autowired
+    protected LookupService lookupService;
 }

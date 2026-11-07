@@ -126,6 +126,16 @@ class CheckoutValidationServiceImplTest {
         }
 
         @Test
+        @DisplayName("shouldPassForEftPaymentMethod")
+        void shouldPassForEftPaymentMethod() {
+            validCheckout.setPaymentMethod(PaymentMethod.EFT);
+            when(productRepository.findById(any())).thenReturn(Optional.of(product));
+
+            assertThatCode(() -> validationService.validateCheckout(validCheckout))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
         @DisplayName("shouldThrowWhenShippingAddressIsNull")
         void shouldThrowWhenShippingAddressIsNull() {
             validCheckout.setShippingAddress(null);

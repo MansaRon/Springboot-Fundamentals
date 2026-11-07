@@ -124,7 +124,9 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getUserOrders(ObjectId userId) {
         log.info("Fetching orders for user: {}", userId);
 
-        return orderRepository.findByCustomerInfoId(userId)
+        // Newest first so the frontend's order history / "latest order" shows the
+        // just-placed order at the top rather than buried at the end.
+        return orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
@@ -205,7 +207,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDTO getOrderByIdAndCustomerId(ObjectId customerId, ObjectId orderId) {
         log.info("Fetching order by customerId and orderId: {} / {} ", orderId, customerId);
-        Order order = orderRepository.findByIdAndCustomerInfoId(customerId, orderId)
+        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",

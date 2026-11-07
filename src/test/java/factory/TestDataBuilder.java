@@ -137,6 +137,10 @@ public class TestDataBuilder {
 
     public static Address buildAddress() {
         return Address.builder()
+                .fullName("Frank Ocean")
+                .phoneNumber("0821234567")
+                .email("frank@example.com")
+                .apartment("Unit 4B")
                 .streetAddress("51 Frank Ocean Street")
                 .city("Johannesburg")
                 .state("Gauteng")

@@ -80,6 +80,11 @@ class OrderMapperTest {
 
             assertThat(dto.getShippingAddress()).isNotNull();
             assertThat(dto.getShippingAddress().getCity()).isEqualTo("Johannesburg");
+            // Contact fields must survive mapping (previously dropped).
+            assertThat(dto.getShippingAddress().getFullName()).isEqualTo("Frank Ocean");
+            assertThat(dto.getShippingAddress().getPhoneNumber()).isEqualTo("0821234567");
+            assertThat(dto.getShippingAddress().getEmail()).isEqualTo("frank@example.com");
+            assertThat(dto.getShippingAddress().getApartment()).isEqualTo("Unit 4B");
             assertThat(dto.getBillingAddress()).isNotNull();
         }
 
@@ -116,7 +121,10 @@ class OrderMapperTest {
             orderItem.setId(new ObjectId());
             orderItem.setProduct(product);
             orderItem.setQuantity(2);
+            orderItem.setUnitPrice(49.99);
             orderItem.setTotalPrice(99.98);
+            orderItem.setDiscount(5.0);
+            orderItem.setTax(15.0);
             orderItem.setCreatedAt(LocalDateTime.now());
             orderItem.setUpdatedAt(LocalDateTime.now());
 
@@ -125,7 +133,11 @@ class OrderMapperTest {
             assertThat(dto).isNotNull();
             assertThat(dto.getProductTitle()).isEqualTo("Organic Fleece Hoodie");
             assertThat(dto.getQuantity()).isEqualTo(2);
+            // Per-item pricing must be mapped (previously always 0).
+            assertThat(dto.getUnitPrice()).isEqualTo(49.99);
             assertThat(dto.getTotalPrice()).isEqualTo(99.98);
+            assertThat(dto.getDiscount()).isEqualTo(5.0);
+            assertThat(dto.getTax()).isEqualTo(15.0);
         }
     }
 

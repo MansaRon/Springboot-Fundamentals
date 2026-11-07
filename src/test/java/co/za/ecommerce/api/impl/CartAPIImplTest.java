@@ -51,6 +51,7 @@ class CartAPIImplTest {
     @MockBean private ObjectMapper objectMapper;
     @MockBean private JwtTokenProvider jwtTokenProvider;
     @MockBean private CustomUserDetailsService customUserDetailsService;
+    @MockBean private LookupService lookupService;
 
     private static final String USER_ID = "507f1f77bcf86cd799439011";
     private static final String PRODUCT_ID = "507f1f77bcf86cd799439022";
@@ -382,17 +383,19 @@ class CartAPIImplTest {
         }
 
         @Test
-        @DisplayName("shouldReturn400WhenCartNotFound")
-        void shouldReturn400WhenCartNotFound() throws Exception {
-            when(cartService.clearCart(any(ObjectId.class)))
-                    .thenThrow(new CartException(
-                            HttpStatus.BAD_REQUEST.toString(),
-                            "Cart not found for user",
-                            HttpStatus.BAD_REQUEST.value()));
+        @DisplayName("shouldReturn200WithEmptyCartWhenNoCartExists")
+        void shouldReturn200WithEmptyCartWhenNoCartExists() throws Exception {
+            // Clearing is idempotent — a missing cart yields an empty cart, not a 400.
+            CartDTO emptyCart = CartDTO.builder()
+                    .cartItems(List.of())
+                    .totalPrice(0.0)
+                    .build();
+            when(cartService.clearCart(any(ObjectId.class))).thenReturn(emptyCart);
 
             mockMvc.perform(delete("/api/v1/cart/{userId}/clear", USER_ID))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value("Cart not found for user"));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.cartItems").isEmpty())
+                    .andExpect(jsonPath("$.data.totalPrice").value(0.0));
         }
     }
 }

@@ -79,10 +79,11 @@ public class CartServiceImpl implements CartService {
     @Override
     @Cacheable(value = "carts", key = "#userId")
     public CartDTO getUserCartWithItems(ObjectId userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseGet(() -> createNewCartForUser(userId));
-
-        return CartMapper.toDTO(cart);
+        // No cart yet (new user, or cleared after checkout) is not an error — return an
+        // empty cart with 200 rather than creating one as a side effect of a GET.
+        return cartRepository.findByUserId(userId)
+                .map(CartMapper::toDTO)
+                .orElseGet(CartServiceImpl::emptyCart);
     }
 
     @Override
@@ -153,11 +154,13 @@ public class CartServiceImpl implements CartService {
     @Override
     @CacheEvict(value = "carts", key = "#userId")
     public CartDTO clearCart(ObjectId userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new CartException(
-                        HttpStatus.BAD_REQUEST.toString(),
-                        "Cart not found for user",
-                        HttpStatus.BAD_REQUEST.value()));
+        // Clearing is idempotent: no cart (e.g. already removed during order
+        // confirmation) is a success state, not a 400 — return an empty cart.
+        Cart cart = cartRepository.findByUserId(userId).orElse(null);
+        if (cart == null) {
+            log.info("No cart to clear for user: {} — returning empty cart.", userId);
+            return emptyCart();
+        }
 
         log.info("Clearing cart for user: {}", userId);
 
@@ -179,6 +182,13 @@ public class CartServiceImpl implements CartService {
     public void deleteCart(Cart cart) {
         log.info("Deleting cart: {}", cart.getId());
         cartRepository.delete(cart);
+    }
+
+    private static CartDTO emptyCart() {
+        return CartDTO.builder()
+                .cartItems(new ArrayList<>())
+                .totalPrice(0.0)
+                .build();
     }
 
     // TODO add method to remove specific product within cart

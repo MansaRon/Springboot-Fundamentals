@@ -68,6 +68,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
+    @ExceptionHandler(LookupException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleLookupException(
+            final LookupException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] LookupException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
     @ExceptionHandler(WishlistException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleWishlistException(
             final WishlistException ex, final HttpServletRequest request) {

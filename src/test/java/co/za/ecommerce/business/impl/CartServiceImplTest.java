@@ -280,27 +280,18 @@ class CartServiceImplTest {
         }
 
         @Test
-        @DisplayName("shouldCreateAndReturnNewCartWhenNoneExists")
-        void shouldCreateAndReturnNewCartWhenNoneExists() {
-            Cart newCart = Cart.builder()
-                    .id(new ObjectId())
-                    .user(user)
-                    .cartItems(new ArrayList<>())
-                    .totalPrice(0.0)
-                    .build();
-
+        @DisplayName("shouldReturnEmptyCartWithoutCreatingWhenNoneExists")
+        void shouldReturnEmptyCartWithoutCreatingWhenNoneExists() {
             when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(cartRepository.save(any(Cart.class))).thenReturn(newCart);
 
-            try (MockedStatic<CartMapper> cartMapperMock = mockStatic(CartMapper.class)) {
-                cartMapperMock.when(() -> CartMapper.toDTO(any(Cart.class))).thenReturn(new CartDTO());
+            CartDTO result = cartService.getUserCartWithItems(userId);
 
-                cartService.getUserCartWithItems(userId);
-
-                verify(cartRepository).save(any(Cart.class));
-                verify(userRepository).findById(userId);
-            }
+            // 200-empty: no cart is created as a side effect of a GET, and no user lookup.
+            assertThat(result).isNotNull();
+            assertThat(result.getCartItems()).isEmpty();
+            assertThat(result.getTotalPrice()).isZero();
+            verify(cartRepository, never()).save(any());
+            verify(userRepository, never()).findById(any());
         }
     }
 
@@ -485,14 +476,17 @@ class CartServiceImplTest {
         }
 
         @Test
-        @DisplayName("shouldThrowCartExceptionWhenCartNotFound")
-        void shouldThrowCartExceptionWhenCartNotFound() {
+        @DisplayName("shouldReturnEmptyCartWhenNoCartExists")
+        void shouldReturnEmptyCartWhenNoCartExists() {
             when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> cartService.clearCart(userId))
-                    .isInstanceOf(CartException.class)
-                    .hasMessageContaining("Cart not found");
+            // Idempotent: already-cleared (e.g. removed during order confirmation) is a
+            // success state, returning an empty cart rather than a 400.
+            CartDTO result = cartService.clearCart(userId);
 
+            assertThat(result).isNotNull();
+            assertThat(result.getCartItems()).isEmpty();
+            assertThat(result.getTotalPrice()).isZero();
             verify(productRepository, never()).save(any());
             verify(cartRepository, never()).save(any());
         }

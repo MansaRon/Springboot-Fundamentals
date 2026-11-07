@@ -55,6 +55,10 @@ public class OrderMapper {
     private static AddressDTO toAddressDTO(Address address) {
         if (address == null) return null;
         AddressDTO dto = new AddressDTO();
+        dto.setFullName(address.getFullName());
+        dto.setPhoneNumber(address.getPhoneNumber());
+        dto.setEmail(address.getEmail());
+        dto.setApartment(address.getApartment());
         dto.setStreetAddress(address.getStreetAddress());
         dto.setCity(address.getCity());
         dto.setState(address.getState());
@@ -71,9 +75,11 @@ public class OrderMapper {
         dto.setUpdatedAt(orderItems.getUpdatedAt());
         dto.setProductTitle(orderItems.getProduct().getTitle());
         dto.setImageUrls(orderItems.getProduct().getImageUrls());
-        dto.setId(orderItems.getId() != null ? orderItems.getId().toHexString() : null);
         dto.setQuantity(orderItems.getQuantity());
+        dto.setUnitPrice(orderItems.getUnitPrice());
         dto.setTotalPrice(orderItems.getTotalPrice());
+        dto.setDiscount(orderItems.getDiscount());
+        dto.setTax(orderItems.getTax());
         dto.setProductId(String.valueOf(orderItems.getProduct().getId()));
 
         return dto;

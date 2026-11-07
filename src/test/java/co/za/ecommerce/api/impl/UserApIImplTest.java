@@ -48,6 +48,7 @@ class UserApIImplTest {
     @MockBean private S3Service s3Service;
     @MockBean private JwtTokenProvider jwtTokenProvider;
     @MockBean private CustomUserDetailsService customUserDetailsService;
+    @MockBean private LookupService lookupService;
     @MockBean private WishlistService wishlistService;
     @MockBean private ModelMapper modelMapper;
 

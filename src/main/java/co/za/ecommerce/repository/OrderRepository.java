@@ -15,6 +15,7 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     Optional<Order> findByOrderNumber(String orderNumber);
     List<Order> findByCustomerInfo(User user);
     List<Order> findByCustomerInfoId(ObjectId userId);
+    List<Order> findByCustomerInfoIdOrderByCreatedAtDesc(ObjectId userId);
     List<Order> findByOrderStatus(OrderStatus status);
     List<Order> findByCustomerInfoIdAndOrderStatus(ObjectId userId, OrderStatus status);
     Optional<Order> findByIdAndCustomerInfoId(ObjectId orderId, ObjectId customerId);
