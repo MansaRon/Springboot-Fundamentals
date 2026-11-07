@@ -2,9 +2,13 @@ package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.business.*;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderStatusHistoryDTO;
+import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.exception.GlobalExceptionHandler;
+import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.order.OrderStatus;
+import org.springframework.http.HttpStatus;
 import co.za.ecommerce.security.CustomUserDetailsService;
 import co.za.ecommerce.security.JwtTokenProvider;
 import org.bson.types.ObjectId;
@@ -364,6 +368,80 @@ class OrderAPIImplTest {
                     .andExpect(jsonPath("$.data.totalOrders").value(0))
                     .andExpect(jsonPath("$.data.pendingOrders").value(0))
                     .andExpect(jsonPath("$.data.confirmedOrders").value(0));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/order/{customerId}/{orderId}/track")
+    class TrackOrder {
+        @Test
+        @DisplayName("shouldReturn200WithTrackingTimeline")
+        void shouldReturn200WithTrackingTimeline() throws Exception {
+            OrderStatusHistoryDTO entry = OrderStatusHistoryDTO.builder()
+                    .status("CONFIRMED").notes("Order created").build();
+            OrderTrackingDTO tracking = OrderTrackingDTO.builder()
+                    .orderNumber(ORDER_NUMBER)
+                    .currentStatus("CONFIRMED")
+                    .shippingMethod("STANDARD")
+                    .cancellable(true)
+                    .history(List.of(entry))
+                    .build();
+
+            when(orderService.trackOrder(eq(new ObjectId(USER_ID)), eq(new ObjectId(ORDER_ID))))
+                    .thenReturn(tracking);
+
+            mockMvc.perform(get("/api/v1/order/{customerId}/{orderId}/track", USER_ID, ORDER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Order tracking retrieved successfully."))
+                    .andExpect(jsonPath("$.data.orderNumber").value(ORDER_NUMBER))
+                    .andExpect(jsonPath("$.data.currentStatus").value("CONFIRMED"))
+                    .andExpect(jsonPath("$.data.cancellable").value(true))
+                    .andExpect(jsonPath("$.data.history[0].status").value("CONFIRMED"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/order/{customerId}/{orderId}/cancel")
+    class CancelOrder {
+        @Test
+        @DisplayName("shouldReturn200WithCancelledOrder")
+        void shouldReturn200WithCancelledOrder() throws Exception {
+            when(orderService.cancelOrder(eq(new ObjectId(USER_ID)), eq(new ObjectId(ORDER_ID)), any()))
+                    .thenReturn(orderDTO);
+
+            mockMvc.perform(post("/api/v1/order/{customerId}/{orderId}/cancel", USER_ID, ORDER_ID)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"reason\":\"Changed my mind\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Order cancelled successfully."))
+                    .andExpect(jsonPath("$.data.orderNumber").value(ORDER_NUMBER));
+        }
+
+        @Test
+        @DisplayName("shouldReturn200WhenNoBodyProvided")
+        void shouldReturn200WhenNoBodyProvided() throws Exception {
+            when(orderService.cancelOrder(eq(new ObjectId(USER_ID)), eq(new ObjectId(ORDER_ID)), any()))
+                    .thenReturn(orderDTO);
+
+            mockMvc.perform(post("/api/v1/order/{customerId}/{orderId}/cancel", USER_ID, ORDER_ID))
+                    .andExpect(status().isOk());
+
+            verify(orderService).cancelOrder(eq(new ObjectId(USER_ID)), eq(new ObjectId(ORDER_ID)), any());
+        }
+
+        @Test
+        @DisplayName("shouldReturn400WhenNotCancellable")
+        void shouldReturn400WhenNotCancellable() throws Exception {
+            when(orderService.cancelOrder(any(), any(), any()))
+                    .thenThrow(new OrderException(
+                            HttpStatus.BAD_REQUEST.toString(),
+                            "The 72-hour cancellation window for this order has passed.",
+                            HttpStatus.BAD_REQUEST.value()));
+
+            mockMvc.perform(post("/api/v1/order/{customerId}/{orderId}/cancel", USER_ID, ORDER_ID))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message")
+                            .value("The 72-hour cancellation window for this order has passed."));
         }
     }
 }

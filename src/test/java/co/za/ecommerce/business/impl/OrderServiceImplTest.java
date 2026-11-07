@@ -3,6 +3,7 @@ package co.za.ecommerce.business.impl;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
@@ -565,6 +566,128 @@ class OrderServiceImplTest {
                 verify(orderRepository).save(captor.capture());
                 assertThat(captor.getValue().getStatusHistory()).isNotNull().hasSize(1);
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("trackOrder")
+    class TrackOrder {
+        @Test
+        @DisplayName("shouldReturnTrackingViewForOwnedOrder")
+        void shouldReturnTrackingViewForOwnedOrder() {
+            savedOrder.setStatusHistory(new ArrayList<>(List.of(
+                    OrderStatusHistory.builder().status(OrderStatus.CONFIRMED)
+                            .timestamp(DateUtil.now()).notes("Order created").build())));
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.of(savedOrder));
+
+            savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
+
+            OrderTrackingDTO tracking = orderService.trackOrder(userId, orderId);
+
+            assertThat(tracking).isNotNull();
+            assertThat(tracking.getOrderNumber()).isEqualTo("ORD-20260314-483920");
+            assertThat(tracking.getCurrentStatus()).isEqualTo("CONFIRMED");
+            assertThat(tracking.getHistory()).hasSize(1);
+            assertThat(tracking.getHistory().get(0).getStatus()).isEqualTo("CONFIRMED");
+            // CONFIRMED and within the window → cancellable.
+            assertThat(tracking.isCancellable()).isTrue();
+        }
+
+        @Test
+        @DisplayName("shouldReportNotCancellableOnceShipped")
+        void shouldReportNotCancellableOnceShipped() {
+            savedOrder.setOrderStatus(OrderStatus.SHIPPED);
+            savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
+            savedOrder.setStatusHistory(new ArrayList<>());
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.of(savedOrder));
+
+            OrderTrackingDTO tracking = orderService.trackOrder(userId, orderId);
+
+            assertThat(tracking.getCurrentStatus()).isEqualTo("SHIPPED");
+            assertThat(tracking.isCancellable()).isFalse();
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOrderNotOwnedOrMissing")
+        void shouldThrowWhenOrderNotOwnedOrMissing() {
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.trackOrder(userId, orderId))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("Order not found");
+        }
+    }
+
+    @Nested
+    @DisplayName("cancelOrder")
+    class CancelOrder {
+        @Test
+        @DisplayName("shouldCancelRestoreInventoryAppendHistoryAndEmailWhenWithinWindow")
+        void shouldCancelRestoreInventoryAppendHistoryAndEmailWhenWithinWindow() {
+            savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
+            savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
+            savedOrder.setStatusHistory(new ArrayList<>());
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.of(savedOrder));
+            when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            OrderDTO result = orderService.cancelOrder(userId, orderId, "Changed my mind");
+
+            assertThat(result).isNotNull();
+
+            ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+            verify(orderRepository).save(captor.capture());
+            Order cancelled = captor.getValue();
+            assertThat(cancelled.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+            assertThat(cancelled.getStatusHistory()).hasSize(1);
+            assertThat(cancelled.getStatusHistory().get(0).getNotes()).contains("Changed my mind");
+
+            verify(inventoryService).restoreInventory(savedOrder.getOrderItems());
+            verify(emailService).sendOrderStatusUpdateEmail(eq(user), any(OrderDTO.class), eq(OrderStatus.CANCELLED));
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOrderAlreadyShipped")
+        void shouldThrowWhenOrderAlreadyShipped() {
+            savedOrder.setOrderStatus(OrderStatus.SHIPPED);
+            savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.of(savedOrder));
+
+            assertThatThrownBy(() -> orderService.cancelOrder(userId, orderId, null))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("cannot be cancelled");
+
+            verify(orderRepository, never()).save(any());
+            verify(inventoryService, never()).restoreInventory(any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenCancellationWindowHasPassed")
+        void shouldThrowWhenCancellationWindowHasPassed() {
+            savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
+            savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(100));
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+                    .thenReturn(Optional.of(savedOrder));
+
+            assertThatThrownBy(() -> orderService.cancelOrder(userId, orderId, null))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("cancellation window");
+
+            verify(orderRepository, never()).save(any());
+            verify(inventoryService, never()).restoreInventory(any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOrderNotOwnedOrMissing")
+        void shouldThrowWhenOrderNotOwnedOrMissing() {
+            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.cancelOrder(userId, orderId, null))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("Order not found");
         }
     }
 }

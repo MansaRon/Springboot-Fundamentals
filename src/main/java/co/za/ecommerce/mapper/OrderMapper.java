@@ -5,9 +5,11 @@ import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.order.Address;
 import co.za.ecommerce.model.order.Order;
 import co.za.ecommerce.model.order.OrderItems;
+import co.za.ecommerce.model.order.OrderStatusHistory;
 import co.za.ecommerce.model.order.PaymentDetails;
 import co.za.ecommerce.utils.DateUtil;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class OrderMapper {
@@ -36,8 +38,39 @@ public class OrderMapper {
         dto.setPaymentMethod(order.getPaymentMethod());
         dto.setShippingCost(order.getShippingCost());
         dto.setOrderNumber(order.getOrderNumber());
+        dto.setShippedDate(order.getShippedDate());
+        dto.setStatusHistory(toStatusHistoryDTOList(order.getStatusHistory()));
 
         return dto;
+    }
+
+    public static OrderTrackingDTO toTrackingDTO(Order order) {
+        if (order == null) return null;
+        return OrderTrackingDTO.builder()
+                .orderNumber(order.getOrderNumber())
+                .currentStatus(order.getOrderStatus() != null ? order.getOrderStatus().name() : null)
+                .shippingMethod(order.getShippingMethod())
+                .placedAt(order.getCreatedAt())
+                .estimatedDeliveryDate(order.getEstimatedDeliveryDate())
+                .shippedDate(order.getShippedDate())
+                .deliveredDate(order.getDeliveredDate())
+                .history(toStatusHistoryDTOList(order.getStatusHistory()))
+                .build();
+    }
+
+    private static List<OrderStatusHistoryDTO> toStatusHistoryDTOList(List<OrderStatusHistory> history) {
+        if (history == null) return null;
+        return history.stream().map(OrderMapper::toStatusHistoryDTO).collect(Collectors.toList());
+    }
+
+    private static OrderStatusHistoryDTO toStatusHistoryDTO(OrderStatusHistory entry) {
+        if (entry == null) return null;
+        return OrderStatusHistoryDTO.builder()
+                .status(entry.getStatus() != null ? entry.getStatus().name() : null)
+                .timestamp(entry.getTimestamp())
+                .notes(entry.getNotes())
+                .updatedBy(entry.getUpdatedBy())
+                .build();
     }
 
     private static CustomerDTO toUserDTO(User user) {

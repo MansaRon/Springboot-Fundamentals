@@ -20,7 +20,6 @@ import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.ProductRepository;
-import co.za.ecommerce.utils.DateUtil;
 import co.za.ecommerce.utils.ValueUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,9 +90,9 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setCurrency("ZAR");
         checkout.setBillingAddress(null);
         checkout.setShippingAddress(null);
-        checkout.setEstimatedDeliveryDate(DateUtil.getEstimatedDeliveryDate().atStartOfDay());
         checkout.setShippingMethod(DeliverMethod.FREE);
 
+        // estimatedDeliveryDate is derived from the shipping method inside recalculateTotals.
         recalculateTotals(checkout);
 
         Checkout savedCheckout = checkoutRepository.save(checkout);
@@ -437,6 +436,12 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.setTax(tax);
         checkout.setShippingCost(shippingCost);
         checkout.setTotalAmount(ValueUtil.round(totalAmount, 2));
+
+        // ETA is derived from the selected delivery method's estimated days, so it
+        // reflects the chosen shipping speed and is never null once a method is set.
+        if (checkout.getShippingMethod() != null) {
+            checkout.setEstimatedDeliveryDate(now().plusDays(checkout.getShippingMethod().getEstimatedDays()));
+        }
 
         log.debug("Totals: Subtotal=R{}, Discount=R{}, Tax=R{}, Shipping=R{}, Total=R{}",
                 subTotal, discount, tax, shippingCost, totalAmount);

@@ -357,6 +357,8 @@ class CheckoutServiceImplTest {
                 // subtotal 99.98 + VAT 15.00 + shipping 50.00 = 164.98
                 assertThat(captor.getValue().getShippingCost()).isEqualTo(50.0);
                 assertThat(captor.getValue().getTotalAmount()).isEqualTo(164.98);
+                // ETA is derived from the selected delivery method (EXPRESS) — never null.
+                assertThat(captor.getValue().getEstimatedDeliveryDate()).isNotNull();
             }
         }
 
