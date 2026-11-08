@@ -36,4 +36,9 @@ public class RatingDTO {
     private double rating;
 
     private String comment;
+
+    /**
+     * Admin moderation flag — true when the review is hidden from public listings.
+     */
+    private boolean hidden;
 }

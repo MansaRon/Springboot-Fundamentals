@@ -393,9 +393,57 @@ public class ProductServiceImpl implements ProductService {
         Product foundProduct = findProductById(productId);
 
         if (foundProduct.getReviews() != null) {
+            List<Rating> visibleReviews = foundProduct.getReviews()
+                    .stream()
+                    .filter(review -> !review. isHidden())
+                    .collect(Collectors.toList());
+            return mapToRatingDTO(visibleReviews);
+        }
+        return List.of();
+    }
+
+    @Override
+    public List<RatingDTO> getAllProductReviews(String productId) {
+        Product foundProduct = findProductById(productId);
+
+        if (foundProduct.getReviews() != null) {
             return mapToRatingDTO(foundProduct.getReviews());
         }
         return List.of();
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = "product-reviews", key = "#productId"),
+            @CacheEvict(value = "products", key = "#productId"),
+            @CacheEvict(value = "product-list", allEntries = true)
+    })
+    public RatingDTO setReviewVisibility(String productId, String userId, boolean hidden) {
+        Product foundProduct = findProductById(productId);
+
+        if (foundProduct.getReviews() == null || foundProduct.getReviews().isEmpty()) {
+            throw new ProductException(
+                    HttpStatus.NOT_FOUND.toString(),
+                    "No reviews found for this product.",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        Rating existingRating = foundProduct.getReviews()
+                .stream()
+                .filter(review -> review.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new ProductException(
+                        HttpStatus.NOT_FOUND.toString(),
+                        "No review found for this user on this product.",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+
+        existingRating.setHidden(hidden);
+        foundProduct.setUpdatedAt(now());
+
+        productRepository.save(foundProduct);
+        return objectMapper.mapObject().map(existingRating, RatingDTO.class);
     }
 
     private Product findProductById(String id) {
