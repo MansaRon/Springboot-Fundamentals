@@ -2,6 +2,7 @@ package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.api.OrderAPI;
 import co.za.ecommerce.config.AppConstants;
+import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.OrderDTOAllApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
@@ -175,6 +176,22 @@ public class OrderAPIImpl extends API implements OrderAPI {
                                 request.getReason()
                         ))
                         .message("Order pricing adjusted.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // ADMIN only — soft-deletes CANCELLED orders created more than olderThanDays ago.
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/admin/stale")
+    public ResponseEntity<ApiResource> deleteStaleOrders(
+            @RequestParam(name = "olderThanDays", defaultValue = "30", required = false) int olderThanDays) {
+        int deleted = orderService.deleteStaleOrders(olderThanDays);
+        return ResponseEntity.ok(
+                ApiResource.builder()
+                        .timestamp(instantNow())
+                        .message(String.format("Soft-deleted %d stale order(s).", deleted))
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

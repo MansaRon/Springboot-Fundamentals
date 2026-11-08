@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -113,7 +114,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO getOrderById(ObjectId orderId) {
         log.info("Fetching order by ID: {}", orderId);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdAndDeletedFalse(orderId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",
@@ -127,7 +128,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO getOrderByOrderNumber(String orderNumber) {
         log.info("Fetching order by order number: {}", orderNumber);
 
-        Order order = orderRepository.findByOrderNumber(orderNumber)
+        Order order = orderRepository.findByOrderNumberAndDeletedFalse(orderNumber)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",
@@ -143,7 +144,7 @@ public class OrderServiceImpl implements OrderService {
 
         // Newest first so the frontend's order history / "latest order" shows the
         // just-placed order at the top rather than buried at the end.
-        return orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId)
+        return orderRepository.findByCustomerInfoIdAndDeletedFalseOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
@@ -153,7 +154,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getUserOrdersByStatus(ObjectId userId, OrderStatus status) {
         log.info("Fetching {} orders for user: {}", status, userId);
 
-        return orderRepository.findByCustomerInfoIdAndOrderStatus(userId, status)
+        return orderRepository.findByCustomerInfoIdAndOrderStatusAndDeletedFalse(userId, status)
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
@@ -163,7 +164,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getAllOrders() {
         log.info("Fetching all orders (admin)");
 
-        return orderRepository.findAll()
+        return orderRepository.findByDeletedFalse()
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
@@ -179,7 +180,7 @@ public class OrderServiceImpl implements OrderService {
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<Order> orders = orderRepository.findAll(pageable);
+        Page<Order> orders = orderRepository.findByDeletedFalse(pageable);
 
         return buildGetAllOrdersDTO(orders);
     }
@@ -204,7 +205,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getOrdersByStatus(OrderStatus status) {
         log.info("Fetching orders with status: {}", status);
 
-        return orderRepository.findByOrderStatus(status)
+        return orderRepository.findByOrderStatusAndDeletedFalse(status)
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
@@ -302,9 +303,41 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public int deleteStaleOrders(int olderThanDays) {
+        log.info("Soft-deleting stale CANCELLED orders older than {} days", olderThanDays);
+
+        if (olderThanDays < 0) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "olderThanDays must be zero or positive.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        LocalDateTime cutoff = DateUtil.now().minusDays(olderThanDays);
+        List<Order> staleOrders = orderRepository
+                .findByOrderStatusAndDeletedFalseAndCreatedAtBefore(OrderStatus.CANCELLED, cutoff);
+
+        if (staleOrders.isEmpty()) {
+            log.info("No stale orders to delete.");
+            return 0;
+        }
+
+        LocalDateTime deletedAt = DateUtil.now();
+        staleOrders.forEach(order -> {
+            order.setDeleted(true);
+            order.setDeletedAt(deletedAt);
+            order.setUpdatedAt(deletedAt);
+        });
+        orderRepository.saveAll(staleOrders);
+
+        log.info("Soft-deleted {} stale CANCELLED orders", staleOrders.size());
+        return staleOrders.size();
+    }
+
+    @Override
     public OrderDTO getOrderByIdAndCustomerId(ObjectId customerId, ObjectId orderId) {
         log.info("Fetching order by customerId and orderId: {} / {} ", orderId, customerId);
-        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
+        Order order = orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, customerId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",
@@ -317,7 +350,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderTrackingDTO trackOrder(ObjectId customerId, ObjectId orderId) {
         log.info("Tracking order {} for customer {}", orderId, customerId);
-        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
+        Order order = orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, customerId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",
@@ -339,7 +372,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO cancelOrder(ObjectId customerId, ObjectId orderId, String reason) {
         log.info("Customer {} requested cancellation of order {}", customerId, orderId);
 
-        Order order = orderRepository.findByIdAndCustomerInfoId(orderId, customerId)
+        Order order = orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, customerId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found",
@@ -408,7 +441,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private Order findOrderById(ObjectId orderId) {
-        return orderRepository.findById(orderId)
+        return orderRepository.findByIdAndDeletedFalse(orderId)
                 .orElseThrow(() -> new OrderException(
                         HttpStatus.NOT_FOUND.toString(),
                         "Order not found.",

@@ -394,6 +394,33 @@ class OrderAPIImplTest {
     }
 
     @Nested
+    @DisplayName("DELETE /api/v1/order/admin/stale")
+    class DeleteStaleOrders {
+
+        @Test
+        @DisplayName("shouldReturn200WithDeletedCount")
+        void shouldReturn200WithDeletedCount() throws Exception {
+            when(orderService.deleteStaleOrders(30)).thenReturn(5);
+
+            mockMvc.perform(delete("/api/v1/order/admin/stale").param("olderThanDays", "30"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message").value("Soft-deleted 5 stale order(s)."));
+        }
+
+        @Test
+        @DisplayName("shouldDefaultTo30DaysWhenParamOmitted")
+        void shouldDefaultTo30DaysWhenParamOmitted() throws Exception {
+            when(orderService.deleteStaleOrders(30)).thenReturn(0);
+
+            mockMvc.perform(delete("/api/v1/order/admin/stale"))
+                    .andExpect(status().isOk());
+
+            verify(orderService).deleteStaleOrders(30);
+        }
+    }
+
+    @Nested
     @DisplayName("GET /api/v1/order/admin/statistics")
     class GetOrderStatistics {
 

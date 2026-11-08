@@ -42,6 +42,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -211,7 +212,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnOrderDTOWhenOrderExists")
         void shouldReturnOrderDTOWhenOrderExists() {
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 mapperMock.when(() -> OrderMapper.mapToOrderDTO(savedOrder)).thenReturn(orderDTO);
@@ -226,7 +227,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldThrowOrderExceptionWhenOrderNotFound")
         void shouldThrowOrderExceptionWhenOrderNotFound() {
-            when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.getOrderById(orderId))
                     .isInstanceOf(OrderException.class)
@@ -240,8 +241,8 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldQueryRepositoryWithOrderIdThenCustomerId")
         void shouldQueryRepositoryWithOrderIdThenCustomerId() {
-            // Repo signature is findByIdAndCustomerInfoId(orderId, customerId) — order matters.
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            // Repo signature is findByIdAndCustomerInfoIdAndDeletedFalse(orderId, customerId) — order matters.
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -250,14 +251,14 @@ class OrderServiceImplTest {
                 OrderDTO result = orderService.getOrderByIdAndCustomerId(userId, orderId);
 
                 assertThat(result).isNotNull();
-                verify(orderRepository).findByIdAndCustomerInfoId(orderId, userId);
+                verify(orderRepository).findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId);
             }
         }
 
         @Test
         @DisplayName("shouldThrowOrderExceptionWhenOrderNotOwnedOrMissing")
         void shouldThrowOrderExceptionWhenOrderNotOwnedOrMissing() {
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.getOrderByIdAndCustomerId(userId, orderId))
@@ -272,7 +273,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnOrderDTOWhenOrderNumberExists")
         void shouldReturnOrderDTOWhenOrderNumberExists() {
-            when(orderRepository.findByOrderNumber("ORD-20260314-483920")).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByOrderNumberAndDeletedFalse("ORD-20260314-483920")).thenReturn(Optional.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 mapperMock.when(() -> OrderMapper.mapToOrderDTO(savedOrder)).thenReturn(orderDTO);
@@ -287,7 +288,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldThrowOrderExceptionWhenOrderNumberNotFound")
         void shouldThrowOrderExceptionWhenOrderNumberNotFound() {
-            when(orderRepository.findByOrderNumber(any())).thenReturn(Optional.empty());
+            when(orderRepository.findByOrderNumberAndDeletedFalse(any())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.getOrderByOrderNumber("ORD-INVALID"))
                     .isInstanceOf(OrderException.class)
@@ -301,7 +302,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnOrderListWhenUserHasOrders")
         void shouldReturnOrderListWhenUserHasOrders() {
-            when(orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId))
+            when(orderRepository.findByCustomerInfoIdAndDeletedFalseOrderByCreatedAtDesc(userId))
                     .thenReturn(List.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -317,7 +318,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnEmptyListWhenUserHasNoOrders")
         void shouldReturnEmptyListWhenUserHasNoOrders() {
-            when(orderRepository.findByCustomerInfoIdOrderByCreatedAtDesc(userId)).thenReturn(List.of());
+            when(orderRepository.findByCustomerInfoIdAndDeletedFalseOrderByCreatedAtDesc(userId)).thenReturn(List.of());
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 List<OrderDTO> results = orderService.getUserOrders(userId);
@@ -338,7 +339,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnAllOrdersWhenOrdersExist")
         void shouldReturnAllOrdersWhenOrdersExist() {
-            when(orderRepository.findAll()).thenReturn(List.of(savedOrder));
+            when(orderRepository.findByDeletedFalse()).thenReturn(List.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 mapperMock.when(() -> OrderMapper.mapToOrderDTO(savedOrder)).thenReturn(orderDTO);
@@ -352,7 +353,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnEmptyListWhenNoOrdersExist")
         void shouldReturnEmptyListWhenNoOrdersExist() {
-            when(orderRepository.findAll()).thenReturn(List.of());
+            when(orderRepository.findByDeletedFalse()).thenReturn(List.of());
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 List<OrderDTO> results = orderService.getAllOrders();
@@ -369,7 +370,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnOrdersMatchingStatus")
         void shouldReturnOrdersMatchingStatus() {
-            when(orderRepository.findByOrderStatus(OrderStatus.CONFIRMED)).thenReturn(List.of(savedOrder));
+            when(orderRepository.findByOrderStatusAndDeletedFalse(OrderStatus.CONFIRMED)).thenReturn(List.of(savedOrder));
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 mapperMock.when(() -> OrderMapper.mapToOrderDTO(savedOrder)).thenReturn(orderDTO);
@@ -383,7 +384,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldReturnEmptyListWhenNoOrdersMatchStatus")
         void shouldReturnEmptyListWhenNoOrdersMatchStatus() {
-            when(orderRepository.findByOrderStatus(OrderStatus.CANCELLED)).thenReturn(List.of());
+            when(orderRepository.findByOrderStatusAndDeletedFalse(OrderStatus.CANCELLED)).thenReturn(List.of());
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
                 List<OrderDTO> results = orderService.getOrdersByStatus(OrderStatus.CANCELLED);
@@ -399,7 +400,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldThrowWhenOrderNotFound")
         void shouldThrowWhenOrderNotFound() {
-            when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     orderService.updateOrderStatus(orderId, OrderStatus.PROCESSING, null))
@@ -413,7 +414,7 @@ class OrderServiceImplTest {
         @DisplayName("shouldThrowWhenTryingToUpdateCancelledOrder")
         void shouldThrowWhenTryingToUpdateCancelledOrder() {
             savedOrder.setOrderStatus(OrderStatus.CANCELLED);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() ->
                     orderService.updateOrderStatus(orderId, OrderStatus.PROCESSING, null))
@@ -427,7 +428,7 @@ class OrderServiceImplTest {
         @DisplayName("shouldThrowWhenTryingToUpdateRefundedOrder")
         void shouldThrowWhenTryingToUpdateRefundedOrder() {
             savedOrder.setOrderStatus(OrderStatus.REFUNDED);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() ->
                     orderService.updateOrderStatus(orderId, OrderStatus.DELIVERED, null))
@@ -439,7 +440,7 @@ class OrderServiceImplTest {
         @DisplayName("shouldThrowWhenTryingToSetDeliveredOrderToAnythingOtherThanRefunded")
         void shouldThrowWhenTryingToSetDeliveredOrderToAnythingOtherThanRefunded() {
             savedOrder.setOrderStatus(OrderStatus.DELIVERED);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() ->
                     orderService.updateOrderStatus(orderId, OrderStatus.PROCESSING, null))
@@ -451,7 +452,7 @@ class OrderServiceImplTest {
         @DisplayName("shouldAllowDeliveredOrderToBeRefunded")
         void shouldAllowDeliveredOrderToBeRefunded() {
             savedOrder.setOrderStatus(OrderStatus.DELIVERED);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -470,7 +471,7 @@ class OrderServiceImplTest {
         void shouldUpdateStatusAndAddHistoryEntryWithCustomNotes() {
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -493,7 +494,7 @@ class OrderServiceImplTest {
         void shouldAutoGenerateNotesWhenNullNotesProvided() {
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -515,7 +516,7 @@ class OrderServiceImplTest {
         void shouldSetShippedDateWhenStatusIsUpdatedToShipped() {
             savedOrder.setOrderStatus(OrderStatus.PROCESSING);
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -534,7 +535,7 @@ class OrderServiceImplTest {
         void shouldSetDeliveredDateWhenStatusIsUpdatedToDelivered() {
             savedOrder.setOrderStatus(OrderStatus.SHIPPED);
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -554,7 +555,7 @@ class OrderServiceImplTest {
         void shouldInitialiseStatusHistoryListWhenItIsNull() {
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
             savedOrder.setStatusHistory(null);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -579,7 +580,7 @@ class OrderServiceImplTest {
             // buildOrder: subtotal 99.98, tax 15.0, discount 0, shipping 50.0 -> total 164.98
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
             try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
@@ -604,7 +605,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldThrowWhenOrderNotFound")
         void shouldThrowWhenOrderNotFound() {
-            when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.adjustOrderPricing(orderId, 10.0, null, "x"))
                     .isInstanceOf(OrderException.class)
@@ -616,7 +617,7 @@ class OrderServiceImplTest {
         @DisplayName("shouldRejectAdjustmentForCancelledOrder")
         void shouldRejectAdjustmentForCancelledOrder() {
             savedOrder.setOrderStatus(OrderStatus.CANCELLED);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() -> orderService.adjustOrderPricing(orderId, 10.0, null, "x"))
                     .isInstanceOf(OrderException.class)
@@ -629,12 +630,53 @@ class OrderServiceImplTest {
         @DisplayName("shouldRejectAdjustmentThatMakesTotalNegative")
         void shouldRejectAdjustmentThatMakesTotalNegative() {
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() -> orderService.adjustOrderPricing(orderId, 1000.0, null, "too much"))
                     .isInstanceOf(OrderException.class)
                     .hasMessageContaining("negative");
             verify(orderRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteStaleOrders")
+    class DeleteStaleOrders {
+
+        @Test
+        @DisplayName("shouldSoftDeleteStaleCancelledOrdersAndReturnCount")
+        void shouldSoftDeleteStaleCancelledOrdersAndReturnCount() {
+            savedOrder.setOrderStatus(OrderStatus.CANCELLED);
+            when(orderRepository.findByOrderStatusAndDeletedFalseAndCreatedAtBefore(eq(OrderStatus.CANCELLED), any()))
+                    .thenReturn(List.of(savedOrder));
+
+            int deleted = orderService.deleteStaleOrders(30);
+
+            assertThat(deleted).isEqualTo(1);
+            assertThat(savedOrder.isDeleted()).isTrue();
+            assertThat(savedOrder.getDeletedAt()).isNotNull();
+            verify(orderRepository).saveAll(any());
+        }
+
+        @Test
+        @DisplayName("shouldReturnZeroAndNotSaveWhenNoStaleOrders")
+        void shouldReturnZeroAndNotSaveWhenNoStaleOrders() {
+            when(orderRepository.findByOrderStatusAndDeletedFalseAndCreatedAtBefore(eq(OrderStatus.CANCELLED), any()))
+                    .thenReturn(List.of());
+
+            int deleted = orderService.deleteStaleOrders(30);
+
+            assertThat(deleted).isZero();
+            verify(orderRepository, never()).saveAll(any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOlderThanDaysNegative")
+        void shouldThrowWhenOlderThanDaysNegative() {
+            assertThatThrownBy(() -> orderService.deleteStaleOrders(-1))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("zero or positive");
+            verify(orderRepository, never()).saveAll(any());
         }
     }
 
@@ -647,7 +689,7 @@ class OrderServiceImplTest {
             savedOrder.setStatusHistory(new ArrayList<>(List.of(
                     OrderStatusHistory.builder().status(OrderStatus.CONFIRMED)
                             .timestamp(DateUtil.now()).notes("Order created").build())));
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.of(savedOrder));
 
             savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
@@ -669,7 +711,7 @@ class OrderServiceImplTest {
             savedOrder.setOrderStatus(OrderStatus.SHIPPED);
             savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.of(savedOrder));
 
             OrderTrackingDTO tracking = orderService.trackOrder(userId, orderId);
@@ -681,7 +723,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldThrowWhenOrderNotOwnedOrMissing")
         void shouldThrowWhenOrderNotOwnedOrMissing() {
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId)).thenReturn(Optional.empty());
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.trackOrder(userId, orderId))
                     .isInstanceOf(OrderException.class)
@@ -698,7 +740,7 @@ class OrderServiceImplTest {
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
             savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
             savedOrder.setStatusHistory(new ArrayList<>());
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.of(savedOrder));
             when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -722,7 +764,7 @@ class OrderServiceImplTest {
         void shouldThrowWhenOrderAlreadyShipped() {
             savedOrder.setOrderStatus(OrderStatus.SHIPPED);
             savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(1));
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() -> orderService.cancelOrder(userId, orderId, null))
@@ -738,7 +780,7 @@ class OrderServiceImplTest {
         void shouldThrowWhenCancellationWindowHasPassed() {
             savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
             savedOrder.setCreatedAt(java.time.LocalDateTime.now().minusHours(100));
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId))
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId))
                     .thenReturn(Optional.of(savedOrder));
 
             assertThatThrownBy(() -> orderService.cancelOrder(userId, orderId, null))
@@ -752,7 +794,7 @@ class OrderServiceImplTest {
         @Test
         @DisplayName("shouldThrowWhenOrderNotOwnedOrMissing")
         void shouldThrowWhenOrderNotOwnedOrMissing() {
-            when(orderRepository.findByIdAndCustomerInfoId(orderId, userId)).thenReturn(Optional.empty());
+            when(orderRepository.findByIdAndCustomerInfoIdAndDeletedFalse(orderId, userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.cancelOrder(userId, orderId, null))
                     .isInstanceOf(OrderException.class)
