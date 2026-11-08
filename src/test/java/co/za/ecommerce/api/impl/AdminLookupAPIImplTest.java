@@ -64,6 +64,44 @@ class AdminLookupAPIImplTest {
                 .build();
     }
 
+    private LookupValueDTO sampleCategory() {
+        return LookupValueDTO.builder()
+                .id(LOOKUP_ID)
+                .type(LookupType.CATEGORY)
+                .code("CLOTHING")
+                .label("Clothing")
+                .active(true)
+                .sortOrder(1)
+                .build();
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/admin/lookup/{type}")
+    class GetByType {
+        @Test
+        @DisplayName("shouldReturn200WithValuesForType")
+        void shouldReturn200WithValuesForType() throws Exception {
+            when(lookupService.getAllByType(LookupType.CATEGORY)).thenReturn(java.util.List.of(sampleCategory()));
+
+            mockMvc.perform(get("/api/v1/admin/lookup/CATEGORY"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message").value("Lookup values retrieved."))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andExpect(jsonPath("$.data[0].code").value("CLOTHING"));
+        }
+
+        @Test
+        @DisplayName("shouldReturn400WhenTypeInvalid")
+        void shouldReturn400WhenTypeInvalid() throws Exception {
+            mockMvc.perform(get("/api/v1/admin/lookup/NOT_A_TYPE"))
+                    .andExpect(status().isBadRequest());
+
+            verify(lookupService, never()).getAllByType(any());
+        }
+    }
+
     @Nested
     @DisplayName("POST /api/v1/admin/lookup")
     class Create {

@@ -72,6 +72,29 @@ class LookupServiceImplTest {
     }
 
     @Nested
+    @DisplayName("getAllByType")
+    class GetAllByType {
+        @Test
+        @DisplayName("shouldReturnAllValuesIncludingInactiveForType")
+        void shouldReturnAllValuesIncludingInactiveForType() {
+            LookupValue active = LookupValue.builder()
+                    .id(new ObjectId()).type(LookupType.CATEGORY)
+                    .code("CLOTHING").label("Clothing").active(true).sortOrder(1).build();
+            LookupValue inactive = LookupValue.builder()
+                    .id(new ObjectId()).type(LookupType.CATEGORY)
+                    .code("FURNITURE").label("Furniture").active(false).sortOrder(2).build();
+            when(lookupValueRepository.findByTypeOrderBySortOrderAsc(LookupType.CATEGORY))
+                    .thenReturn(List.of(active, inactive));
+
+            List<LookupValueDTO> result = lookupService.getAllByType(LookupType.CATEGORY);
+
+            assertThat(result).hasSize(2);
+            assertThat(result).extracting(LookupValueDTO::isActive).containsExactly(true, false);
+            verify(lookupValueRepository).findByTypeOrderBySortOrderAsc(LookupType.CATEGORY);
+        }
+    }
+
+    @Nested
     @DisplayName("create")
     class Create {
         @Test

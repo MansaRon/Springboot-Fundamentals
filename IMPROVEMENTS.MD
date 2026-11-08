@@ -193,12 +193,18 @@ One PR per item, against `feat/admin`, in this order.
       *Depends on:* Rating model change.
       *Note:* the pre-existing owner-scoped `/products/{productId}/reviews/{userId}` routes are
       `USER||ADMIN` but don't verify the caller owns the review — a separate authz gap worth a follow-up.
-- [ ] **PR 5 · `GET /admin/categories` (+ CRUD)** — managed category resource.
-      Categories are currently a hardcoded `enum Category`, not a managed resource.
-      **Decide first:** (a) reuse the lookup pattern (`AdminLookupAPI`:
-      `POST|PUT|DELETE /admin/lookup`) — low effort; or (b) new `Category` collection + migrate
-      `Product.category` to a reference — higher effort, touches product filtering.
-      *Depends on:* option (b) only — product-model changes.
+- [x] **PR 5 · Managed categories (via lookup pattern)** — ✅ **done** (`feat/PR-5/admin-categories`).
+      **Decision: option (a)** — categories are a new `LookupType.CATEGORY`, stored as `LookupValue`s
+      and seeded in `LookupDataSeeder` (mirrors the old `Category` enum: `CLOTHING`→"Clothing", etc.).
+      No new `Category` collection and **no `Product.category` migration** (products still store the
+      category string).
+      Filled the admin-list gap generically: new `GET /api/v1/admin/lookup/{type}` (all values incl.
+      inactive) via `LookupService.getAllByType` + repo `findByTypeOrderBySortOrderAsc`.
+      **Frontend alignment** (reuse the lookup endpoints instead of `/admin/categories`):
+      list → `GET /api/v1/admin/lookup/CATEGORY`; create → `POST /api/v1/admin/lookup` `{type:"CATEGORY",…}`;
+      update → `PUT /api/v1/admin/lookup/{id}`; delete → `DELETE /api/v1/admin/lookup/{id}`;
+      public read → `GET /api/v1/lookup/CATEGORY` (active only).
+      *Depends on:* nothing.
 
 #### Tier 3 — touches order money/state logic
 

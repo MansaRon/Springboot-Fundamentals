@@ -3,6 +3,7 @@ package co.za.ecommerce.api;
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
 import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.LookupValueApiResource;
+import co.za.ecommerce.dto.api.LookupValueListApiResource;
 import co.za.ecommerce.dto.lookup.LookupValueDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +18,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 public interface AdminLookupAPI {
+
+    @Operation(tags = "Admin Lookup", summary = "List all values of a type (including inactive)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lookup values retrieved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = LookupValueListApiResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid lookup type",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<LookupValueListApiResource> getByType(@PathVariable String type);
 
     @Operation(tags = "Admin Lookup", summary = "Create a lookup value")
     @ApiResponses({

@@ -3,7 +3,10 @@ package co.za.ecommerce.api.impl;
 import co.za.ecommerce.api.AdminLookupAPI;
 import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.LookupValueApiResource;
+import co.za.ecommerce.dto.api.LookupValueListApiResource;
 import co.za.ecommerce.dto.lookup.LookupValueDTO;
+import co.za.ecommerce.exception.LookupException;
+import co.za.ecommerce.model.lookup.LookupType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,22 @@ import static java.time.Instant.now;
 @RequestMapping("api/v1/admin/lookup")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminLookupAPIImpl extends API implements AdminLookupAPI {
+
+    @Override
+    @GetMapping("/{type}")
+    public ResponseEntity<LookupValueListApiResource> getByType(@PathVariable String type) {
+        log.info("ResponseEntity<LookupValueListApiResource> getByType(@PathVariable String type)");
+        LookupType lookupType = parseType(type);
+        return ResponseEntity.ok(
+                LookupValueListApiResource.builder()
+                        .timestamp(now())
+                        .data(lookupService.getAllByType(lookupType))
+                        .message("Lookup values retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
 
     @Override
     @PostMapping
@@ -70,5 +89,16 @@ public class AdminLookupAPIImpl extends API implements AdminLookupAPI {
                         .statusCode(HttpStatus.OK.value())
                         .build()
         );
+    }
+
+    private LookupType parseType(String type) {
+        try {
+            return LookupType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new LookupException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Invalid lookup type: " + type,
+                    HttpStatus.BAD_REQUEST.value());
+        }
     }
 }

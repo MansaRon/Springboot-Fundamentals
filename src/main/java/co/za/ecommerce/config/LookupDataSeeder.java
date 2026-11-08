@@ -38,8 +38,31 @@ public class LookupDataSeeder implements CommandLineRunner {
         defaults.addAll(provinces());
         defaults.addAll(deliveryOptions());
         defaults.addAll(paymentMethods());
+        defaults.addAll(categories());
         lookupValueRepository.saveAll(defaults);
         log.info("Seeded {} lookup values.", defaults.size());
+    }
+
+    private List<LookupValue> categories() {
+        // Code is the machine value; label is the display text. Mirrors the former Category enum.
+        String[][] categories = {
+                {"CLOTHING", "Clothing"},
+                {"ELECTRONICS", "Electronics"},
+                {"ACCESSORIES", "Accessories"},
+                {"FURNITURE", "Furniture"},
+                {"SPORTS", "Sports"}
+        };
+        List<LookupValue> values = new ArrayList<>();
+        for (int i = 0; i < categories.length; i++) {
+            values.add(LookupValue.builder()
+                    .type(LookupType.CATEGORY)
+                    .code(categories[i][0])
+                    .label(categories[i][1])
+                    .active(true)
+                    .sortOrder(i + 1)
+                    .build());
+        }
+        return values;
     }
 
     private List<LookupValue> provinces() {

@@ -30,6 +30,13 @@ public class LookupServiceImpl implements LookupService {
     }
 
     @Override
+    public List<LookupValueDTO> getAllByType(LookupType type) {
+        log.info("Fetching all lookup values (admin) for type: {}", type);
+        return LookupMapper.toDTOList(
+                lookupValueRepository.findByTypeOrderBySortOrderAsc(type));
+    }
+
+    @Override
     public LookupValueDTO create(LookupValueDTO dto) {
         log.info("Creating lookup value: type={}, code={}", dto.getType(), dto.getCode());
         LookupValue saved = lookupValueRepository.save(LookupMapper.toEntity(dto));

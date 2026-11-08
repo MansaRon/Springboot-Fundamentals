@@ -13,4 +13,7 @@ public interface LookupValueRepository extends MongoRepository<LookupValue, Obje
 
     /** Active values for a type, ordered for display. */
     List<LookupValue> findByTypeAndActiveTrueOrderBySortOrderAsc(LookupType type);
+
+    /** All values (active and inactive) for a type, ordered for display — admin management view. */
+    List<LookupValue> findByTypeOrderBySortOrderAsc(LookupType type);
 }
