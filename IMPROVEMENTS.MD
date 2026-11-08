@@ -214,10 +214,20 @@ One PR per item, against `feat/admin`, in this order.
       not `/admin/orders/:id/pricing`.
       *Note:* null `discount`/`shippingCost` leaves the existing amount; an explicit `0` clears it.
       *Depends on:* order totals logic.
-- [ ] **PR 7 · `DELETE /admin/orders/stale`** — bulk delete of stale orders
-      (no order-delete of any kind exists today). Define "stale" (e.g. `PENDING` older than N days).
-      *Prerequisite:* implement **soft-delete** first (hard `deleteMany` risks referential integrity).
-      *Depends on:* soft-delete decision.
+- [x] **PR 7 · Soft-delete stale orders** — ✅ **done** (`feat/PR-7/stale-orders`).
+      **Decisions:** soft-delete (not hard); stale = **CANCELLED** orders created before a caller-supplied
+      cutoff. ADMIN-only `DELETE /api/v1/order/admin/stale?olderThanDays=30` →
+      `OrderService.deleteStaleOrders(olderThanDays)` marks matches `deleted=true` + `deletedAt`
+      (via `findByOrderStatusAndDeletedFalseAndCreatedAtBefore`) and returns the count; rejects
+      negative `olderThanDays`.
+      **Soft-delete infra:** added `Order.deleted`/`deletedAt`; **every order read path now excludes
+      deleted** — all `OrderRepository` reads switched to `…AndDeletedFalse` variants (by-id, by-number,
+      user orders, by-status, admin paginated list, stats counts). Dropped three unused repo methods.
+      *Frontend alignment:* path is `/order/admin/stale` (consistent with the other order routes),
+      not `/admin/orders/stale`.
+      *Note:* soft-delete is **orders-only** for now; extending the pattern to Products/Users is
+      tech-debt #3. PENDING orders are intentionally out of scope (would need inventory restore).
+      *Depends on:* soft-delete decision (made here).
 
 #### Tier 4 — aggregation-heavy / most integrated (do last)
 

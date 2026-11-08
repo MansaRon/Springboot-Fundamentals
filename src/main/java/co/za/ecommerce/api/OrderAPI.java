@@ -1,6 +1,7 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
+import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.OrderDTOAllApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
@@ -418,6 +419,33 @@ public interface OrderAPI {
                     })
     })
     ResponseEntity<OrderDTOApiResource> adjustOrderPricing(@PathVariable ObjectId orderId, @Valid @RequestBody OrderPricingUpdateRequest request);
+
+    @Operation(tags = "Order", summary = "Soft-delete stale cancelled orders (admin)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Stale orders soft-deleted",
+                    content = {
+                            @Content(schema = @Schema(implementation = ApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid olderThanDays",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<ApiResource> deleteStaleOrders(int olderThanDays);
 
     @Operation(tags = "Order", summary = "Get order statistics")
     @ApiResponses({

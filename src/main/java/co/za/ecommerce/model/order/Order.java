@@ -117,4 +117,15 @@ public class Order extends Entity {
      * History status of the order.
      */
     private List<OrderStatusHistory> statusHistory;
+
+    /**
+     * Soft-delete flag. Deleted orders are retained for audit but excluded from all
+     * read paths. Set by the admin stale-order cleanup.
+     */
+    private boolean deleted;
+
+    /**
+     * Timestamp the order was soft-deleted.
+     */
+    private LocalDateTime deletedAt;
 }
