@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; }
+    .header { background: #1a1a2e; padding: 32px; text-align: center; }
+    .header h1 { color: #fff; margin: 0; font-size: 24px; }
+    .body { padding: 32px; color: #333; }
+    .body h2 { color: #1a1a2e; }
+    .totals { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .totals td { padding: 6px 0; }
+    .totals .label { color: #666; }
+    .totals .amount { text-align: right; }
+    .totals .grand { font-weight: bold; border-top: 1px solid #ddd; padding-top: 10px; }
+    .reason { margin: 20px 0; padding: 12px 16px; background: #f4f4f4; border-left: 4px solid #1a1a2e; }
+    .footer { padding: 16px 32px; background: #f4f4f4; color: #999; font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Thendo Ecommerce</h1>
+  </div>
+  <div class="body">
+    <h2>Order Total Updated</h2>
+    <p>Hi <span th:text="${name}">Customer</span>,</p>
+    <p>The pricing on your order <strong th:text="${order.orderNumber}">ORD-000</strong> has been
+       updated by our team.</p>
+    <div class="reason">
+      <strong>Reason:</strong> <span th:text="${reason}">Goodwill discount applied</span>
+    </div>
+    <table class="totals">
+      <tr><td class="label">Subtotal</td><td class="amount" th:text="'R' + ${order.subtotal}">R0.00</td></tr>
+      <tr><td class="label">Discount</td><td class="amount" th:text="'-R' + ${order.discount}">-R0.00</td></tr>
+      <tr><td class="label">Tax</td><td class="amount" th:text="'R' + ${order.tax}">R0.00</td></tr>
+      <tr><td class="label">Shipping</td><td class="amount" th:text="'R' + ${order.shippingCost}">R0.00</td></tr>
+      <tr><td class="label grand">Total</td><td class="amount grand" th:text="'R' + ${order.totalAmount}">R0.00</td></tr>
+    </table>
+    <p>If you have any questions about this change, please contact our support team.</p>
+  </div>
+  <div class="footer">
+    &copy; 2026 Thendo Ecommerce. All rights reserved.
+  </div>
+</div>
+</body>
+</html>

@@ -210,4 +210,31 @@ class EmailServiceImplTest {
                     .hasMessageContaining("Failed to send email");
         }
     }
+
+    @Nested
+    @DisplayName("sendOrderPriceAdjustmentEmail")
+    class SendOrderPriceAdjustmentEmail {
+
+        @Test
+        @DisplayName("shouldProcessAdjustmentTemplateWithOrderNameAndReason")
+        void shouldProcessAdjustmentTemplateWithOrderNameAndReason() {
+            emailService.sendOrderPriceAdjustmentEmail(user, order, "Goodwill discount");
+
+            ArgumentCaptor<Context> ctxCaptor = ArgumentCaptor.forClass(Context.class);
+            verify(templateEngine).process(eq("email/order-price-adjustment"), ctxCaptor.capture());
+
+            Context ctx = ctxCaptor.getValue();
+            assertThat(ctx.getVariable("name")).isEqualTo(user.getName());
+            assertThat(ctx.getVariable("order")).isEqualTo(order);
+            assertThat(ctx.getVariable("reason")).isEqualTo("Goodwill discount");
+        }
+
+        @Test
+        @DisplayName("shouldSendEmailForPriceAdjustment")
+        void shouldSendEmailForPriceAdjustment() {
+            emailService.sendOrderPriceAdjustmentEmail(user, order, "reason");
+
+            verify(mailSender).send(mimeMessage);
+        }
+    }
 }

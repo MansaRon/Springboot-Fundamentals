@@ -7,6 +7,7 @@ import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
 import co.za.ecommerce.dto.api.OrderTrackingApiResource;
 import co.za.ecommerce.dto.order.OrderCancellationRequest;
+import co.za.ecommerce.dto.order.OrderPricingUpdateRequest;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -382,6 +383,41 @@ public interface OrderAPI {
                     })
     })
     ResponseEntity<OrderDTOApiResource> updateOrderStatus(@PathVariable ObjectId orderId, @Valid @RequestBody OrderStatusUpdateRequest request);
+
+    @Operation(tags = "Order", summary = "Adjust order pricing (admin)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Order pricing adjusted",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid adjustment (e.g. negative total, or order cancelled/delivered)",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Order not found",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderDTOApiResource> adjustOrderPricing(@PathVariable ObjectId orderId, @Valid @RequestBody OrderPricingUpdateRequest request);
 
     @Operation(tags = "Order", summary = "Get order statistics")
     @ApiResponses({
