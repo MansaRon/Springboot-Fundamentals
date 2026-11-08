@@ -25,4 +25,7 @@ public interface ProductService {
     RatingDTO updateRating(RatingDTO rating, String productId, String userId);
     void deleteRating(String productId, String userId);
     List<RatingDTO> getProductReviews(String productId);
+    // admin moderation
+    List<RatingDTO> getAllProductReviews(String productId);
+    RatingDTO setReviewVisibility(String productId, String userId, boolean hidden);
 }

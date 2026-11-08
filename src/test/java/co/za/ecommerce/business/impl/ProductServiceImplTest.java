@@ -7,6 +7,7 @@ import co.za.ecommerce.dto.product.RatingDTO;
 import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
+import co.za.ecommerce.model.Rating;
 import co.za.ecommerce.repository.ProductRepository;
 import co.za.ecommerce.utils.DateUtil;
 import factory.TestDataBuilder;
@@ -653,6 +654,102 @@ class ProductServiceImplTest {
             // Assert — S3 is never called, DB delete still happens
             verify(s3Service, never()).deleteFile(any());
             verify(productRepository).deleteAll(any(List.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("review moderation")
+    class ReviewModeration {
+
+        private Rating visibleReview;
+        private Rating hiddenReview;
+
+        @BeforeEach
+        void seedReviews() {
+            visibleReview = Rating.builder()
+                    .userId("user-visible").userName("Visible User")
+                    .rating(4.5).comment("great").reviewDate(now()).hidden(false)
+                    .build();
+            hiddenReview = Rating.builder()
+                    .userId("user-hidden").userName("Hidden User")
+                    .rating(1.0).comment("spam").reviewDate(now()).hidden(true)
+                    .build();
+            savedProduct.setReviews(List.of(visibleReview, hiddenReview));
+        }
+
+        @Test
+        @DisplayName("getProductReviews should exclude hidden reviews")
+        void getProductReviewsShouldExcludeHidden() {
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(Rating.class), any())).thenReturn(new RatingDTO());
+
+            List<RatingDTO> result = productService.getProductReviews(VALID_ID);
+
+            org.assertj.core.api.Assertions.assertThat(result).hasSize(1);
+            verify(modelMapper, times(1)).map(any(Rating.class), any());
+        }
+
+        @Test
+        @DisplayName("getAllProductReviews should include hidden reviews")
+        void getAllProductReviewsShouldIncludeHidden() {
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(Rating.class), any())).thenReturn(new RatingDTO());
+
+            List<RatingDTO> result = productService.getAllProductReviews(VALID_ID);
+
+            org.assertj.core.api.Assertions.assertThat(result).hasSize(2);
+            verify(modelMapper, times(2)).map(any(Rating.class), any());
+        }
+
+        @Test
+        @DisplayName("setReviewVisibility should hide a visible review and persist")
+        void setReviewVisibilityShouldHide() {
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(Rating.class), any())).thenReturn(new RatingDTO());
+
+            productService.setReviewVisibility(VALID_ID, "user-visible", true);
+
+            assertThat(visibleReview.isHidden()).isTrue();
+            verify(productRepository).save(savedProduct);
+        }
+
+        @Test
+        @DisplayName("setReviewVisibility should approve (un-hide) a hidden review")
+        void setReviewVisibilityShouldApprove() {
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(Rating.class), any())).thenReturn(new RatingDTO());
+
+            productService.setReviewVisibility(VALID_ID, "user-hidden", false);
+
+            assertThat(hiddenReview.isHidden()).isFalse();
+            verify(productRepository).save(savedProduct);
+        }
+
+        @Test
+        @DisplayName("setReviewVisibility should throw when the review does not exist")
+        void setReviewVisibilityShouldThrowWhenReviewMissing() {
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+
+            assertThatThrownBy(() -> productService.setReviewVisibility(VALID_ID, "unknown-user", true))
+                    .isInstanceOf(ProductException.class)
+                    .hasMessageContaining("No review found for this user");
+            verify(productRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("setReviewVisibility should throw when the product has no reviews")
+        void setReviewVisibilityShouldThrowWhenNoReviews() {
+            savedProduct.setReviews(List.of());
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+
+            assertThatThrownBy(() -> productService.setReviewVisibility(VALID_ID, "user-visible", true))
+                    .isInstanceOf(ProductException.class)
+                    .hasMessageContaining("No reviews found for this product");
+            verify(productRepository, never()).save(any());
         }
     }
 }

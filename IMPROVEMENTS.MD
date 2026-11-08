@@ -184,10 +184,15 @@ One PR per item, against `feat/admin`, in this order.
 
 #### Tier 2 — small model/logic additions, reuse existing flows
 
-- [ ] **PR 4 · Review moderation** — admin hide/remove/approve **any** review
-      (distinct from the existing owner-scoped review CRUD). Add a `hidden`/`status` field to
-      the `Rating` model, filter it in `getProductReviews`, add ADMIN routes.
+- [x] **PR 4 · Review moderation** — ✅ **done** (`feat/PR-4/review-moderation`).
+      Added `Rating.hidden` (+ `RatingDTO.hidden`); public `getProductReviews` now filters hidden
+      reviews out. New ADMIN-only `AdminReviewAPI`/`AdminReviewAPIImpl` under
+      `api/v1/admin/products/{productId}/reviews`: `GET` (all, incl. hidden),
+      `PATCH /{userId}/hide`, `PATCH /{userId}/approve`, `DELETE /{userId}`.
+      Service gained `getAllProductReviews` + `setReviewVisibility` (cache-evicting).
       *Depends on:* Rating model change.
+      *Note:* the pre-existing owner-scoped `/products/{productId}/reviews/{userId}` routes are
+      `USER||ADMIN` but don't verify the caller owns the review — a separate authz gap worth a follow-up.
 - [ ] **PR 5 · `GET /admin/categories` (+ CRUD)** — managed category resource.
       Categories are currently a hardcoded `enum Category`, not a managed resource.
       **Decide first:** (a) reuse the lookup pattern (`AdminLookupAPI`:

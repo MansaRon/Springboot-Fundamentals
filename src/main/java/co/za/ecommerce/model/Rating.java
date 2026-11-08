@@ -31,4 +31,10 @@ public class Rating {
     private double rating;
 
     private String comment;
+
+    /**
+     * Admin moderation flag. When true the review is hidden from public listings
+     * but retained for moderation. Defaults to false (visible).
+     */
+    private boolean hidden;
 }
