@@ -159,18 +159,27 @@ One PR per item, against `feat/admin`, in this order.
 
 #### Tier 1 — standalone, low effort (unblocks frontend lists)
 
-- [ ] **PR 1 · `GET /admin/users`** — admin user-listing endpoint (none exists today).
-      New `UserListDTO` (exclude password/OTP), `UserService.getAllUsers(...)`, ADMIN-only
-      controller route. Paginate from the start.
+- [x] **PR 1 · `GET /admin/users`** — ✅ **done & merged** (`feat/admin-user-list`). Paginated,
+      ADMIN-only `GET /api/v1/admin/users` via new `AdminUserAPI`/`AdminUserAPIImpl`,
+      `UserListDTO` (no password/token/OTP), `GetAllUsersDTO` wrapper, `UserService.getAllUsers(...)`.
+      Returns an empty page (not 400) when no users.
       *Depends on:* nothing.
-- [ ] **PR 2 · Paginate admin order list** *(modify existing)* — add `Pageable` to
-      `GET /order/admin/all` + `OrderService.getAllOrders`. Copy the existing product
-      pagination pattern (`CustomProductRepository`). Optionally alias route to `/admin/orders`.
+- [x] **PR 2 · Paginate admin order list** — ✅ **done & merged** (`feat/PR-2/order-admin-all`).
+      `GET /order/admin/all` now takes `pageNumber/pageSize/sortBy/sortOrder` and returns
+      `OrderDTOAllApiResource` (`GetAllOrdersDTO` wrapper). Default sort `totalAmount` (a real field).
+      ⚠️ Response shape changed: data is now `{ orders: [...], pageNo, ... }` — frontend reads `data.orders`.
       *Depends on:* nothing. Establishes the pagination pattern reused later.
-- [ ] **PR 3 · `POST /admin/users/:id/reset-password`** — admin-triggered reset by `userId`.
-      New `UserService.adminResetPassword(...)` + `EmailService.sendPasswordResetEmail(...)`.
-      *Note:* existing `POST /auth/update-password` is self-service and requires the current
-      password; the admin flow must reset without it.
+- [x] **PR 3 · `POST /admin/users/:id/reset-password`** — ✅ **done** (`feat/PR-3/admin-reset-password`).
+      ADMIN-only `POST /api/v1/admin/users/{id}/reset-password` on `AdminUserAPIImpl`;
+      `UserService.adminResetPassword(userId)` generates a policy-compliant temp password and
+      emails it via new `EmailService.sendPasswordResetEmail(...)` (+ `password-reset.html`).
+      Rejects users still `AWAITING_CONFIRMATION`.
+      **Hardened flow:** (1) **force-change** — sets `User.mustChangePassword`; login returns the flag
+      and self-service `update-password` clears it; (2) **no lockout** — the email is sent *synchronously
+      before* the password is persisted, so a mail failure aborts with 503 and leaves the old password intact;
+      (3) **expiry** — `User.passwordResetAt` + `app.security.temp-password-ttl-hours` (default 24) causes
+      login to reject an expired temp password.
+      *Note:* distinct from the self-service `POST /auth/update-password` (which needs the current password).
       *Depends on:* nothing (reuses existing `EmailService`).
 
 #### Tier 2 — small model/logic additions, reuse existing flows

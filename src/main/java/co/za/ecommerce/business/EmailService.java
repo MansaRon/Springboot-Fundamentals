@@ -9,4 +9,5 @@ public interface EmailService {
     void sendOrderConfirmationEmail(User user, OrderDTO order);
     void sendOrderStatusUpdateEmail(User user, OrderDTO order, OrderStatus newStatus);
     void sendPaymentFailureEmail(User user, String reason);
+    void sendPasswordResetEmail(User user, String temporaryPassword);
 }

@@ -1,6 +1,7 @@
 package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.exception.EmailException;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.order.OrderStatus;
 import factory.TestDataBuilder;
@@ -22,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -170,6 +172,42 @@ class EmailServiceImplTest {
             emailService.sendPaymentFailureEmail(user, "Insufficient funds");
 
             verify(mailSender).send(mimeMessage);
+        }
+    }
+
+    @Nested
+    @DisplayName("sendPasswordResetEmail")
+    class SendPasswordResetEmail {
+
+        @Test
+        @DisplayName("shouldProcessResetTemplateWithNameAndTemporaryPassword")
+        void shouldProcessResetTemplateWithNameAndTemporaryPassword() {
+            emailService.sendPasswordResetEmail(user, "Temp@1234");
+
+            ArgumentCaptor<Context> ctxCaptor = ArgumentCaptor.forClass(Context.class);
+            verify(templateEngine).process(eq("email/password-reset"), ctxCaptor.capture());
+
+            Context ctx = ctxCaptor.getValue();
+            assertThat(ctx.getVariable("name")).isEqualTo(user.getName());
+            assertThat(ctx.getVariable("temporaryPassword")).isEqualTo("Temp@1234");
+        }
+
+        @Test
+        @DisplayName("shouldSendEmailForPasswordReset")
+        void shouldSendEmailForPasswordReset() {
+            emailService.sendPasswordResetEmail(user, "Temp@1234");
+
+            verify(mailSender).send(mimeMessage);
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenMailSendFails")
+        void shouldThrowWhenMailSendFails() {
+            doThrow(new RuntimeException("SMTP down")).when(mailSender).send(any(MimeMessage.class));
+
+            assertThatThrownBy(() -> emailService.sendPasswordResetEmail(user, "Temp@1234"))
+                    .isInstanceOf(EmailException.class)
+                    .hasMessageContaining("Failed to send email");
         }
     }
 }

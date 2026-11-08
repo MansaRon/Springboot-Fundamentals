@@ -6,6 +6,7 @@ import co.za.ecommerce.business.RefreshTokenService;
 import co.za.ecommerce.business.UserService;
 import co.za.ecommerce.dto.user.*;
 import co.za.ecommerce.exception.ClientException;
+import co.za.ecommerce.exception.EmailException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.User;
@@ -13,6 +14,7 @@ import co.za.ecommerce.repository.RefreshTokenRepository;
 import co.za.ecommerce.repository.UserRepository;
 import co.za.ecommerce.security.JwtTokenProvider;
 import co.za.ecommerce.utils.DateUtil;
+import co.za.ecommerce.utils.GenerateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +43,12 @@ public class UserServiceImpl implements UserService {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailService emailService;
+
+    /**
+     * How long an admin-issued temporary password remains valid for login.
+     */
+    @Value("${app.security.temp-password-ttl-hours:24}")
+    private long tempPasswordTtlHours;
 
     @Override
     public User createUser(UserCreateDTO userCreateDTO) {
@@ -120,6 +129,14 @@ public class UserServiceImpl implements UserService {
             throw new ClientException(HttpStatus.BAD_REQUEST, "Incorrect password.");
         }
 
+        log.info("============= Enforce temporary password expiry ===============");
+        if (user.isMustChangePassword()
+                && user.getPasswordResetAt() != null
+                && DateUtil.now().isAfter(user.getPasswordResetAt().plusHours(tempPasswordTtlHours))) {
+            throw new ClientException(HttpStatus.BAD_REQUEST,
+                    "Your temporary password has expired. Please request a new password reset.");
+        }
+
         log.info("============= Assign session token, refresh token and login ===============");
         return UserDTO
                 .builder()
@@ -131,6 +148,7 @@ public class UserServiceImpl implements UserService {
                 .status(user.getStatus().name())
                 .phone(user.getPhone())
                 .roles(user.getRoles())
+                .mustChangePassword(user.isMustChangePassword())
                 .accessToken(jwtTokenProvider.generateToken(user.getEmail()))
                 .refreshToken(refreshTokenService.createRefreshToken(user.getId().toString()).getToken())
                 .build();
@@ -180,9 +198,49 @@ public class UserServiceImpl implements UserService {
 
         log.info("============= Save new password ===============");
         existingUser.setPassword(passwordEncoder.encode(updatePasswordDTO.getNewPassword()));
+        existingUser.setMustChangePassword(false);
+        existingUser.setPasswordResetAt(null);
 
         log.info("============= Save user ===============");
         userRepository.save(existingUser);
+        return ResetPwdDTO.builder()
+                .username(existingUser.getEmail())
+                .pwdReset(true)
+                .build();
+    }
+
+    @Override
+    public ResetPwdDTO adminResetPassword(ObjectId userId) {
+        log.info("============= Admin password reset for user {} ===============", userId);
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ClientException(HttpStatus.NOT_FOUND, "User not found."));
+
+        log.info("============= Check if active user or awaiting confirmation ===============");
+        if (existingUser.getStatus().equals(AccountStatus.AWAITING_CONFIRMATION)) {
+            throw new ClientException(HttpStatus.BAD_REQUEST, "Activate user before resetting password.");
+        }
+
+        String temporaryPassword = GenerateUtil.generateTempPassword();
+
+        // Deliver the temporary password BEFORE persisting it. If the email fails we abort
+        // without touching the stored password, so the user is never locked out.
+        log.info("============= Email temporary password to user ===============");
+        try {
+            emailService.sendPasswordResetEmail(existingUser, temporaryPassword);
+        } catch (EmailException e) {
+            log.error("Password reset aborted — could not email temporary password to {}: {}",
+                    existingUser.getEmail(), e.getMessage());
+            throw new ClientException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Could not send the password reset email. The password was not changed; please try again.");
+        }
+
+        log.info("============= Save temporary password and force change on next login ===============");
+        existingUser.setPassword(passwordEncoder.encode(temporaryPassword));
+        existingUser.setMustChangePassword(true);
+        existingUser.setPasswordResetAt(DateUtil.now());
+        existingUser.setUpdatedAt(DateUtil.now());
+        userRepository.save(existingUser);
+
         return ResetPwdDTO.builder()
                 .username(existingUser.getEmail())
                 .pwdReset(true)

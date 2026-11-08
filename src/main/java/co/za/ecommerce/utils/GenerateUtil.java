@@ -51,4 +51,32 @@ public final class GenerateUtil {
         return String.valueOf(new Random().nextInt(900000) + 100000);
     }
 
+    /**
+     * Generate a strong temporary password that satisfies the account password policy
+     * (at least one upper, lower, digit and special character; no whitespace; 12 chars).
+     * Used for admin-triggered password resets.
+     */
+    public static String generateTempPassword() {
+        String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lower = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String special = "@#$%^&-+=()";
+        String all = upper + lower + digits + special;
+
+        Random random = new Random();
+        StringBuilder result = new StringBuilder();
+
+        // Guarantee one of each required character class.
+        result.append(upper.charAt(random.nextInt(upper.length())));
+        result.append(lower.charAt(random.nextInt(lower.length())));
+        result.append(digits.charAt(random.nextInt(digits.length())));
+        result.append(special.charAt(random.nextInt(special.length())));
+
+        for (int i = result.length(); i < 12; i++) {
+            result.append(all.charAt(random.nextInt(all.length())));
+        }
+
+        return result.toString();
+    }
+
 }
