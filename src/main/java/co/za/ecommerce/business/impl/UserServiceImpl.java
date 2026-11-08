@@ -16,11 +16,16 @@ import co.za.ecommerce.utils.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -66,6 +71,37 @@ public class UserServiceImpl implements UserService {
         log.info("============= Generate OTP ===============");
         otpService.generateOTP(user.getPhone());
         return user;
+    }
+
+    @Override
+    public GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir) {
+        log.info("Fetching users with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
+                pageNo, pageSize, sortBy, sortDir);
+
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<User> users = userRepository.findAll(pageable);
+
+        return buildGetAllUsersDTO(users);
+    }
+
+    private GetAllUsersDTO buildGetAllUsersDTO(Page<User> page) {
+        List<UserListDTO> users = page.getContent()
+                .stream()
+                .map(user -> objectMapper.mapObject().map(user, UserListDTO.class))
+                .toList();
+
+        return GetAllUsersDTO.builder()
+                .users(users)
+                .pageNo(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
     }
 
     @Override

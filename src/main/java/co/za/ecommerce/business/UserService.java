@@ -7,6 +7,7 @@ import org.bson.types.ObjectId;
 
 public interface UserService {
     User createUser(UserCreateDTO userCreateDTO);
+    GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir);
     UserDTO loginUser(LoginDTO loginDTO);
     UserDTO activateUserOTP(String phoneNum, String otp);
     ResetPwdDTO updatePassword(UpdatePasswordDTO updatePasswordDTO);

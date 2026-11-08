@@ -6,70 +6,69 @@
 
 ## Features to Add
 
+> 👑 = work that falls within the **Admin** role's scope.
+> Fully completed features (e.g. customer Order Cancellation) have been removed from this list.
+
 ### High Priority
 
-#### 1. Email Notifications
-- [ ] Order confirmation email
-- [ ] Order status update emails (shipped, delivered)
-- [ ] Payment failure notification
+#### 1. Email Notifications — *mostly done*
+- [x] Order confirmation email
+- [x] Order status update emails (shipped, delivered)
+- [x] Payment failure notification
+- [x] Welcome email for new users
 - [ ] Cart abandonment reminder
-- [ ] Welcome email for new users
 - **Tech:** Spring Mail, Thymeleaf templates
-- **Estimate:** 4-6 hours
+- **Status:** `EmailService` wired into order confirmation, status updates, payment failure and registration. Only cart-abandonment remains.
 
 #### 2. Coupon/Promo Code System
 - [ ] Create Coupon entity (code, discount %, expiry date)
 - [ ] Apply coupon at checkout
 - [ ] Validate coupon (active, not expired, usage limit)
 - [ ] Track coupon usage per user
-- [ ] Admin: Create/manage coupons
+- [ ] 👑 Admin: Create/manage coupons
 - **Estimate:** 6-8 hours
 
-#### 3. Order Cancellation (Customer)
-- [ ] Allow customer to cancel pending orders
-- [ ] Restore inventory on cancellation
-- [ ] Add cancellation reason
-- [ ] Update order status to CANCELLED
-- [ ] Prevent cancellation after shipping
-- **Estimate:** 3-4 hours
-
-#### 4. Refund Processing
-- [ ] Admin initiates refund
+#### 3. Refund Processing 👑
+- [ ] 👑 Admin initiates refund
 - [ ] Partial vs full refund
 - [ ] Restore inventory if applicable
 - [ ] Track refund status
 - [ ] Refund history in order details
 - **Estimate:** 4-5 hours
+- **Note:** Customer-side cancellation (with inventory restore + CANCELLED status) already exists; refunds are the admin-driven counterpart and are still outstanding.
 
-#### 5. Product Reviews & Ratings
-- [ ] Customer can review purchased products
-- [ ] Star rating (1-5)
-- [ ] Review text and images
-- [ ] Calculate average product rating
-- [ ] Display reviews on product page
-- [ ] Admin moderation for reviews
-- **Estimate:** 6-8 hours
+#### 4. Product Reviews & Ratings — *partially done*
+- [x] Customer can review products
+- [x] Star rating (1-5)
+- [x] Review text (create / edit / delete)
+- [x] Display reviews on product page
+- [ ] Restrict reviews to verified purchasers
+- [ ] Review images
+- [ ] Calculate & expose average product rating
+- [ ] 👑 Admin moderation for reviews (hide/remove/approve)
+- **Status:** Review CRUD endpoints exist (`USER`/`ADMIN`); no purchase check, no average aggregation, no admin moderation.
 
 ### Medium Priority
 
-#### 6. Wishlist Feature 
-- [ ] Add products to wishlist
-- [ ] Remove from wishlist
-- [ ] View wishlist
+#### 5. Wishlist Feature — *partially done*
+- [x] Add products to wishlist
+- [x] Remove from wishlist
+- [x] View wishlist
 - [ ] Move wishlist item to cart
 - [ ] Share wishlist (optional)
-- **Estimate:** 4-5 hours
+- **Status:** `WishlistAPI` supports add / get / delete. Move-to-cart and sharing outstanding.
 
-#### 7. Product Search & Filtering
+#### 6. Product Search & Filtering — *partially done*
 - [ ] Search by product name/description
-- [ ] Filter by category
+- [x] Filter by category
+- [x] Lookup by title
 - [ ] Filter by price range
 - [ ] Filter by rating
 - [ ] Sort by price, popularity, newest
 - **Tech:** MongoDB text search or Elasticsearch
-- **Estimate:** 5-6 hours
+- **Status:** Category and title endpoints exist; free-text search, price/rating filters and sorting outstanding.
 
-#### 8. Order Invoice Generation
+#### 7. Order Invoice Generation
 - [ ] Generate PDF invoice
 - [ ] Include order details, items, totals
 - [ ] Company branding/logo
@@ -77,14 +76,14 @@
 - **Tech:** iText or Apache PDFBox
 - **Estimate:** 4-5 hours
 
-#### 9. Inventory Alerts
+#### 8. Inventory Alerts 👑
 - [ ] Low stock warning (< 5 units)
 - [ ] Out of stock notification
-- [ ] Admin email when stock low
+- [ ] 👑 Admin email when stock low
 - [ ] Prevent checkout if out of stock
 - **Estimate:** 2-3 hours
 
-#### 10. Multiple Shipping Addresses
+#### 9. Multiple Shipping Addresses
 - [ ] Save multiple addresses per user
 - [ ] Set default shipping address
 - [ ] Select address at checkout
@@ -93,21 +92,22 @@
 
 ### Low Priority
 
-#### 11. Guest Checkout
+#### 10. Guest Checkout
 - [ ] Checkout without account
 - [ ] Collect email for order tracking
 - [ ] Optional account creation after order
 - [ ] Guest order tracking by email + order number
 - **Estimate:** 5-6 hours
 
-#### 12. Order Tracking Integration
+#### 11. Order Tracking Integration — *internal tracking done*
+- [x] Internal tracking timeline (`/track` endpoint)
 - [ ] Integrate with DHL/FedEx API
 - [ ] Real-time tracking updates
-- [ ] Display tracking number
+- [ ] Display carrier tracking number
 - [ ] Tracking link in order details
-- **Estimate:** 8-10 hours
+- **Status:** In-app order tracking exists; external carrier integration outstanding.
 
-#### 13. Loyalty Points System
+#### 12. Loyalty Points System
 - [ ] Earn points on purchases
 - [ ] Redeem points for discounts
 - [ ] Points expiration
@@ -115,7 +115,7 @@
 - [ ] Different tiers (Bronze, Silver, Gold)
 - **Estimate:** 8-10 hours
 
-#### 14. Product Recommendations
+#### 13. Product Recommendations
 - [ ] "Customers also bought" feature
 - [ ] Personalized recommendations
 - [ ] Recently viewed products
@@ -123,14 +123,93 @@
 - **Tech:** Basic algorithm or ML integration
 - **Estimate:** 10-12 hours
 
-#### 15. Advanced Analytics Dashboard
-- [ ] Sales charts (daily, weekly, monthly)
-- [ ] Revenue tracking
-- [ ] Top selling products
-- [ ] Customer analytics
-- [ ] Conversion rate tracking
+#### 14. Advanced Analytics Dashboard 👑
+- [x] Order counts by status (`/order/admin/statistics`)
+- [ ] 👑 Sales charts (daily, weekly, monthly)
+- [ ] 👑 Revenue tracking
+- [ ] 👑 Top selling products
+- [ ] 👑 Customer analytics
+- [ ] 👑 Conversion rate tracking
 - **Tech:** Chart.js or similar
-- **Estimate:** 8-10 hours
+- **Status:** Basic status-count statistics exist; revenue, trends, top-sellers and customer analytics outstanding. Entirely admin-facing.
+
+---
+
+## Frontend-Expected Admin Endpoints (Backend Contract)
+
+Endpoints the admin frontend branches expect. Check each box when the backend
+route is implemented **and** verified against the frontend integration.
+Paths below are the frontend's expected shape; where a backend equivalent already
+exists under a different path, it's noted so we can align naming.
+
+**Branching / PR workflow:** each numbered build item below is its own PR, opened
+against the **`feat/admin`** feature branch. Once all are merged and the feature
+branch is green, `feat/admin` is merged into `master`. Build in the listed order —
+each item depends only on items above it (or on the flagged prerequisites).
+
+### Already available (align frontend to these)
+- [x] `GET /admin/orders` — exists as **`GET /order/admin/all`** (ADMIN-only, all users).
+      ⚠️ No pagination yet; returns the full list. Also `GET /order/admin/status/{status}`.
+- [x] Review create/edit/delete — exists as **`POST|PATCH|DELETE /products/{productId}/reviews/{userId}`**
+      (owner-scoped: a user manages their own review).
+
+### To build server-side — ordered build / PR plan
+
+One PR per item, against `feat/admin`, in this order.
+
+#### Tier 1 — standalone, low effort (unblocks frontend lists)
+
+- [ ] **PR 1 · `GET /admin/users`** — admin user-listing endpoint (none exists today).
+      New `UserListDTO` (exclude password/OTP), `UserService.getAllUsers(...)`, ADMIN-only
+      controller route. Paginate from the start.
+      *Depends on:* nothing.
+- [ ] **PR 2 · Paginate admin order list** *(modify existing)* — add `Pageable` to
+      `GET /order/admin/all` + `OrderService.getAllOrders`. Copy the existing product
+      pagination pattern (`CustomProductRepository`). Optionally alias route to `/admin/orders`.
+      *Depends on:* nothing. Establishes the pagination pattern reused later.
+- [ ] **PR 3 · `POST /admin/users/:id/reset-password`** — admin-triggered reset by `userId`.
+      New `UserService.adminResetPassword(...)` + `EmailService.sendPasswordResetEmail(...)`.
+      *Note:* existing `POST /auth/update-password` is self-service and requires the current
+      password; the admin flow must reset without it.
+      *Depends on:* nothing (reuses existing `EmailService`).
+
+#### Tier 2 — small model/logic additions, reuse existing flows
+
+- [ ] **PR 4 · Review moderation** — admin hide/remove/approve **any** review
+      (distinct from the existing owner-scoped review CRUD). Add a `hidden`/`status` field to
+      the `Rating` model, filter it in `getProductReviews`, add ADMIN routes.
+      *Depends on:* Rating model change.
+- [ ] **PR 5 · `GET /admin/categories` (+ CRUD)** — managed category resource.
+      Categories are currently a hardcoded `enum Category`, not a managed resource.
+      **Decide first:** (a) reuse the lookup pattern (`AdminLookupAPI`:
+      `POST|PUT|DELETE /admin/lookup`) — low effort; or (b) new `Category` collection + migrate
+      `Product.category` to a reference — higher effort, touches product filtering.
+      *Depends on:* option (b) only — product-model changes.
+
+#### Tier 3 — touches order money/state logic
+
+- [ ] **PR 6 · `PATCH /admin/orders/:id/pricing`** — admin price-adjustment on an order
+      (only `PUT /order/{orderId}/status` exists today). Recalculate subtotal/total, record the
+      adjustment, notify customer. Resolve the "price validation mismatch" tech-debt here.
+      *Depends on:* order totals logic.
+- [ ] **PR 7 · `DELETE /admin/orders/stale`** — bulk delete of stale orders
+      (no order-delete of any kind exists today). Define "stale" (e.g. `PENDING` older than N days).
+      *Prerequisite:* implement **soft-delete** first (hard `deleteMany` risks referential integrity).
+      *Depends on:* soft-delete decision.
+
+#### Tier 4 — aggregation-heavy / most integrated (do last)
+
+- [ ] **PR 8 · `GET /admin/stats`** *(expand existing)* — dedicated aggregation endpoint.
+      `GET /order/admin/statistics` returns status counts only; needs revenue, sales trends,
+      top-sellers, and user/customer metrics via MongoDB aggregation.
+      *Depends on:* orders (exist); more accurate after PR 6.
+- [ ] **PR 9 · `POST /admin/orders/:id/rebook`** — rebook/clone an existing order:
+      new checkout/order, re-validate inventory, re-price at current prices, new order number,
+      `PENDING` status, confirmation email.
+      *Depends on:* order-creation internals, inventory, pricing (PR 6), email flow. Build last.
+
+**Cross-cutting prerequisites:** the pagination pattern (PR 2 — reused by PR 1 & PR 8) and the
+soft-delete decision (gates PR 7, makes PR 9's cancel/restore safer).
 
 ---
 
