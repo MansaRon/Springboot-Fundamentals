@@ -1,10 +1,13 @@
 package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.api.OrderAPI;
+import co.za.ecommerce.config.AppConstants;
+import co.za.ecommerce.dto.api.OrderDTOAllApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
 import co.za.ecommerce.dto.api.OrderTrackingApiResource;
+import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderStatisticsDTO;
@@ -99,12 +102,18 @@ public class OrderAPIImpl extends API implements OrderAPI {
     // ADMIN only.
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/all")
-    public ResponseEntity<OrderDTOListApiResource> getAllOrders() {
+    public ResponseEntity<OrderDTOAllApiResource> getAllOrders(
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_ORDERS_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder
+    ) {
+        GetAllOrdersDTO orders = orderService.getAllOrders(pageNumber, pageSize, sortBy, sortOrder);
         return ResponseEntity.ok(
-                OrderDTOListApiResource.builder()
+                OrderDTOAllApiResource.builder()
                         .timestamp(instantNow())
-                        .data(orderService.getAllOrders())
-                        .message(String.format("Retrieved %d total orders.", orderService.getAllOrders().size()))
+                        .data(orders)
+                        .message(String.format("Retrieved %d total orders.", orders.getTotalElements()))
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

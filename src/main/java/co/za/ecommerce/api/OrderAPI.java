@@ -1,6 +1,7 @@
 package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
+import co.za.ecommerce.dto.api.OrderDTOAllApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
@@ -229,13 +230,13 @@ public interface OrderAPI {
     })
     ResponseEntity<OrderDTOListApiResource> getUserOrdersByStatus(@PathVariable ObjectId userId, @PathVariable String status);
 
-    @Operation(tags = "Order", summary = "Get all orders")
+    @Operation(tags = "Order", summary = "Get all orders (paginated)")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "All Orders",
                     content = {
-                            @Content(schema = @Schema(implementation = OrderDTOListApiResource.class))
+                            @Content(schema = @Schema(implementation = OrderDTOAllApiResource.class))
                     }),
             @ApiResponse(
                     responseCode = "400",
@@ -278,7 +279,7 @@ public interface OrderAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<OrderDTOListApiResource> getAllOrders();
+    ResponseEntity<OrderDTOAllApiResource> getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
 
     @Operation(tags = "Order", summary = "Get orders by status")
     @ApiResponses({
