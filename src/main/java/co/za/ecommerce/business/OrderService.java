@@ -1,6 +1,7 @@
 package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.PaymentResultDTO;
+import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.model.checkout.Checkout;
@@ -18,6 +19,7 @@ public interface OrderService {
     List<OrderDTO> getUserOrdersByStatus(ObjectId userId, OrderStatus status);
 
     List<OrderDTO> getAllOrders();
+    GetAllOrdersDTO getAllOrders(int pageNo, int pageSize, String sortBy, String sortDir);
     List<OrderDTO> getOrdersByStatus(OrderStatus status);
     OrderDTO updateOrderStatus(ObjectId orderId, OrderStatus newStatus, String notes);
     OrderDTO getOrderByIdAndCustomerId(ObjectId orderId, ObjectId customerId);

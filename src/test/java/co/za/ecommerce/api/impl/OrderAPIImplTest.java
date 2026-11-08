@@ -1,6 +1,7 @@
 package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.business.*;
+import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderStatusHistoryDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
@@ -229,25 +230,43 @@ class OrderAPIImplTest {
         @Test
         @DisplayName("shouldReturn200WithAllOrdersWhenOrdersExist")
         void shouldReturn200WithAllOrdersWhenOrdersExist() throws Exception {
-            when(orderService.getAllOrders()).thenReturn(List.of(orderDTO, orderDTO2));
+            GetAllOrdersDTO page = GetAllOrdersDTO.builder()
+                    .orders(List.of(orderDTO, orderDTO2))
+                    .pageNo(0)
+                    .pageSize(10)
+                    .totalElements(2)
+                    .totalPages(1)
+                    .last(true)
+                    .build();
+            when(orderService.getAllOrders(anyInt(), anyInt(), anyString(), anyString())).thenReturn(page);
 
             mockMvc.perform(get("/api/v1/order/admin/all"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message").value("Retrieved 2 total orders."))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data.length()").value(2));
+                    .andExpect(jsonPath("$.data.orders").isArray())
+                    .andExpect(jsonPath("$.data.orders.length()").value(2))
+                    .andExpect(jsonPath("$.data.totalElements").value(2))
+                    .andExpect(jsonPath("$.data.last").value(true));
         }
 
         @Test
         @DisplayName("shouldReturn200WithEmptyListWhenNoOrdersExist")
         void shouldReturn200WithEmptyListWhenNoOrdersExist() throws Exception {
-            when(orderService.getAllOrders()).thenReturn(List.of());
+            GetAllOrdersDTO page = GetAllOrdersDTO.builder()
+                    .orders(List.of())
+                    .pageNo(0)
+                    .pageSize(10)
+                    .totalElements(0)
+                    .totalPages(0)
+                    .last(true)
+                    .build();
+            when(orderService.getAllOrders(anyInt(), anyInt(), anyString(), anyString())).thenReturn(page);
 
             mockMvc.perform(get("/api/v1/order/admin/all"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Retrieved 0 total orders."))
-                    .andExpect(jsonPath("$.data").isEmpty());
+                    .andExpect(jsonPath("$.data.orders").isEmpty());
         }
     }
 

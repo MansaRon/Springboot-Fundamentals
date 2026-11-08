@@ -4,6 +4,7 @@ import co.za.ecommerce.business.EmailService;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.PaymentResultDTO;
+import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
@@ -19,6 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
@@ -161,6 +166,37 @@ public class OrderServiceImpl implements OrderService {
                 .stream()
                 .map(OrderMapper::mapToOrderDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public GetAllOrdersDTO getAllOrders(int pageNo, int pageSize, String sortBy, String sortDir) {
+        log.info("Fetching all orders (admin) with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
+                pageNo, pageSize, sortBy, sortDir);
+
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<Order> orders = orderRepository.findAll(pageable);
+
+        return buildGetAllOrdersDTO(orders);
+    }
+
+    private GetAllOrdersDTO buildGetAllOrdersDTO(Page<Order> page) {
+        List<OrderDTO> orders = page.getContent()
+                .stream()
+                .map(OrderMapper::mapToOrderDTO)
+                .toList();
+
+        return GetAllOrdersDTO.builder()
+                .orders(orders)
+                .pageNo(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
     }
 
     @Override
