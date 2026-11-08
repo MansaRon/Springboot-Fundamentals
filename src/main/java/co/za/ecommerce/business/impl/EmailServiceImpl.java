@@ -79,6 +79,18 @@ public class EmailServiceImpl implements EmailService {
         sendOrThrow(user.getEmail(), "Your Password Has Been Reset", "email/password-reset", ctx);
     }
 
+    @Async
+    @Override
+    public void sendOrderPriceAdjustmentEmail(User user, OrderDTO order, String reason) {
+        log.info("Sending price adjustment email to {} for order {}", user.getEmail(), order.getOrderNumber());
+        Context ctx = new Context();
+        ctx.setVariable("name", user.getName());
+        ctx.setVariable("order", order);
+        ctx.setVariable("reason", reason);
+        send(user.getEmail(), "Your Order Total Has Been Updated — " + order.getOrderNumber(),
+                "email/order-price-adjustment", ctx);
+    }
+
     void send(String to, String subject, String template, Context ctx) {
         try {
             dispatch(to, subject, template, ctx);

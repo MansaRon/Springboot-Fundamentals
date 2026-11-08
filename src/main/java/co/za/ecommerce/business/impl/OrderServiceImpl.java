@@ -15,6 +15,7 @@ import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.OrderRepository;
 import co.za.ecommerce.utils.DateUtil;
+import co.za.ecommerce.utils.ValueUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -249,6 +250,55 @@ public class OrderServiceImpl implements OrderService {
             emailService.sendOrderStatusUpdateEmail(updatedOrder.getCustomerInfo(), updatedDTO, newStatus);
         }
         return updatedDTO;
+    }
+
+    @Override
+    public OrderDTO adjustOrderPricing(ObjectId orderId, Double discount, Double shippingCost, String reason) {
+        log.info("Adjusting pricing for order {}", orderId);
+
+        Order order = findOrderById(orderId);
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.DELIVERED) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Cannot adjust pricing for a " + order.getOrderStatus() + " order.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        // null leaves the existing amount unchanged; an explicit 0 clears it.
+        double appliedDiscount = discount != null ? discount : order.getDiscount();
+        double appliedShipping = shippingCost != null ? shippingCost : order.getShippingCost();
+
+        // Mirror the checkout total formula: (subtotal - discount) + tax + shipping.
+        double newTotal = (order.getSubtotal() - appliedDiscount) + order.getTax() + appliedShipping;
+        if (newTotal < 0) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Adjustment would make the order total negative.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        order.setDiscount(appliedDiscount);
+        order.setShippingCost(appliedShipping);
+        order.setTotalAmount(ValueUtil.round(newTotal, 2));
+        order.setUpdatedAt(DateUtil.now());
+
+        if (order.getStatusHistory() == null) {
+            order.setStatusHistory(new ArrayList<>());
+        }
+        order.getStatusHistory().add(OrderStatusHistory.builder()
+                .status(order.getOrderStatus())
+                .timestamp(DateUtil.now())
+                .notes("Pricing adjusted. Reason: " + reason)
+                .updatedBy("ADMIN")
+                .build());
+
+        Order saved = orderRepository.save(order);
+        log.info("Order {} pricing adjusted — new total {}", saved.getOrderNumber(), saved.getTotalAmount());
+
+        OrderDTO dto = OrderMapper.mapToOrderDTO(saved);
+        emailService.sendOrderPriceAdjustmentEmail(saved.getCustomerInfo(), dto, reason);
+        return dto;
     }
 
     @Override

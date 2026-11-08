@@ -193,7 +193,7 @@ One PR per item, against `feat/admin`, in this order.
       *Depends on:* Rating model change.
       *Note:* the pre-existing owner-scoped `/products/{productId}/reviews/{userId}` routes are
       `USER||ADMIN` but don't verify the caller owns the review — a separate authz gap worth a follow-up.
-- [ ] **PR 5 · `GET /admin/categories` (+ CRUD)** — managed category resource.
+- [x] **PR 5 · `GET /admin/categories` (+ CRUD)** — managed category resource.
       Categories are currently a hardcoded `enum Category`, not a managed resource.
       **Decide first:** (a) reuse the lookup pattern (`AdminLookupAPI`:
       `POST|PUT|DELETE /admin/lookup`) — low effort; or (b) new `Category` collection + migrate
@@ -202,9 +202,17 @@ One PR per item, against `feat/admin`, in this order.
 
 #### Tier 3 — touches order money/state logic
 
-- [ ] **PR 6 · `PATCH /admin/orders/:id/pricing`** — admin price-adjustment on an order
-      (only `PUT /order/{orderId}/status` exists today). Recalculate subtotal/total, record the
-      adjustment, notify customer. Resolve the "price validation mismatch" tech-debt here.
+- [x] **PR 6 · Order price adjustment** — ✅ **done** (`feat/PR-6/order-pricing`).
+      ADMIN-only `PATCH /api/v1/order/{orderId}/pricing` (`OrderPricingUpdateRequest`:
+      optional `discount`/`shippingCost` + required `reason`). `OrderService.adjustOrderPricing`
+      recomputes the total using the canonical checkout formula `(subtotal − discount) + tax + shipping`
+      (via `ValueUtil.round`), appends a `statusHistory` entry (`updatedBy="ADMIN"`), and emails the
+      customer (`EmailService.sendOrderPriceAdjustmentEmail` + `order-price-adjustment.html`).
+      Rejects CANCELLED/DELIVERED orders and any adjustment that would make the total negative.
+      **Also:** PR-5 cleanup — deleted the dead `model/Category.java` enum.
+      *Frontend alignment:* path is `/order/{orderId}/pricing` (consistent with `/order/{orderId}/status`),
+      not `/admin/orders/:id/pricing`.
+      *Note:* null `discount`/`shippingCost` leaves the existing amount; an explicit `0` clears it.
       *Depends on:* order totals logic.
 - [ ] **PR 7 · `DELETE /admin/orders/stale`** — bulk delete of stale orders
       (no order-delete of any kind exists today). Define "stale" (e.g. `PENDING` older than N days).

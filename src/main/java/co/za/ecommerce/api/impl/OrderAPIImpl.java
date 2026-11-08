@@ -10,6 +10,7 @@ import co.za.ecommerce.dto.api.OrderTrackingApiResource;
 import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderPricingUpdateRequest;
 import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
 import co.za.ecommerce.model.order.OrderStatus;
@@ -152,6 +153,28 @@ public class OrderAPIImpl extends API implements OrderAPI {
                                 request.getNotes()
                         ))
                         .message("Order status updated to " + request.getNewStatus())
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // ADMIN only — recalculates the order total from an adjusted discount/shipping.
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{orderId}/pricing")
+    public ResponseEntity<OrderDTOApiResource> adjustOrderPricing(
+            @PathVariable ObjectId orderId,
+            @Valid @RequestBody OrderPricingUpdateRequest request) {
+        return ResponseEntity.ok(
+                OrderDTOApiResource.builder()
+                        .timestamp(instantNow())
+                        .data(orderService.adjustOrderPricing(
+                                orderId,
+                                request.getDiscount(),
+                                request.getShippingCost(),
+                                request.getReason()
+                        ))
+                        .message("Order pricing adjusted.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

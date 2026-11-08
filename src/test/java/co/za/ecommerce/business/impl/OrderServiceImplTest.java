@@ -570,6 +570,75 @@ class OrderServiceImplTest {
     }
 
     @Nested
+    @DisplayName("adjustOrderPricing")
+    class AdjustOrderPricing {
+
+        @Test
+        @DisplayName("shouldRecalculateTotalApplyDiscountRecordHistoryAndEmail")
+        void shouldRecalculateTotalApplyDiscountRecordHistoryAndEmail() {
+            // buildOrder: subtotal 99.98, tax 15.0, discount 0, shipping 50.0 -> total 164.98
+            savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
+            savedOrder.setStatusHistory(new ArrayList<>());
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+            when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+
+            try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
+                mapperMock.when(() -> OrderMapper.mapToOrderDTO(any())).thenReturn(orderDTO);
+
+                orderService.adjustOrderPricing(orderId, 20.0, null, "Goodwill discount");
+
+                ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+                verify(orderRepository).save(captor.capture());
+                Order saved = captor.getValue();
+                // (99.98 - 20.0) + 15.0 + 50.0 = 144.98
+                assertThat(saved.getDiscount()).isEqualTo(20.0);
+                assertThat(saved.getShippingCost()).isEqualTo(50.0);
+                assertThat(saved.getTotalAmount()).isEqualTo(144.98);
+                assertThat(saved.getStatusHistory()).hasSize(1);
+                assertThat(saved.getStatusHistory().get(0).getNotes()).contains("Goodwill discount");
+
+                verify(emailService).sendOrderPriceAdjustmentEmail(eq(user), eq(orderDTO), eq("Goodwill discount"));
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOrderNotFound")
+        void shouldThrowWhenOrderNotFound() {
+            when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.adjustOrderPricing(orderId, 10.0, null, "x"))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("Order not found");
+            verify(orderRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("shouldRejectAdjustmentForCancelledOrder")
+        void shouldRejectAdjustmentForCancelledOrder() {
+            savedOrder.setOrderStatus(OrderStatus.CANCELLED);
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+
+            assertThatThrownBy(() -> orderService.adjustOrderPricing(orderId, 10.0, null, "x"))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("Cannot adjust pricing");
+            verify(orderRepository, never()).save(any());
+            verify(emailService, never()).sendOrderPriceAdjustmentEmail(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("shouldRejectAdjustmentThatMakesTotalNegative")
+        void shouldRejectAdjustmentThatMakesTotalNegative() {
+            savedOrder.setOrderStatus(OrderStatus.CONFIRMED);
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(savedOrder));
+
+            assertThatThrownBy(() -> orderService.adjustOrderPricing(orderId, 1000.0, null, "too much"))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("negative");
+            verify(orderRepository, never()).save(any());
+        }
+    }
+
+    @Nested
     @DisplayName("trackOrder")
     class TrackOrder {
         @Test

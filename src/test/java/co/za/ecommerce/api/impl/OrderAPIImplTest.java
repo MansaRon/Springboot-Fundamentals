@@ -342,6 +342,58 @@ class OrderAPIImplTest {
     }
 
     @Nested
+    @DisplayName("PATCH /api/v1/order/{orderId}/pricing")
+    class AdjustOrderPricing {
+
+        @Test
+        @DisplayName("shouldReturn200WithAdjustedOrder")
+        void shouldReturn200WithAdjustedOrder() throws Exception {
+            OrderDTO adjusted = OrderDTO.builder()
+                    .id(ORDER_ID)
+                    .orderNumber(ORDER_NUMBER)
+                    .orderStatus(OrderStatus.CONFIRMED.name())
+                    .discount(20.0)
+                    .totalAmount(144.98)
+                    .build();
+
+            when(orderService.adjustOrderPricing(
+                    eq(new ObjectId(ORDER_ID)),
+                    eq(20.0),
+                    isNull(),
+                    eq("Goodwill discount")))
+                    .thenReturn(adjusted);
+
+            mockMvc.perform(patch("/api/v1/order/{orderId}/pricing", ORDER_ID)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {
+                                      "discount": 20.0,
+                                      "reason": "Goodwill discount"
+                                    }
+                                    """))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message").value("Order pricing adjusted."))
+                    .andExpect(jsonPath("$.data.totalAmount").value(144.98));
+        }
+
+        @Test
+        @DisplayName("shouldReturn400WhenReasonMissing")
+        void shouldReturn400WhenReasonMissing() throws Exception {
+            mockMvc.perform(patch("/api/v1/order/{orderId}/pricing", ORDER_ID)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {
+                                      "discount": 20.0
+                                    }
+                                    """))
+                    .andExpect(status().isBadRequest());
+
+            verify(orderService, never()).adjustOrderPricing(any(), any(), any(), any());
+        }
+    }
+
+    @Nested
     @DisplayName("GET /api/v1/order/admin/statistics")
     class GetOrderStatistics {
 
