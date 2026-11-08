@@ -49,4 +49,10 @@ public class UserDTO extends EntityDTO {
      * User roles
      */
     private Set<String> roles;
+
+    /**
+     * True when the account must change its password before normal use
+     * (e.g. after an admin-triggered reset).
+     */
+    private boolean mustChangePassword;
 }

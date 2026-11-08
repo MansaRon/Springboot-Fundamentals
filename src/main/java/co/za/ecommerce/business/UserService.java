@@ -11,6 +11,7 @@ public interface UserService {
     UserDTO loginUser(LoginDTO loginDTO);
     UserDTO activateUserOTP(String phoneNum, String otp);
     ResetPwdDTO updatePassword(UpdatePasswordDTO updatePasswordDTO);
+    ResetPwdDTO adminResetPassword(ObjectId userId);
     void logout(String refreshToken);
     UserDTO addRole(ObjectId userId, String role);
     UserDTO removeRole(ObjectId userId, String role);

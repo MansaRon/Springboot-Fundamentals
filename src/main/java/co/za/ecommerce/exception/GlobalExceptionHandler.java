@@ -108,6 +108,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
+    @ExceptionHandler(EmailException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleEmailException(
+            final EmailException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.error("[{}] EmailException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
     @ExceptionHandler(InventoryException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleInventoryException(
             final InventoryException ex, final HttpServletRequest request) {

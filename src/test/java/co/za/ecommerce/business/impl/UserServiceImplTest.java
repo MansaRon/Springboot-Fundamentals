@@ -5,6 +5,7 @@ import co.za.ecommerce.business.OTPService;
 import co.za.ecommerce.business.RefreshTokenService;
 import co.za.ecommerce.dto.user.*;
 import co.za.ecommerce.exception.ClientException;
+import co.za.ecommerce.exception.EmailException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.RefreshToken;
@@ -22,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import co.za.ecommerce.utils.DateUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -62,6 +65,7 @@ class UserServiceImplTest {
         user.setStatus(AccountStatus.ACTIVE);
         user.setPassword("encoded-password");
         user.setRoles(new HashSet<>(Set.of("ROLE_USER")));
+        ReflectionTestUtils.setField(userService, "tempPasswordTtlHours", 24L);
     }
 
     @Nested
@@ -195,6 +199,49 @@ class UserServiceImplTest {
                     .isInstanceOf(ClientException.class)
                     .hasMessageContaining("Incorrect password");
         }
+
+        @Test
+        @DisplayName("shouldThrowWhenTemporaryPasswordHasExpired")
+        void shouldThrowWhenTemporaryPasswordHasExpired() {
+            user.setMustChangePassword(true);
+            user.setPasswordResetAt(DateUtil.now().minusHours(48));
+
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setEmail("email@example.com");
+            loginDTO.setPassword("TempPass@1");
+
+            when(userRepository.findByEmail("email@example.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.loginUser(loginDTO))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("temporary password has expired");
+        }
+
+        @Test
+        @DisplayName("shouldLoginAndFlagMustChangeWhenTempPasswordWithinWindow")
+        void shouldLoginAndFlagMustChangeWhenTempPasswordWithinWindow() {
+            user.setMustChangePassword(true);
+            user.setPasswordResetAt(DateUtil.now().minusHours(1));
+
+            RefreshToken refreshToken = new RefreshToken();
+            refreshToken.setToken("refresh-token-value");
+            refreshToken.setExpiry(new Date(System.currentTimeMillis() + 100000));
+
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setEmail("email@example.com");
+            loginDTO.setPassword("TempPass@1");
+
+            when(userRepository.findByEmail("email@example.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+            when(jwtTokenProvider.generateToken(anyString())).thenReturn("access-token");
+            when(refreshTokenService.createRefreshToken(anyString())).thenReturn(refreshToken);
+
+            UserDTO result = userService.loginUser(loginDTO);
+
+            assertThat(result.isMustChangePassword()).isTrue();
+            assertThat(result.getAccessToken()).isEqualTo("access-token");
+        }
     }
 
     @Nested
@@ -303,6 +350,67 @@ class UserServiceImplTest {
             assertThatThrownBy(() -> userService.updatePassword(dto))
                     .isInstanceOf(ClientException.class)
                     .hasMessageContaining("Current password matches old password");
+        }
+    }
+
+    @Nested
+    @DisplayName("AdminResetPassword")
+    class AdminResetPassword {
+
+        @Test
+        @DisplayName("shouldResetPasswordAndEmailTemporaryPassword")
+        void shouldResetPasswordAndEmailTemporaryPassword() {
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(passwordEncoder.encode(anyString())).thenReturn("temp-encoded");
+
+            ResetPwdDTO result = userService.adminResetPassword(userId);
+
+            assertThat(result.isPwdReset()).isTrue();
+            assertThat(result.getUsername()).isEqualTo(user.getEmail());
+            assertThat(user.isMustChangePassword()).isTrue();
+            assertThat(user.getPasswordResetAt()).isNotNull();
+            verify(emailService).sendPasswordResetEmail(eq(user), anyString());
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        @DisplayName("shouldAbortWithoutChangingPasswordWhenEmailFails")
+        void shouldAbortWithoutChangingPasswordWhenEmailFails() {
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            doThrow(new EmailException("smtp down", null))
+                    .when(emailService).sendPasswordResetEmail(eq(user), anyString());
+
+            assertThatThrownBy(() -> userService.adminResetPassword(userId))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("Could not send the password reset email");
+
+            verify(userRepository, never()).save(any());
+            assertThat(user.isMustChangePassword()).isFalse();
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenUserNotFound")
+        void shouldThrowWhenUserNotFound() {
+            ObjectId missingId = new ObjectId();
+            when(userRepository.findById(missingId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.adminResetPassword(missingId))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("User not found");
+            verify(emailService, never()).sendPasswordResetEmail(any(), anyString());
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenUserIsAwaitingConfirmation")
+        void shouldThrowWhenUserIsAwaitingConfirmation() {
+            user.setStatus(AccountStatus.AWAITING_CONFIRMATION);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.adminResetPassword(userId))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("Activate user before resetting password");
+            verify(userRepository, never()).save(any());
+            verify(emailService, never()).sendPasswordResetEmail(any(), anyString());
         }
     }
 

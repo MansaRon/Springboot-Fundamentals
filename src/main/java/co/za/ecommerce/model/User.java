@@ -12,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -61,6 +62,16 @@ public class User extends Entity {
      * User roles assigned to
      */
     private Set<String> roles;
+
+    /**
+     * Set when an admin resets the password; forces the user to change it on next login.
+     */
+    private boolean mustChangePassword;
+
+    /**
+     * Timestamp of the last admin-triggered password reset. Used to expire temporary passwords.
+     */
+    private LocalDateTime passwordResetAt;
 
     public void addRoles(String... newRoles) {
         if (roles == null) roles = new HashSet<>();
