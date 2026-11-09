@@ -12,7 +12,6 @@ import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderPricingUpdateRequest;
-import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
 import co.za.ecommerce.model.order.OrderStatus;
 import jakarta.validation.Valid;
@@ -202,21 +201,10 @@ public class OrderAPIImpl extends API implements OrderAPI {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics")
     public ResponseEntity<OrderStatisticsApiResource> getOrderStatistics() {
-        // TODO find a better means of handling these stats
-        OrderStatisticsDTO stats = OrderStatisticsDTO.builder()
-                .totalOrders(orderService.getAllOrders().size())
-                .pendingOrders(orderService.getOrdersByStatus(OrderStatus.PENDING).size())
-                .confirmedOrders(orderService.getOrdersByStatus(OrderStatus.CONFIRMED).size())
-                .processingOrders(orderService.getOrdersByStatus(OrderStatus.PROCESSING).size())
-                .shippedOrders(orderService.getOrdersByStatus(OrderStatus.SHIPPED).size())
-                .deliveredOrders(orderService.getOrdersByStatus(OrderStatus.DELIVERED).size())
-                .cancelledOrders(orderService.getOrdersByStatus(OrderStatus.CANCELLED).size())
-                .build();
-
         return ResponseEntity.ok(
                 OrderStatisticsApiResource.builder()
                         .timestamp(instantNow())
-                        .data(stats)
+                        .data(orderService.getOrderStatistics())
                         .message("Order statistics retrieved.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())

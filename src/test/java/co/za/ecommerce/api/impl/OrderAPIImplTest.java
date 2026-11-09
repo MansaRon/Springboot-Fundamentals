@@ -1,10 +1,13 @@
 package co.za.ecommerce.api.impl;
 
 import co.za.ecommerce.business.*;
+import co.za.ecommerce.dto.order.DailySalesDTO;
 import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderStatusHistoryDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
+import co.za.ecommerce.dto.order.TopProductDTO;
 import co.za.ecommerce.exception.GlobalExceptionHandler;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.ObjectMapper;
@@ -425,47 +428,44 @@ class OrderAPIImplTest {
     class GetOrderStatistics {
 
         @Test
-        @DisplayName("shouldReturn200WithCorrectStatisticsWhenOrdersExist")
-        void shouldReturn200WithCorrectStatisticsWhenOrdersExist() throws Exception {
-            // Stub each service call the statistics endpoint makes
-            when(orderService.getAllOrders()).thenReturn(List.of(orderDTO, orderDTO2));
-            when(orderService.getOrdersByStatus(eq(OrderStatus.PENDING)))
-                    .thenReturn(List.of(orderDTO2));
-            when(orderService.getOrdersByStatus(eq(OrderStatus.CONFIRMED)))
-                    .thenReturn(List.of(orderDTO));
-            when(orderService.getOrdersByStatus(eq(OrderStatus.PROCESSING)))
-                    .thenReturn(List.of());
-            when(orderService.getOrdersByStatus(eq(OrderStatus.SHIPPED)))
-                    .thenReturn(List.of());
-            when(orderService.getOrdersByStatus(eq(OrderStatus.DELIVERED)))
-                    .thenReturn(List.of());
-            when(orderService.getOrdersByStatus(eq(OrderStatus.CANCELLED)))
-                    .thenReturn(List.of());
+        @DisplayName("shouldReturn200WithStatisticsFromService")
+        void shouldReturn200WithStatisticsFromService() throws Exception {
+            OrderStatisticsDTO stats = OrderStatisticsDTO.builder()
+                    .totalOrders(2)
+                    .pendingOrders(1)
+                    .confirmedOrders(1)
+                    .refundedOrders(0)
+                    .totalRevenue(164.98)
+                    .averageOrderValue(164.98)
+                    .totalCustomers(2)
+                    .topSellingProducts(List.of(
+                            TopProductDTO.builder().productId("p1").title("Hoodie").quantitySold(3).revenue(150.0).build()))
+                    .salesByDay(List.of(
+                            DailySalesDTO.builder().date("2026-11-09").orderCount(2).revenue(164.98).build()))
+                    .build();
+            when(orderService.getOrderStatistics()).thenReturn(stats);
 
             mockMvc.perform(get("/api/v1/order/admin/statistics"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message").value("Order statistics retrieved."))
                     .andExpect(jsonPath("$.data.totalOrders").value(2))
-                    .andExpect(jsonPath("$.data.pendingOrders").value(1))
-                    .andExpect(jsonPath("$.data.confirmedOrders").value(1))
-                    .andExpect(jsonPath("$.data.processingOrders").value(0))
-                    .andExpect(jsonPath("$.data.shippedOrders").value(0))
-                    .andExpect(jsonPath("$.data.deliveredOrders").value(0))
-                    .andExpect(jsonPath("$.data.cancelledOrders").value(0));
+                    .andExpect(jsonPath("$.data.totalRevenue").value(164.98))
+                    .andExpect(jsonPath("$.data.averageOrderValue").value(164.98))
+                    .andExpect(jsonPath("$.data.totalCustomers").value(2))
+                    .andExpect(jsonPath("$.data.topSellingProducts[0].productId").value("p1"))
+                    .andExpect(jsonPath("$.data.salesByDay[0].date").value("2026-11-09"));
         }
 
         @Test
         @DisplayName("shouldReturn200WithAllZerosWhenNoOrdersExist")
         void shouldReturn200WithAllZerosWhenNoOrdersExist() throws Exception {
-            when(orderService.getAllOrders()).thenReturn(List.of());
-            when(orderService.getOrdersByStatus(any())).thenReturn(List.of());
+            when(orderService.getOrderStatistics()).thenReturn(OrderStatisticsDTO.builder().build());
 
             mockMvc.perform(get("/api/v1/order/admin/statistics"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.totalOrders").value(0))
-                    .andExpect(jsonPath("$.data.pendingOrders").value(0))
-                    .andExpect(jsonPath("$.data.confirmedOrders").value(0));
+                    .andExpect(jsonPath("$.data.totalRevenue").value(0.0));
         }
     }
 
