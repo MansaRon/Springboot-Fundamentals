@@ -4,13 +4,18 @@ import co.za.ecommerce.business.EmailService;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.business.OrderService;
 import co.za.ecommerce.dto.PaymentResultDTO;
+import co.za.ecommerce.dto.order.DailySalesDTO;
 import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
+import co.za.ecommerce.dto.order.TopProductDTO;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
 import co.za.ecommerce.model.CartItems;
+import co.za.ecommerce.model.Product;
+import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.OrderRepository;
@@ -32,9 +37,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static co.za.ecommerce.utils.DateUtil.now;
@@ -332,6 +342,99 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Soft-deleted {} stale CANCELLED orders", staleOrders.size());
         return staleOrders.size();
+    }
+
+    // Statuses that represent realised revenue — paid and not cancelled/refunded.
+    private static final Set<OrderStatus> REVENUE_STATUSES = Set.of(
+            OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED);
+
+    @Override
+    public OrderStatisticsDTO getOrderStatistics() {
+        log.info("Computing order statistics (admin)");
+
+        List<Order> orders = orderRepository.findByDeletedFalse();
+
+        Map<OrderStatus, Long> countByStatus = orders.stream()
+                .filter(order -> order.getOrderStatus() != null)
+                .collect(Collectors.groupingBy(Order::getOrderStatus, Collectors.counting()));
+
+        List<Order> revenueOrders = orders.stream()
+                .filter(order -> order.getOrderStatus() != null && REVENUE_STATUSES.contains(order.getOrderStatus()))
+                .collect(Collectors.toList());
+
+        double totalRevenue = revenueOrders.stream().mapToDouble(Order::getTotalAmount).sum();
+        double averageOrderValue = revenueOrders.isEmpty()
+                ? 0.0
+                : ValueUtil.round(totalRevenue / revenueOrders.size(), 2);
+
+        long totalCustomers = orders.stream()
+                .map(Order::getCustomerInfo)
+                .filter(Objects::nonNull)
+                .map(User::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .count();
+
+        return OrderStatisticsDTO.builder()
+                .totalOrders(orders.size())
+                .pendingOrders(statusCount(countByStatus, OrderStatus.PENDING))
+                .confirmedOrders(statusCount(countByStatus, OrderStatus.CONFIRMED))
+                .processingOrders(statusCount(countByStatus, OrderStatus.PROCESSING))
+                .shippedOrders(statusCount(countByStatus, OrderStatus.SHIPPED))
+                .deliveredOrders(statusCount(countByStatus, OrderStatus.DELIVERED))
+                .cancelledOrders(statusCount(countByStatus, OrderStatus.CANCELLED))
+                .refundedOrders(statusCount(countByStatus, OrderStatus.REFUNDED))
+                .totalRevenue(ValueUtil.round(totalRevenue, 2))
+                .averageOrderValue(averageOrderValue)
+                .totalCustomers(totalCustomers)
+                .topSellingProducts(topSellingProducts(revenueOrders))
+                .salesByDay(salesByDay(revenueOrders))
+                .build();
+    }
+
+    private int statusCount(Map<OrderStatus, Long> counts, OrderStatus status) {
+        return counts.getOrDefault(status, 0L).intValue();
+    }
+
+    private List<TopProductDTO> topSellingProducts(List<Order> orders) {
+        Map<String, List<OrderItems>> itemsByProduct = orders.stream()
+                .map(Order::getOrderItems)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(item -> item.getProduct() != null && item.getProduct().getId() != null)
+                .collect(Collectors.groupingBy(item -> item.getProduct().getId().toHexString()));
+
+        return itemsByProduct.values().stream()
+                .map(items -> {
+                    long quantity = items.stream().mapToLong(OrderItems::getQuantity).sum();
+                    double revenue = items.stream().mapToDouble(OrderItems::getTotalPrice).sum();
+                    Product product = items.get(0).getProduct();
+                    return TopProductDTO.builder()
+                            .productId(product.getId().toHexString())
+                            .title(product.getTitle())
+                            .quantitySold(quantity)
+                            .revenue(ValueUtil.round(revenue, 2))
+                            .build();
+                })
+                .sorted(Comparator.comparingLong(TopProductDTO::getQuantitySold).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+    }
+
+    private List<DailySalesDTO> salesByDay(List<Order> orders) {
+        Map<LocalDate, List<Order>> byDay = orders.stream()
+                .filter(order -> order.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(order -> order.getCreatedAt().toLocalDate()));
+
+        return byDay.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> DailySalesDTO.builder()
+                        .date(entry.getKey().toString())
+                        .orderCount(entry.getValue().size())
+                        .revenue(ValueUtil.round(
+                                entry.getValue().stream().mapToDouble(Order::getTotalAmount).sum(), 2))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override

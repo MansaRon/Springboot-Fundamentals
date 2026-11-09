@@ -125,13 +125,13 @@
 
 #### 14. Advanced Analytics Dashboard 👑
 - [x] Order counts by status (`/order/admin/statistics`)
-- [ ] 👑 Sales charts (daily, weekly, monthly)
-- [ ] 👑 Revenue tracking
-- [ ] 👑 Top selling products
-- [ ] 👑 Customer analytics
-- [ ] 👑 Conversion rate tracking
+- [x] 👑 Sales charts — **daily** trend done (`salesByDay`); weekly/monthly buckets outstanding
+- [x] 👑 Revenue tracking (`totalRevenue`, `averageOrderValue`)
+- [x] 👑 Top selling products (`topSellingProducts`, top 5)
+- [x] 👑 Customer analytics — distinct `totalCustomers` done; richer per-customer analytics outstanding
+- [ ] 👑 Conversion rate tracking (needs cart/checkout data)
 - **Tech:** Chart.js or similar
-- **Status:** Basic status-count statistics exist; revenue, trends, top-sellers and customer analytics outstanding. Entirely admin-facing.
+- **Status:** Expanded in PR 8 (revenue, AOV, top-sellers, distinct customers, daily trend). Remaining: weekly/monthly buckets, per-customer analytics, conversion rate.
 
 ---
 
@@ -231,9 +231,19 @@ One PR per item, against `feat/admin`, in this order.
 
 #### Tier 4 — aggregation-heavy / most integrated (do last)
 
-- [ ] **PR 8 · `GET /admin/stats`** *(expand existing)* — dedicated aggregation endpoint.
-      `GET /order/admin/statistics` returns status counts only; needs revenue, sales trends,
-      top-sellers, and user/customer metrics via MongoDB aggregation.
+- [x] **PR 8 · Expanded order statistics** — ✅ **done** (`feat/PR-8/statistics`).
+      Moved stats out of the controller into `OrderService.getOrderStatistics()`. `GET /order/admin/statistics`
+      now returns, over non-deleted orders: all 7 status counts (incl. the previously-missing **REFUNDED**),
+      `totalRevenue` + `averageOrderValue` (over CONFIRMED/PROCESSING/SHIPPED/DELIVERED only),
+      `totalCustomers` (distinct), `topSellingProducts` (top 5 by qty, new `TopProductDTO`), and
+      `salesByDay` (daily trend, new `DailySalesDTO`).
+      **Edge cases:** empty data → all-zero/empty (no div-by-zero on AOV); null status / null `customerInfo` /
+      null `orderItems` / null product (deleted) all skipped; currency rounded via `ValueUtil.round`;
+      soft-deleted orders excluded.
+      *Note:* computed in Java from a single `findByDeletedFalse()` fetch (simple + fully unit-tested);
+      move to Mongo aggregation pipelines if order volume grows. **Conversion rate** (cart→order) still
+      outstanding — needs checkout/cart data.
+      *Frontend:* path unchanged, `GET /order/admin/statistics`; response gains the new fields.
       *Depends on:* orders (exist); more accurate after PR 6.
 - [ ] **PR 9 · `POST /admin/orders/:id/rebook`** — rebook/clone an existing order:
       new checkout/order, re-validate inventory, re-price at current prices, new order number,

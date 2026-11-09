@@ -3,6 +3,7 @@ package co.za.ecommerce.business.impl;
 import co.za.ecommerce.business.InventoryService;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
+import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
 import co.za.ecommerce.exception.OrderException;
@@ -16,6 +17,7 @@ import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
 import co.za.ecommerce.model.order.Address;
 import co.za.ecommerce.model.order.Order;
+import co.za.ecommerce.model.order.OrderItems;
 import co.za.ecommerce.model.order.OrderStatus;
 import co.za.ecommerce.model.order.OrderStatusHistory;
 import co.za.ecommerce.repository.OrderRepository;
@@ -35,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -677,6 +680,115 @@ class OrderServiceImplTest {
                     .isInstanceOf(OrderException.class)
                     .hasMessageContaining("zero or positive");
             verify(orderRepository, never()).saveAll(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getOrderStatistics")
+    class GetOrderStatistics {
+
+        private Order statsOrder(User customer, OrderStatus status, double total,
+                                 List<OrderItems> items, LocalDateTime createdAt) {
+            Order o = TestDataBuilder.buildOrder(customer);
+            o.setOrderStatus(status);
+            o.setTotalAmount(total);
+            o.setOrderItems(items);
+            o.setCreatedAt(createdAt);
+            return o;
+        }
+
+        @Test
+        @DisplayName("shouldComputeRevenueCountsCustomersTopSellersAndTrend")
+        void shouldComputeRevenueCountsCustomersTopSellersAndTrend() {
+            User customerA = TestDataBuilder.buildUser(new ObjectId());
+            User customerB = TestDataBuilder.buildUser(new ObjectId());
+            User customerC = TestDataBuilder.buildUser(new ObjectId());
+
+            Product productX = TestDataBuilder.buildProduct(new ObjectId());
+            productX.setTitle("Product X");
+            Product productY = TestDataBuilder.buildProduct(new ObjectId());
+            productY.setTitle("Product Y");
+
+            LocalDateTime day = LocalDateTime.of(2026, 11, 9, 10, 0);
+
+            Order o1 = statsOrder(customerA, OrderStatus.CONFIRMED, 100.0,
+                    List.of(OrderItems.builder().product(productX).quantity(2).totalPrice(100.0).build()), day);
+            Order o2 = statsOrder(customerB, OrderStatus.DELIVERED, 200.0,
+                    List.of(
+                            OrderItems.builder().product(productX).quantity(1).totalPrice(50.0).build(),
+                            OrderItems.builder().product(productY).quantity(2).totalPrice(150.0).build()), day);
+            Order cancelled = statsOrder(customerA, OrderStatus.CANCELLED, 999.0, List.of(), day);
+            Order refunded = statsOrder(customerC, OrderStatus.REFUNDED, 50.0, List.of(), day);
+
+            when(orderRepository.findByDeletedFalse()).thenReturn(List.of(o1, o2, cancelled, refunded));
+
+            OrderStatisticsDTO stats = orderService.getOrderStatistics();
+
+            assertThat(stats.getTotalOrders()).isEqualTo(4);
+            assertThat(stats.getConfirmedOrders()).isEqualTo(1);
+            assertThat(stats.getDeliveredOrders()).isEqualTo(1);
+            assertThat(stats.getCancelledOrders()).isEqualTo(1);
+            assertThat(stats.getRefundedOrders()).isEqualTo(1);
+
+            // Revenue only over CONFIRMED + DELIVERED: 100 + 200 = 300; AOV 150.
+            assertThat(stats.getTotalRevenue()).isEqualTo(300.0);
+            assertThat(stats.getAverageOrderValue()).isEqualTo(150.0);
+
+            // Distinct customers across all non-deleted orders: A, B, C.
+            assertThat(stats.getTotalCustomers()).isEqualTo(3);
+
+            // Top sellers from revenue orders: X qty 3, Y qty 2.
+            assertThat(stats.getTopSellingProducts()).hasSize(2);
+            assertThat(stats.getTopSellingProducts().get(0).getProductId())
+                    .isEqualTo(productX.getId().toHexString());
+            assertThat(stats.getTopSellingProducts().get(0).getQuantitySold()).isEqualTo(3);
+            assertThat(stats.getTopSellingProducts().get(1).getQuantitySold()).isEqualTo(2);
+
+            // Both revenue orders on the same day -> one bucket.
+            assertThat(stats.getSalesByDay()).hasSize(1);
+            assertThat(stats.getSalesByDay().get(0).getDate()).isEqualTo("2026-11-09");
+            assertThat(stats.getSalesByDay().get(0).getOrderCount()).isEqualTo(2);
+            assertThat(stats.getSalesByDay().get(0).getRevenue()).isEqualTo(300.0);
+        }
+
+        @Test
+        @DisplayName("shouldReturnZeroedStatsWhenNoOrders")
+        void shouldReturnZeroedStatsWhenNoOrders() {
+            when(orderRepository.findByDeletedFalse()).thenReturn(List.of());
+
+            OrderStatisticsDTO stats = orderService.getOrderStatistics();
+
+            assertThat(stats.getTotalOrders()).isZero();
+            assertThat(stats.getTotalRevenue()).isZero();
+            assertThat(stats.getAverageOrderValue()).isZero();
+            assertThat(stats.getTotalCustomers()).isZero();
+            assertThat(stats.getTopSellingProducts()).isEmpty();
+            assertThat(stats.getSalesByDay()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("shouldHandleNullProductAndNullStatusGracefully")
+        void shouldHandleNullProductAndNullStatusGracefully() {
+            User customer = TestDataBuilder.buildUser(new ObjectId());
+            LocalDateTime day = LocalDateTime.of(2026, 11, 9, 10, 0);
+
+            // Revenue order with an item whose product is null (e.g. product later deleted).
+            Order withNullProductItem = statsOrder(customer, OrderStatus.DELIVERED, 80.0,
+                    List.of(OrderItems.builder().product(null).quantity(5).totalPrice(80.0).build()), day);
+            // Order with a null status must not break counting.
+            Order nullStatus = statsOrder(customer, OrderStatus.CONFIRMED, 20.0, List.of(), day);
+            nullStatus.setOrderStatus(null);
+
+            when(orderRepository.findByDeletedFalse()).thenReturn(List.of(withNullProductItem, nullStatus));
+
+            OrderStatisticsDTO stats = orderService.getOrderStatistics();
+
+            assertThat(stats.getTotalOrders()).isEqualTo(2);
+            assertThat(stats.getDeliveredOrders()).isEqualTo(1);
+            // Null-product item is skipped -> no top sellers.
+            assertThat(stats.getTopSellingProducts()).isEmpty();
+            // Revenue still counts the delivered order total.
+            assertThat(stats.getTotalRevenue()).isEqualTo(80.0);
         }
     }
 
