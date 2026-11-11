@@ -181,6 +181,21 @@ public class OrderAPIImpl extends API implements OrderAPI {
         );
     }
 
+    // ADMIN only — clones an existing order at current prices as a new PENDING order.
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{orderId}/rebook")
+    public ResponseEntity<OrderDTOApiResource> rebookOrder(@PathVariable ObjectId orderId) {
+        return ResponseEntity.ok(
+                OrderDTOApiResource.builder()
+                        .timestamp(instantNow())
+                        .data(orderService.rebookOrder(orderId))
+                        .message("Order rebooked.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
     // ADMIN only — soft-deletes CANCELLED orders created more than olderThanDays ago.
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/stale")

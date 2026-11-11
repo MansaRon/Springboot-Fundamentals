@@ -26,6 +26,7 @@ public interface OrderService {
     OrderDTO adjustOrderPricing(ObjectId orderId, Double discount, Double shippingCost, String reason);
     int deleteStaleOrders(int olderThanDays);
     OrderStatisticsDTO getOrderStatistics();
+    OrderDTO rebookOrder(ObjectId orderId);
     OrderDTO getOrderByIdAndCustomerId(ObjectId orderId, ObjectId customerId);
     OrderTrackingDTO trackOrder(ObjectId customerId, ObjectId orderId);
     OrderDTO cancelOrder(ObjectId customerId, ObjectId orderId, String reason);

@@ -447,6 +447,41 @@ public interface OrderAPI {
     })
     ResponseEntity<ApiResource> deleteStaleOrders(int olderThanDays);
 
+    @Operation(tags = "Order", summary = "Rebook (clone) an existing order (admin)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Order rebooked",
+                    content = {
+                            @Content(schema = @Schema(implementation = OrderDTOApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Order has no items, a product is unavailable, or insufficient stock",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Order not found",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<OrderDTOApiResource> rebookOrder(@PathVariable ObjectId orderId);
+
     @Operation(tags = "Order", summary = "Get order statistics")
     @ApiResponses({
             @ApiResponse(

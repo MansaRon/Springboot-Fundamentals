@@ -6,6 +6,7 @@ import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
+import co.za.ecommerce.exception.InventoryException;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
 import co.za.ecommerce.model.Cart;
@@ -639,6 +640,107 @@ class OrderServiceImplTest {
                     .isInstanceOf(OrderException.class)
                     .hasMessageContaining("negative");
             verify(orderRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("rebookOrder")
+    class RebookOrder {
+
+        private Order originalWith(Product product, int quantity) {
+            Order original = TestDataBuilder.buildOrder(user); // shippingCost 50.0
+            original.setOrderStatus(OrderStatus.DELIVERED);
+            original.setOrderItems(List.of(OrderItems.builder()
+                    .product(product).quantity(quantity).unitPrice(50.0).totalPrice(100.0).build()));
+            return original;
+        }
+
+        @Test
+        @DisplayName("shouldClonePendingOrderAtCurrentPricesReserveStockAndEmail")
+        void shouldClonePendingOrderAtCurrentPricesReserveStockAndEmail() {
+            Product product = TestDataBuilder.buildProduct(new ObjectId());
+            product.setPrice(100.0); // price changed since the original order
+            Order original = originalWith(product, 2);
+
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(original));
+            when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            try (MockedStatic<OrderMapper> mapperMock = mockStatic(OrderMapper.class)) {
+                mapperMock.when(() -> OrderMapper.mapToOrderDTO(any())).thenReturn(orderDTO);
+
+                orderService.rebookOrder(orderId);
+
+                verify(inventoryService).reduceInventory(any());
+
+                ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+                verify(orderRepository).save(captor.capture());
+                Order rebooked = captor.getValue();
+
+                assertThat(rebooked.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+                assertThat(rebooked.getDiscount()).isZero();
+                // Re-priced at current price 100.0 * 2 = 200 subtotal; tax 30; shipping 50; total 280.
+                assertThat(rebooked.getSubtotal()).isEqualTo(200.0);
+                assertThat(rebooked.getTax()).isEqualTo(30.0);
+                assertThat(rebooked.getShippingCost()).isEqualTo(50.0);
+                assertThat(rebooked.getTotalAmount()).isEqualTo(280.0);
+                assertThat(rebooked.getOrderItems()).hasSize(1);
+                assertThat(rebooked.getOrderItems().get(0).getUnitPrice()).isEqualTo(100.0);
+                assertThat(rebooked.getOrderItems().get(0).getTotalPrice()).isEqualTo(200.0);
+                assertThat(rebooked.getStatusHistory().get(0).getNotes()).contains("Rebooked from order");
+
+                verify(emailService).sendOrderConfirmationEmail(eq(user), eq(orderDTO));
+            }
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOriginalHasNoItems")
+        void shouldThrowWhenOriginalHasNoItems() {
+            Order original = TestDataBuilder.buildOrder(user);
+            original.setOrderItems(List.of());
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(original));
+
+            assertThatThrownBy(() -> orderService.rebookOrder(orderId))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("no items");
+            verify(inventoryService, never()).reduceInventory(any());
+            verify(orderRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenAProductIsUnavailable")
+        void shouldThrowWhenAProductIsUnavailable() {
+            Order original = TestDataBuilder.buildOrder(user);
+            original.setOrderItems(List.of(OrderItems.builder().product(null).quantity(1).build()));
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(original));
+
+            assertThatThrownBy(() -> orderService.rebookOrder(orderId))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("no longer available");
+            verify(orderRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("shouldNotSaveWhenInventoryInsufficient")
+        void shouldNotSaveWhenInventoryInsufficient() {
+            Product product = TestDataBuilder.buildProduct(new ObjectId());
+            Order original = originalWith(product, 2);
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.of(original));
+            doThrow(new InventoryException("400", "Insufficient inventory", 400))
+                    .when(inventoryService).reduceInventory(any());
+
+            assertThatThrownBy(() -> orderService.rebookOrder(orderId))
+                    .isInstanceOf(InventoryException.class);
+            verify(orderRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowWhenOrderNotFound")
+        void shouldThrowWhenOrderNotFound() {
+            when(orderRepository.findByIdAndDeletedFalse(orderId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.rebookOrder(orderId))
+                    .isInstanceOf(OrderException.class)
+                    .hasMessageContaining("Order not found");
         }
     }
 

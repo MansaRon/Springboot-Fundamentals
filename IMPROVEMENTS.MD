@@ -245,13 +245,42 @@ One PR per item, against `feat/admin`, in this order.
       outstanding — needs checkout/cart data.
       *Frontend:* path unchanged, `GET /order/admin/statistics`; response gains the new fields.
       *Depends on:* orders (exist); more accurate after PR 6.
-- [ ] **PR 9 · `POST /admin/orders/:id/rebook`** — rebook/clone an existing order:
-      new checkout/order, re-validate inventory, re-price at current prices, new order number,
-      `PENDING` status, confirmation email.
-      *Depends on:* order-creation internals, inventory, pricing (PR 6), email flow. Build last.
+- [x] **PR 9 · Rebook (clone) an order** — ✅ **done** (`feat/PR-9/orders-rebook`).
+      ADMIN-only `POST /api/v1/order/{orderId}/rebook` → `OrderService.rebookOrder(orderId)`: clones the
+      original's items/addresses/shipping/payment-method into a **new `PENDING` order** with a fresh
+      order number; **re-prices every line at the product's current price** (recomputes subtotal/tax/total),
+      resets discount to 0, records a `statusHistory` entry ("Rebooked from order …"), and sends the
+      order-confirmation email.
+      **Inventory:** re-validates + reserves stock via `inventoryService.reduceInventory` **before** saving,
+      so an out-of-stock item aborts (400) without leaving an orphan order.
+      **Edge cases:** 404 if the order doesn't exist (or is soft-deleted); 400 if it has no items or a line's
+      product is no longer available (null DBRef); inventory shortfall propagates as 400 with no order created.
+      *Frontend alignment:* path is `/order/{orderId}/rebook` (consistent with sibling order routes),
+      not `/admin/orders/:id/rebook`.
+      *Depends on:* order-creation internals, inventory, pricing (PR 6), email flow.
 
 **Cross-cutting prerequisites:** the pagination pattern (PR 2 — reused by PR 1 & PR 8) and the
 soft-delete decision (gates PR 7, makes PR 9's cancel/restore safer).
+
+### Follow-ups / known gaps (surfaced during the admin build)
+
+Deferred items flagged while building PRs 1–9 — none block the admin feature, but worth tracking:
+
+- [ ] **Review ownership authz** (from PR 4) — the owner-scoped
+      `POST|PATCH|DELETE /products/{productId}/reviews/{userId}` routes are `USER||ADMIN` but never
+      verify the caller actually owns `{userId}`, so any user can edit/delete another user's review.
+      Enforce `#userId == authentication.principal.id` (admins exempt).
+- [ ] **Conversion-rate analytics** (from PR 8) — needs cart/checkout data (orders ÷ checkouts);
+      the only `GET /order/admin/statistics` metric still outstanding.
+- [ ] **Weekly/monthly sales buckets + per-customer analytics** (from PR 8) — only the daily
+      `salesByDay` trend and a distinct `totalCustomers` count exist today.
+- [ ] **Stats via Mongo aggregation** (from PR 8) — statistics are computed in Java from a single
+      `findByDeletedFalse()` fetch; move to aggregation pipelines if order volume grows.
+- [ ] **Extend soft-delete to Products/Users** (tech-debt #3) — PR 7 added soft-delete for **orders only**.
+- [ ] **Route-naming alignment** — several admin endpoints live under existing controllers rather than the
+      frontend-contract paths: `/order/admin/all` (not `/admin/orders`), `/order/{id}/pricing`,
+      `/order/{id}/rebook`, `/order/admin/stale`, `/order/admin/statistics`, and categories under
+      `/admin/lookup/CATEGORY`. Either the FE aligns to these or we add thin aliases.
 
 ---
 
