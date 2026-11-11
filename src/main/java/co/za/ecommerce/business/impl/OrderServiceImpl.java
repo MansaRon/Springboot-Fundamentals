@@ -313,6 +313,97 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderDTO rebookOrder(ObjectId orderId) {
+        log.info("Rebooking order {}", orderId);
+
+        Order original = findOrderById(orderId);
+
+        List<OrderItems> originalItems = original.getOrderItems();
+        if (originalItems == null || originalItems.isEmpty()) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Cannot rebook an order with no items.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        boolean hasMissingProduct = originalItems.stream()
+                .anyMatch(item -> item.getProduct() == null || item.getProduct().getId() == null);
+        if (hasMissingProduct) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Cannot rebook: a product in this order is no longer available.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        // Re-validate and reserve stock at current levels BEFORE creating the new order, so an
+        // out-of-stock item aborts (InventoryException) without leaving an orphan order behind.
+        List<CartItems> reservation = originalItems.stream()
+                .map(item -> CartItems.builder()
+                        .product(item.getProduct())
+                        .quantity(item.getQuantity())
+                        .build())
+                .collect(Collectors.toList());
+        inventoryService.reduceInventory(reservation);
+
+        // Re-price every line at the product's current price.
+        List<OrderItems> newItems = originalItems.stream()
+                .map(item -> {
+                    double unitPrice = item.getProduct().getPrice();
+                    return OrderItems.builder()
+                            .id(new ObjectId())
+                            .createdAt(now())
+                            .updatedAt(now())
+                            .product(item.getProduct())
+                            .quantity(item.getQuantity())
+                            .unitPrice(unitPrice)
+                            .totalPrice(ValueUtil.round(unitPrice * item.getQuantity(), 2))
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        double subtotal = newItems.stream().mapToDouble(OrderItems::getTotalPrice).sum();
+        double tax = ValueUtil.vat(subtotal);
+        double shippingCost = original.getShippingCost();
+        double totalAmount = ValueUtil.round(subtotal + tax + shippingCost, 2);
+
+        Order rebooked = Order.builder()
+                .orderNumber(generateOrderNumber())
+                .createdAt(now())
+                .updatedAt(now())
+                .customerInfo(original.getCustomerInfo())
+                .orderItems(newItems)
+                .shippingAddress(original.getShippingAddress())
+                .billingAddress(original.getBillingAddress())
+                .shippingMethod(original.getShippingMethod())
+                .paymentMethod(original.getPaymentMethod())
+                .paymentDetails(PaymentDetails.builder()
+                        .paymentMethod(original.getPaymentMethod() != null ? original.getPaymentMethod().name() : null)
+                        .paymentStatus(PaymentStatus.PENDING.name())
+                        .paymentDate(now())
+                        .build())
+                .orderStatus(OrderStatus.PENDING)
+                .subtotal(ValueUtil.round(subtotal, 2))
+                .discount(0)
+                .tax(ValueUtil.round(tax, 2))
+                .shippingCost(shippingCost)
+                .totalAmount(totalAmount)
+                .statusHistory(new ArrayList<>(List.of(OrderStatusHistory.builder()
+                        .status(OrderStatus.PENDING)
+                        .timestamp(now())
+                        .notes("Rebooked from order " + original.getOrderNumber())
+                        .updatedBy("ADMIN")
+                        .build())))
+                .build();
+
+        Order saved = orderRepository.save(rebooked);
+        log.info("Order {} rebooked as {}", original.getOrderNumber(), saved.getOrderNumber());
+
+        OrderDTO dto = OrderMapper.mapToOrderDTO(saved);
+        emailService.sendOrderConfirmationEmail(saved.getCustomerInfo(), dto);
+        return dto;
+    }
+
+    @Override
     public int deleteStaleOrders(int olderThanDays) {
         log.info("Soft-deleting stale CANCELLED orders older than {} days", olderThanDays);
 

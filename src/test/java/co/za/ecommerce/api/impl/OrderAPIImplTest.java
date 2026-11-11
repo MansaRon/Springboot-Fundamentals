@@ -397,6 +397,30 @@ class OrderAPIImplTest {
     }
 
     @Nested
+    @DisplayName("POST /api/v1/order/{orderId}/rebook")
+    class RebookOrder {
+
+        @Test
+        @DisplayName("shouldReturn200WithRebookedOrder")
+        void shouldReturn200WithRebookedOrder() throws Exception {
+            OrderDTO rebooked = OrderDTO.builder()
+                    .id(ORDER_ID)
+                    .orderNumber("ORD-20261111-NEW123")
+                    .orderStatus(OrderStatus.PENDING.name())
+                    .totalAmount(280.0)
+                    .build();
+            when(orderService.rebookOrder(eq(new ObjectId(ORDER_ID)))).thenReturn(rebooked);
+
+            mockMvc.perform(post("/api/v1/order/{orderId}/rebook", ORDER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.statusCode").value(200))
+                    .andExpect(jsonPath("$.message").value("Order rebooked."))
+                    .andExpect(jsonPath("$.data.orderStatus").value("PENDING"))
+                    .andExpect(jsonPath("$.data.totalAmount").value(280.0));
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/v1/order/admin/stale")
     class DeleteStaleOrders {
 
