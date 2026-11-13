@@ -119,6 +119,11 @@ public class Order extends Entity {
     private List<OrderStatusHistory> statusHistory;
 
     /**
+     * Refunds issued against this order (full or partial). Empty/null when none.
+     */
+    private List<Refund> refunds;
+
+    /**
      * Soft-delete flag. Deleted orders are retained for audit but excluded from all
      * read paths. Set by the admin stale-order cleanup.
      */

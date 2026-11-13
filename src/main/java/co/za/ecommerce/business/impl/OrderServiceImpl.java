@@ -10,6 +10,7 @@ import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
 import co.za.ecommerce.dto.order.PaymentStatus;
+import co.za.ecommerce.dto.order.RefundDTO;
 import co.za.ecommerce.dto.order.TopProductDTO;
 import co.za.ecommerce.exception.OrderException;
 import co.za.ecommerce.mapper.OrderMapper;
@@ -401,6 +402,109 @@ public class OrderServiceImpl implements OrderService {
         OrderDTO dto = OrderMapper.mapToOrderDTO(saved);
         emailService.sendOrderConfirmationEmail(saved.getCustomerInfo(), dto);
         return dto;
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "orders", key = "#orderId"),
+            @CacheEvict(value = "user-orders", allEntries = true)
+    })
+    public RefundDTO initiateRefund(ObjectId orderId, Double amount, String reason) {
+        log.info("Initiating refund for order {}", orderId);
+
+        Order order = findOrderById(orderId);
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Cannot refund a cancelled order.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        double alreadyRefunded = totalRefunded(order);
+        double refundable = ValueUtil.round(order.getTotalAmount() - alreadyRefunded, 2);
+        if (refundable <= 0) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Order is already fully refunded.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        // null amount refunds the full remaining balance.
+        double refundAmount = amount != null ? ValueUtil.round(amount, 2) : refundable;
+        if (refundAmount <= 0) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Refund amount must be positive.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+        if (refundAmount > refundable) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    String.format("Refund amount %.2f exceeds the refundable balance of %.2f.", refundAmount, refundable),
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        Refund refund = Refund.builder()
+                .id(new ObjectId())
+                .amount(refundAmount)
+                .reason(reason)
+                .status(RefundStatus.COMPLETED)
+                .createdAt(DateUtil.now())
+                .processedBy("ADMIN")
+                .build();
+
+        if (order.getRefunds() == null) {
+            order.setRefunds(new ArrayList<>());
+        }
+        order.getRefunds().add(refund);
+
+        boolean fullyRefunded = ValueUtil.round(alreadyRefunded + refundAmount, 2) >= order.getTotalAmount();
+
+        if (order.getStatusHistory() == null) {
+            order.setStatusHistory(new ArrayList<>());
+        }
+        order.getStatusHistory().add(OrderStatusHistory.builder()
+                .status(fullyRefunded ? OrderStatus.REFUNDED : order.getOrderStatus())
+                .timestamp(DateUtil.now())
+                .notes(String.format("Refund of %.2f issued. Reason: %s", refundAmount, reason))
+                .updatedBy("ADMIN")
+                .build());
+
+        if (fullyRefunded) {
+            order.setOrderStatus(OrderStatus.REFUNDED);
+            if (order.getPaymentDetails() != null) {
+                order.getPaymentDetails().setPaymentStatus("REFUNDED");
+            }
+        }
+        order.setUpdatedAt(DateUtil.now());
+
+        Order saved = orderRepository.save(order);
+        log.info("Refund of {} issued against order {} (fully refunded: {})",
+                refundAmount, saved.getOrderNumber(), fullyRefunded);
+
+        return OrderMapper.toRefundDTOList(saved.getRefunds()).stream()
+                .filter(r -> r.getId().equals(refund.getId().toHexString()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @Override
+    public List<RefundDTO> getRefunds(ObjectId orderId) {
+        log.info("Fetching refunds for order {}", orderId);
+        Order order = findOrderById(orderId);
+        return OrderMapper.toRefundDTOList(order.getRefunds());
+    }
+
+    /** Sum of all non-failed refunds already issued against the order. */
+    private double totalRefunded(Order order) {
+        if (order.getRefunds() == null) return 0;
+        double sum = order.getRefunds().stream()
+                .filter(r -> r.getStatus() != RefundStatus.FAILED)
+                .mapToDouble(Refund::getAmount)
+                .sum();
+        return ValueUtil.round(sum, 2);
     }
 
     @Override

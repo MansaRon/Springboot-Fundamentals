@@ -7,9 +7,12 @@ import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
 import co.za.ecommerce.dto.api.OrderTrackingApiResource;
+import co.za.ecommerce.dto.api.RefundApiResource;
+import co.za.ecommerce.dto.api.RefundDTOListApiResource;
 import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderPricingUpdateRequest;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
+import co.za.ecommerce.dto.order.RefundRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -481,6 +484,68 @@ public interface OrderAPI {
                     })
     })
     ResponseEntity<OrderDTOApiResource> rebookOrder(@PathVariable ObjectId orderId);
+
+    @Operation(tags = "Order", summary = "Initiate a refund against an order (admin)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Refund initiated",
+                    content = {
+                            @Content(schema = @Schema(implementation = RefundApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Order cancelled/already refunded, or amount exceeds the refundable balance",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Order not found",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<RefundApiResource> initiateRefund(@PathVariable ObjectId orderId, @Valid @RequestBody RefundRequest request);
+
+    @Operation(tags = "Order", summary = "Get an order's refund history (admin)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Refund history retrieved",
+                    content = {
+                            @Content(schema = @Schema(implementation = RefundDTOListApiResource.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Authorisation invalid",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    }),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Order not found",
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(implementation = GlobalApiErrorResponse.class))
+                    })
+    })
+    ResponseEntity<RefundDTOListApiResource> getRefunds(@PathVariable ObjectId orderId);
 
     @Operation(tags = "Order", summary = "Get order statistics")
     @ApiResponses({
