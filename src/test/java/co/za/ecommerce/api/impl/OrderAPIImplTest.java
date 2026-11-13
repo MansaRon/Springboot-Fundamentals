@@ -89,7 +89,7 @@ class OrderAPIImplTest {
     // ADMIN-only endpoint. Ownership-scoped single-order fetch for a regular user is
     // covered by GET /{customerId}/{orderId} (see GetOrderByIdAndCustomerId below).
     @Nested
-    @DisplayName("GET /api/v1/order/{orderId}")
+    @DisplayName("GET /api/v1/order/admin/{orderId}")
     class GetOrderById {
 
         @Test
@@ -97,7 +97,7 @@ class OrderAPIImplTest {
         void shouldReturn200WithOrderWhenIdExists() throws Exception {
             when(orderService.getOrderById(eq(new ObjectId(ORDER_ID)))).thenReturn(orderDTO);
 
-            mockMvc.perform(get("/api/v1/order/{orderId}", ORDER_ID))
+            mockMvc.perform(get("/api/v1/order/admin/{orderId}", ORDER_ID))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message").value("Order retrieved successfully."))
@@ -112,7 +112,7 @@ class OrderAPIImplTest {
         void shouldPassCorrectOrderIdToService() throws Exception {
             when(orderService.getOrderById(any())).thenReturn(orderDTO);
 
-            mockMvc.perform(get("/api/v1/order/{orderId}", ORDER_ID)).andExpect(status().isOk());
+            mockMvc.perform(get("/api/v1/order/admin/{orderId}", ORDER_ID)).andExpect(status().isOk());
 
             verify(orderService).getOrderById(eq(new ObjectId(ORDER_ID)));
         }
@@ -291,7 +291,7 @@ class OrderAPIImplTest {
     }
 
     @Nested
-    @DisplayName("PUT /api/v1/order/{orderId}/status")
+    @DisplayName("PATCH /api/v1/order/admin/{orderId}/status")
     class UpdateOrderStatus {
 
         @Test
@@ -310,7 +310,7 @@ class OrderAPIImplTest {
                     eq("Order picked and packed.")))
                     .thenReturn(updatedOrder);
 
-            mockMvc.perform(put("/api/v1/order/{orderId}/status", ORDER_ID)
+            mockMvc.perform(patch("/api/v1/order/admin/{orderId}/status", ORDER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {
@@ -333,7 +333,7 @@ class OrderAPIImplTest {
                     isNull()))
                     .thenReturn(orderDTO);
 
-            mockMvc.perform(put("/api/v1/order/{orderId}/status", ORDER_ID)
+            mockMvc.perform(patch("/api/v1/order/admin/{orderId}/status", ORDER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {
@@ -345,7 +345,7 @@ class OrderAPIImplTest {
     }
 
     @Nested
-    @DisplayName("PATCH /api/v1/order/{orderId}/pricing")
+    @DisplayName("PATCH /api/v1/order/admin/{orderId}/pricing")
     class AdjustOrderPricing {
 
         @Test
@@ -366,7 +366,7 @@ class OrderAPIImplTest {
                     eq("Goodwill discount")))
                     .thenReturn(adjusted);
 
-            mockMvc.perform(patch("/api/v1/order/{orderId}/pricing", ORDER_ID)
+            mockMvc.perform(patch("/api/v1/order/admin/{orderId}/pricing", ORDER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {
@@ -383,7 +383,7 @@ class OrderAPIImplTest {
         @Test
         @DisplayName("shouldReturn400WhenReasonMissing")
         void shouldReturn400WhenReasonMissing() throws Exception {
-            mockMvc.perform(patch("/api/v1/order/{orderId}/pricing", ORDER_ID)
+            mockMvc.perform(patch("/api/v1/order/admin/{orderId}/pricing", ORDER_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {
@@ -397,7 +397,7 @@ class OrderAPIImplTest {
     }
 
     @Nested
-    @DisplayName("POST /api/v1/order/{orderId}/rebook")
+    @DisplayName("POST /api/v1/order/admin/{orderId}/rebook")
     class RebookOrder {
 
         @Test
@@ -411,7 +411,7 @@ class OrderAPIImplTest {
                     .build();
             when(orderService.rebookOrder(eq(new ObjectId(ORDER_ID)))).thenReturn(rebooked);
 
-            mockMvc.perform(post("/api/v1/order/{orderId}/rebook", ORDER_ID))
+            mockMvc.perform(post("/api/v1/order/admin/{orderId}/rebook", ORDER_ID))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.statusCode").value(200))
                     .andExpect(jsonPath("$.message").value("Order rebooked."))

@@ -8,11 +8,15 @@ import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.api.OrderDTOListApiResource;
 import co.za.ecommerce.dto.api.OrderStatisticsApiResource;
 import co.za.ecommerce.dto.api.OrderTrackingApiResource;
+import co.za.ecommerce.dto.api.RefundApiResource;
+import co.za.ecommerce.dto.api.RefundDTOListApiResource;
 import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderCancellationRequest;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderPricingUpdateRequest;
 import co.za.ecommerce.dto.order.OrderStatusUpdateRequest;
+import co.za.ecommerce.dto.order.RefundDTO;
+import co.za.ecommerce.dto.order.RefundRequest;
 import co.za.ecommerce.model.order.OrderStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +41,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
     // can't be enforced declaratively here — regular users fetch their own orders
     // via the ownership-scoped GET /{customerId}/{orderId} below.
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/{orderId}")
+    @GetMapping("/admin/{orderId}")
     public ResponseEntity<OrderDTOApiResource> getOrderById(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
@@ -140,7 +144,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
 
     // ADMIN only — order status transitions.
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{orderId}/status")
+    @PatchMapping("/admin/{orderId}/status")
     public ResponseEntity<OrderDTOApiResource> updateOrderStatus(
             @PathVariable ObjectId orderId,
             @Valid @RequestBody OrderStatusUpdateRequest request) {
@@ -161,7 +165,7 @@ public class OrderAPIImpl extends API implements OrderAPI {
 
     // ADMIN only — recalculates the order total from an adjusted discount/shipping.
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{orderId}/pricing")
+    @PatchMapping("/admin/{orderId}/pricing")
     public ResponseEntity<OrderDTOApiResource> adjustOrderPricing(
             @PathVariable ObjectId orderId,
             @Valid @RequestBody OrderPricingUpdateRequest request) {
@@ -183,13 +187,47 @@ public class OrderAPIImpl extends API implements OrderAPI {
 
     // ADMIN only — clones an existing order at current prices as a new PENDING order.
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/{orderId}/rebook")
+    @PostMapping("/admin/{orderId}/rebook")
     public ResponseEntity<OrderDTOApiResource> rebookOrder(@PathVariable ObjectId orderId) {
         return ResponseEntity.ok(
                 OrderDTOApiResource.builder()
                         .timestamp(instantNow())
                         .data(orderService.rebookOrder(orderId))
                         .message("Order rebooked.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // ADMIN only — issues a full or partial refund against an order.
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/{orderId}/refund")
+    public ResponseEntity<RefundApiResource> initiateRefund(
+            @PathVariable ObjectId orderId,
+            @Valid @RequestBody RefundRequest request) {
+        RefundDTO refund = orderService.initiateRefund(orderId, request.getAmount(), request.getReason());
+        return ResponseEntity.ok(
+                RefundApiResource.builder()
+                        .timestamp(instantNow())
+                        .data(refund)
+                        .message(String.format("Refund of %.2f initiated.", refund.getAmount()))
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    // ADMIN only — refund history for an order.
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/{orderId}/refunds")
+    public ResponseEntity<RefundDTOListApiResource> getRefunds(@PathVariable ObjectId orderId) {
+        List<RefundDTO> refunds = orderService.getRefunds(orderId);
+        return ResponseEntity.ok(
+                RefundDTOListApiResource.builder()
+                        .timestamp(instantNow())
+                        .data(refunds)
+                        .message(String.format("Retrieved %d refund(s).", refunds.size()))
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

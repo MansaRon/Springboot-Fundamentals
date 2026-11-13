@@ -7,6 +7,7 @@ import co.za.ecommerce.model.order.Order;
 import co.za.ecommerce.model.order.OrderItems;
 import co.za.ecommerce.model.order.OrderStatusHistory;
 import co.za.ecommerce.model.order.PaymentDetails;
+import co.za.ecommerce.model.order.Refund;
 import co.za.ecommerce.utils.DateUtil;
 
 import java.util.List;
@@ -40,6 +41,7 @@ public class OrderMapper {
         dto.setOrderNumber(order.getOrderNumber());
         dto.setShippedDate(order.getShippedDate());
         dto.setStatusHistory(toStatusHistoryDTOList(order.getStatusHistory()));
+        dto.setRefunds(toRefundDTOList(order.getRefunds()));
 
         return dto;
     }
@@ -70,6 +72,23 @@ public class OrderMapper {
                 .timestamp(entry.getTimestamp())
                 .notes(entry.getNotes())
                 .updatedBy(entry.getUpdatedBy())
+                .build();
+    }
+
+    public static List<RefundDTO> toRefundDTOList(List<Refund> refunds) {
+        if (refunds == null) return List.of();
+        return refunds.stream().map(OrderMapper::toRefundDTO).collect(Collectors.toList());
+    }
+
+    private static RefundDTO toRefundDTO(Refund refund) {
+        if (refund == null) return null;
+        return RefundDTO.builder()
+                .id(refund.getId() != null ? refund.getId().toHexString() : null)
+                .amount(refund.getAmount())
+                .reason(refund.getReason())
+                .status(refund.getStatus() != null ? refund.getStatus().name() : null)
+                .createdAt(refund.getCreatedAt())
+                .processedBy(refund.getProcessedBy())
                 .build();
     }
 

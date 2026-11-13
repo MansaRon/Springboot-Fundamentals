@@ -46,4 +46,5 @@ public class OrderDTO extends EntityDTO {
     private double shippingCost;
     private String orderNumber;
     private List<OrderStatusHistoryDTO> statusHistory;
+    private List<RefundDTO> refunds;
 }

@@ -5,6 +5,7 @@ import co.za.ecommerce.dto.order.GetAllOrdersDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.dto.order.OrderStatisticsDTO;
 import co.za.ecommerce.dto.order.OrderTrackingDTO;
+import co.za.ecommerce.dto.order.RefundDTO;
 import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.order.OrderStatus;
 import org.bson.types.ObjectId;
@@ -27,6 +28,8 @@ public interface OrderService {
     int deleteStaleOrders(int olderThanDays);
     OrderStatisticsDTO getOrderStatistics();
     OrderDTO rebookOrder(ObjectId orderId);
+    RefundDTO initiateRefund(ObjectId orderId, Double amount, String reason);
+    List<RefundDTO> getRefunds(ObjectId orderId);
     OrderDTO getOrderByIdAndCustomerId(ObjectId orderId, ObjectId customerId);
     OrderTrackingDTO trackOrder(ObjectId customerId, ObjectId orderId);
     OrderDTO cancelOrder(ObjectId customerId, ObjectId orderId, String reason);
