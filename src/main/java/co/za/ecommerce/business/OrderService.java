@@ -21,7 +21,7 @@ public interface OrderService {
     List<OrderDTO> getUserOrdersByStatus(ObjectId userId, OrderStatus status);
 
     List<OrderDTO> getAllOrders();
-    GetAllOrdersDTO getAllOrders(int pageNo, int pageSize, String sortBy, String sortDir);
+    GetAllOrdersDTO getAllOrders(int pageNo, int pageSize, String sortBy, String sortDir, String search, String status);
     List<OrderDTO> getOrdersByStatus(OrderStatus status);
     OrderDTO updateOrderStatus(ObjectId orderId, OrderStatus newStatus, String notes);
     OrderDTO adjustOrderPricing(ObjectId orderId, Double discount, Double shippingCost, String reason);

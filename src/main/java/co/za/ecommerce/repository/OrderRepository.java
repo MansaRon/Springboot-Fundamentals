@@ -34,6 +34,26 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     @Query("{ 'deleted': { $ne: true } }")
     Page<Order> findByDeletedFalse(Pageable pageable);
 
+    /** Non-deleted orders with a given status (paginated). */
+    @Query("{ 'deleted': { $ne: true }, 'orderStatus': ?0 }")
+    Page<Order> findActiveByStatus(OrderStatus status, Pageable pageable);
+
+    /** Non-deleted orders matching the search term (order number, customer name/email, transaction id). */
+    @Query("{ 'deleted': { $ne: true }, $or: [ " +
+            "{ 'orderNumber': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'customerInfo.name': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'customerInfo.email': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'transactionId': { $regex: ?0, $options: 'i' } } ] }")
+    Page<Order> searchActiveOrders(String search, Pageable pageable);
+
+    /** Non-deleted orders matching the search term AND an exact status. */
+    @Query("{ 'deleted': { $ne: true }, 'orderStatus': ?1, $or: [ " +
+            "{ 'orderNumber': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'customerInfo.name': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'customerInfo.email': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'transactionId': { $regex: ?0, $options: 'i' } } ] }")
+    Page<Order> searchActiveOrdersByStatus(String search, OrderStatus status, Pageable pageable);
+
     /** Live candidates for stale-order cleanup: a given status, created before the cutoff. */
     List<Order> findByOrderStatusAndDeletedFalseAndCreatedAtBefore(OrderStatus status, LocalDateTime cutoff);
 }

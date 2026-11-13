@@ -28,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -83,18 +84,44 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir) {
-        log.info("Fetching users with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
-                pageNo, pageSize, sortBy, sortDir);
+    public GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir, String search, String status) {
+        log.info("Fetching users with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}, search: {}, status: {}",
+                pageNo, pageSize, sortBy, sortDir, search, status);
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<User> users = userRepository.findAll(pageable);
+
+        boolean hasSearch = search != null && !search.isBlank();
+        String term = hasSearch ? search.trim() : null;
+        AccountStatus accountStatus = parseStatus(status);
+
+        Page<User> users;
+        if (hasSearch && accountStatus != null) {
+            users = userRepository.searchUsersByStatus(term, accountStatus, pageable);
+        } else if (hasSearch) {
+            users = userRepository.searchUsers(term, pageable);
+        } else if (accountStatus != null) {
+            users = userRepository.findByStatus(accountStatus, pageable);
+        } else {
+            users = userRepository.findAll(pageable);
+        }
 
         return buildGetAllUsersDTO(users);
+    }
+
+    /** Parses the optional status filter; null/blank means "no status filter". */
+    private AccountStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return AccountStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ClientException(HttpStatus.BAD_REQUEST,
+                    String.format("Invalid status '%s'. Valid values: %s",
+                            status, Arrays.toString(AccountStatus.values())));
+        }
     }
 
     private GetAllUsersDTO buildGetAllUsersDTO(Page<User> page) {

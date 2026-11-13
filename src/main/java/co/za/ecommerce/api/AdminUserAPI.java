@@ -27,7 +27,7 @@ public interface AdminUserAPI {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = GlobalApiErrorResponse.class)))
     })
-    ResponseEntity<UsersListApiResource> getAllUsers(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
+    ResponseEntity<UsersListApiResource> getAllUsers(Integer page, Integer size, String sortBy, String sortOrder, String search, String status);
 
     @Operation(tags = "Admin User", summary = "Admin-triggered password reset")
     @ApiResponses({

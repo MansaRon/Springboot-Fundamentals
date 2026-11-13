@@ -241,7 +241,7 @@ class OrderAPIImplTest {
                     .totalPages(1)
                     .last(true)
                     .build();
-            when(orderService.getAllOrders(anyInt(), anyInt(), anyString(), anyString())).thenReturn(page);
+            when(orderService.getAllOrders(anyInt(), anyInt(), anyString(), anyString(), any(), any())).thenReturn(page);
 
             mockMvc.perform(get("/api/v1/order/admin/all"))
                     .andExpect(status().isOk())
@@ -264,7 +264,7 @@ class OrderAPIImplTest {
                     .totalPages(0)
                     .last(true)
                     .build();
-            when(orderService.getAllOrders(anyInt(), anyInt(), anyString(), anyString())).thenReturn(page);
+            when(orderService.getAllOrders(anyInt(), anyInt(), anyString(), anyString(), any(), any())).thenReturn(page);
 
             mockMvc.perform(get("/api/v1/order/admin/all"))
                     .andExpect(status().isOk())
