@@ -34,10 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        log.info("JWT Filter hit: {} {}", request.getMethod(), request.getRequestURI());
+        // log.info("JWT Filter hit: {} {}", request.getMethod(), request.getRequestURI());
 
         String authHead = request.getHeader("Authorization");
-        log.info("Authorization header: {}", authHead);
+        // log.info("Authorization header: {}", authHead);
         String token = null;
         String userEmail = null;
 
