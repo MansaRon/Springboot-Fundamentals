@@ -37,8 +37,8 @@ public class LookupMapper {
                 .code(dto.getCode())
                 .label(dto.getLabel())
                 .metadata(dto.getMetadata())
-                .active(dto.isActive())
-                .sortOrder(dto.getSortOrder())
+                .active(Boolean.TRUE.equals(dto.getActive()))
+                .sortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0)
                 .build();
     }
 }

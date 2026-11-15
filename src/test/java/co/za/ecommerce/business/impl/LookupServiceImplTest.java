@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 class LookupServiceImplTest {
 
     @Mock private LookupValueRepository lookupValueRepository;
+    @Mock private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
     @InjectMocks private LookupServiceImpl lookupService;
 
     private LookupValue gauteng() {
@@ -103,6 +104,32 @@ class LookupServiceImplTest {
             assertThat(captor.getValue().getType()).isEqualTo(LookupType.DELIVERY_OPTION);
             assertThat(captor.getValue().getMetadata()).containsEntry("price", 50.0);
         }
+
+        @Test
+        @DisplayName("shouldDefaultActiveToTrueWhenOmitted")
+        void shouldDefaultActiveToTrueWhenOmitted() {
+            when(lookupValueRepository.save(any(LookupValue.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            LookupValueDTO result = lookupService.create(LookupValueDTO.builder()
+                    .type(LookupType.CATEGORY).code("APPAREL").label("Apparel").build()); // active omitted
+
+            assertThat(result.getActive()).isTrue();
+        }
+
+        @Test
+        @DisplayName("shouldRejectDuplicateCodeWithinType")
+        void shouldRejectDuplicateCodeWithinType() {
+            when(lookupValueRepository.existsByTypeAndCodeIgnoreCase(LookupType.CATEGORY, "APPAREL"))
+                    .thenReturn(true);
+
+            assertThatThrownBy(() -> lookupService.create(LookupValueDTO.builder()
+                    .type(LookupType.CATEGORY).code("APPAREL").label("Apparel").build()))
+                    .isInstanceOf(LookupException.class)
+                    .hasMessageContaining("already exists");
+
+            verify(lookupValueRepository, never()).save(any());
+        }
     }
 
     @Nested
@@ -129,8 +156,26 @@ class LookupServiceImplTest {
             LookupValueDTO result = lookupService.update(id, dto);
 
             assertThat(result.getLabel()).isEqualTo("Gauteng Province");
-            assertThat(result.isActive()).isFalse();
+            assertThat(result.getActive()).isFalse();
             assertThat(result.getSortOrder()).isEqualTo(10);
+        }
+
+        @Test
+        @DisplayName("shouldKeepExistingFieldsOnPartialUpdate")
+        void shouldKeepExistingFieldsOnPartialUpdate() {
+            LookupValue existing = gauteng(); // code GAUTENG, label Gauteng, active true, sortOrder 3
+            ObjectId id = existing.getId();
+            when(lookupValueRepository.findById(id)).thenReturn(Optional.of(existing));
+            when(lookupValueRepository.save(any(LookupValue.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            // Only toggle active; type/code/label/sortOrder omitted.
+            LookupValueDTO result = lookupService.update(id, LookupValueDTO.builder().active(false).build());
+
+            assertThat(result.getCode()).isEqualTo("GAUTENG");
+            assertThat(result.getLabel()).isEqualTo("Gauteng");
+            assertThat(result.getActive()).isFalse();
+            assertThat(result.getSortOrder()).isEqualTo(3);
         }
 
         @Test
@@ -145,6 +190,25 @@ class LookupServiceImplTest {
 
             verify(lookupValueRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("shouldCascadeCategoryCodeRenameToProducts")
+        void shouldCascadeCategoryCodeRenameToProducts() {
+            LookupValue existing = LookupValue.builder()
+                    .id(new ObjectId()).type(LookupType.CATEGORY)
+                    .code("APPAREL").label("Apparel").active(true).sortOrder(1).build();
+            ObjectId id = existing.getId();
+            when(lookupValueRepository.findById(id)).thenReturn(Optional.of(existing));
+            when(lookupValueRepository.save(any(LookupValue.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(mongoTemplate.updateMulti(any(), any(), eq(co.za.ecommerce.model.Product.class)))
+                    .thenReturn(com.mongodb.client.result.UpdateResult.acknowledged(2, 2L, null));
+
+            lookupService.update(id, LookupValueDTO.builder()
+                    .type(LookupType.CATEGORY).code("CLOTHING").label("Apparel").sortOrder(1).build());
+
+            verify(mongoTemplate).updateMulti(any(), any(), eq(co.za.ecommerce.model.Product.class));
+        }
     }
 
     @Nested
@@ -153,8 +217,9 @@ class LookupServiceImplTest {
         @Test
         @DisplayName("shouldDeleteWhenValueExists")
         void shouldDeleteWhenValueExists() {
-            ObjectId id = new ObjectId();
-            when(lookupValueRepository.existsById(id)).thenReturn(true);
+            LookupValue existing = gauteng(); // PROVINCE — no product-usage check
+            ObjectId id = existing.getId();
+            when(lookupValueRepository.findById(id)).thenReturn(Optional.of(existing));
 
             lookupService.delete(id);
 
@@ -165,11 +230,27 @@ class LookupServiceImplTest {
         @DisplayName("shouldThrowWhenValueDoesNotExist")
         void shouldThrowWhenValueDoesNotExist() {
             ObjectId id = new ObjectId();
-            when(lookupValueRepository.existsById(id)).thenReturn(false);
+            when(lookupValueRepository.findById(id)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> lookupService.delete(id))
                     .isInstanceOf(LookupException.class)
                     .hasMessageContaining("Lookup value not found");
+
+            verify(lookupValueRepository, never()).deleteById(any());
+        }
+
+        @Test
+        @DisplayName("shouldBlockDeletingCategoryStillUsedByProducts")
+        void shouldBlockDeletingCategoryStillUsedByProducts() {
+            LookupValue category = LookupValue.builder()
+                    .id(new ObjectId()).type(LookupType.CATEGORY)
+                    .code("APPAREL").label("Apparel").active(true).build();
+            when(lookupValueRepository.findById(category.getId())).thenReturn(Optional.of(category));
+            when(mongoTemplate.count(any(), eq(co.za.ecommerce.model.Product.class))).thenReturn(3L);
+
+            assertThatThrownBy(() -> lookupService.delete(category.getId()))
+                    .isInstanceOf(LookupException.class)
+                    .hasMessageContaining("still use it");
 
             verify(lookupValueRepository, never()).deleteById(any());
         }

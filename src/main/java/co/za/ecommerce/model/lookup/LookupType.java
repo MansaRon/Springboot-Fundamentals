@@ -7,5 +7,6 @@ package co.za.ecommerce.model.lookup;
 public enum LookupType {
     PROVINCE,
     DELIVERY_OPTION,
-    PAYMENT_METHOD
+    PAYMENT_METHOD,
+    CATEGORY
 }

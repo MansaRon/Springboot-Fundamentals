@@ -36,7 +36,13 @@ public class LookupValueDTO {
 
     private Map<String, Object> metadata;
 
-    private boolean active;
+    /**
+     * Nullable so an omitted flag can be distinguished from an explicit {@code false}:
+     * on create a null defaults to active ({@code true}); on update a null leaves the
+     * existing value unchanged.
+     */
+    private Boolean active;
 
-    private int sortOrder;
+    /** Nullable so a partial update can omit it; defaults to 0 on create when omitted. */
+    private Integer sortOrder;
 }

@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface LookupService {
     List<LookupValueDTO> getActiveByType(LookupType type);
+    List<LookupValueDTO> getAllByType(LookupType type);
     LookupValueDTO create(LookupValueDTO dto);
     LookupValueDTO update(ObjectId id, LookupValueDTO dto);
     void delete(ObjectId id);

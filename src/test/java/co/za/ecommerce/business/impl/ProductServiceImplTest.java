@@ -50,6 +50,9 @@ class ProductServiceImplTest {
     @Mock
     private S3Service s3Service;
 
+    @Mock
+    private co.za.ecommerce.repository.LookupValueRepository lookupValueRepository;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
@@ -96,6 +99,22 @@ class ProductServiceImplTest {
     @Nested
     @DisplayName("addProduct")
     class addProduct {
+
+        @Test
+        @DisplayName("shouldRejectCategoryNotInManagedLookupList")
+        void shouldRejectCategoryNotInManagedLookupList() {
+            // A managed CATEGORY list exists, but none match the product's category.
+            when(lookupValueRepository.findByTypeAndActiveTrueOrderBySortOrderAsc(
+                    co.za.ecommerce.model.lookup.LookupType.CATEGORY))
+                    .thenReturn(List.of(co.za.ecommerce.model.lookup.LookupValue.builder()
+                            .code("Electronics").label("Electronics").active(true).build()));
+
+            assertThatThrownBy(() -> productService.addProduct(productDTO, List.of(imageFile)))
+                    .isInstanceOf(ProductException.class)
+                    .hasMessageContaining("Invalid category");
+
+            verify(productRepository, never()).save(any());
+        }
 
         @Test
         @DisplayName("shouldUploadImagesSaveProductAndReturnDTOWhenInputIsValid")

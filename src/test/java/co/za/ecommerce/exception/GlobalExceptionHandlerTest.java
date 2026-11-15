@@ -6,8 +6,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -225,6 +228,25 @@ class GlobalExceptionHandlerTest {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
             assertThat(response.getBody().getMessage()).isEqualTo("An unexpected error occurred. Please try again later.");
             assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+        }
+    }
+
+    @Nested
+    @DisplayName("MaxUploadSizeExceededException")
+    class MaxUploadSize {
+        @Test
+        void returns413WithFriendlyMessage() {
+            var ex = new MaxUploadSizeExceededException(1_048_576L);
+            var response = handler.handleMaxUploadSizeExceededException(
+                    ex, new HttpHeaders(), HttpStatus.PAYLOAD_TOO_LARGE, new ServletWebRequest(request));
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+            assertThat(response.getBody()).isInstanceOf(GlobalApiErrorResponse.class);
+            GlobalApiErrorResponse body = (GlobalApiErrorResponse) response.getBody();
+            assertThat(body.getMessage())
+                    .isEqualTo("Upload too large. The total size of the uploaded file(s) exceeds the allowed limit.");
+            assertThat(body.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE.value());
+            assertThat(body.getPath()).isEqualTo("/api/v1/test");
         }
     }
 
