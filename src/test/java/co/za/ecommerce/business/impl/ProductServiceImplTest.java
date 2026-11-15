@@ -186,7 +186,7 @@ class ProductServiceImplTest {
             when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(productDTO);
 
             // Act
-            GetAllProductsDTO result = productService.getAllPosts(0, 10, "title", "asc");
+            GetAllProductsDTO result = productService.getAllPosts(0, 10, "title", "asc", null, null);
 
             // Assert
             assertThat(result).isNotNull();
@@ -205,7 +205,7 @@ class ProductServiceImplTest {
             // Act & Assert
             // assertThatThrownBy is the AssertJ way to assert that a method throws.
             // It's cleaner than try-catch and gives better failure messages.
-            assertThatThrownBy(() -> productService.getAllPosts(0, 10, "title", "asc"))
+            assertThatThrownBy(() -> productService.getAllPosts(0, 10, "title", "asc", null, null))
                     .isInstanceOf(ProductException.class)
                     .hasMessageContaining("No products found");
 
@@ -225,7 +225,7 @@ class ProductServiceImplTest {
             when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(productDTO);
 
             // Act
-            productService.getAllPosts(0, 10, "title", "desc");
+            productService.getAllPosts(0, 10, "title", "desc", null, null);
 
             // Assert — capture the Pageable and verify the sort direction
             ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
@@ -264,6 +264,25 @@ class ProductServiceImplTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getTitle()).isEqualTo(PRODUCT_TITLE);
+        }
+
+        @Test
+        @DisplayName("shouldExcludeHiddenReviewsFromPublicView")
+        void shouldExcludeHiddenReviewsFromPublicView() {
+            ProductDTO mapped = ProductDTO.builder()
+                    .reviews(List.of(
+                            RatingDTO.builder().hidden(false).build(),
+                            RatingDTO.builder().hidden(true).build()))
+                    .build();
+            when(productRepository.findById(new ObjectId(VALID_ID))).thenReturn(Optional.of(savedProduct));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(Product.class), eq(ProductDTO.class))).thenReturn(mapped);
+
+            ProductDTO result = productService.getProduct(VALID_ID);
+
+            org.assertj.core.api.Assertions.assertThat(result.getReviews())
+                    .extracting(RatingDTO::isHidden)
+                    .containsExactly(false);
         }
 
         @Test
