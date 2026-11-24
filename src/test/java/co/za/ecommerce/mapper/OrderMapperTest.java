@@ -139,6 +139,48 @@ class OrderMapperTest {
             assertThat(dto.getDiscount()).isEqualTo(5.0);
             assertThat(dto.getTax()).isEqualTo(15.0);
         }
+
+        @Test
+        @DisplayName("shouldPreferSnapshotTitleAndImagesOverLiveProduct")
+        void shouldPreferSnapshotTitleAndImagesOverLiveProduct() {
+            // Live product was renamed/re-imaged after purchase; the order line must keep
+            // the values captured at order time.
+            var product = TestDataBuilder.buildProduct(); // live title "Organic Fleece Hoodie"
+            OrderItems orderItem = new OrderItems();
+            orderItem.setId(new ObjectId());
+            orderItem.setProduct(product);
+            orderItem.setProductTitle("Title At Purchase");
+            orderItem.setImageUrls(List.of("https://img/at-purchase.jpg"));
+            orderItem.setQuantity(1);
+
+            OrderItemsDTO dto = OrderMapper.mapToOrderItemsDTO(orderItem);
+
+            assertThat(dto.getProductTitle()).isEqualTo("Title At Purchase");
+            assertThat(dto.getImageUrls()).containsExactly("https://img/at-purchase.jpg");
+        }
+
+        @Test
+        @DisplayName("shouldNotFailWhenProductWasDeleted")
+        void shouldNotFailWhenProductWasDeleted() {
+            // Product is a @DBRef; after the product is deleted it resolves to null.
+            OrderItems orderItem = new OrderItems();
+            orderItem.setId(new ObjectId());
+            orderItem.setProduct(null);
+            orderItem.setQuantity(2);
+            orderItem.setUnitPrice(49.99);
+            orderItem.setTotalPrice(99.98);
+
+            OrderItemsDTO dto = OrderMapper.mapToOrderItemsDTO(orderItem);
+
+            assertThat(dto).isNotNull();
+            assertThat(dto.getProductTitle()).isEqualTo("[Deleted product]");
+            assertThat(dto.getProductId()).isNull();
+            assertThat(dto.getImageUrls()).isNull();
+            // Pricing captured on the item itself is still intact.
+            assertThat(dto.getQuantity()).isEqualTo(2);
+            assertThat(dto.getUnitPrice()).isEqualTo(49.99);
+            assertThat(dto.getTotalPrice()).isEqualTo(99.98);
+        }
     }
 
     @Nested
