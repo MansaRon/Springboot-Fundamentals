@@ -3,13 +3,16 @@ package co.za.ecommerce.api.impl;
 import co.za.ecommerce.api.AdminUserAPI;
 import co.za.ecommerce.config.AppConstants;
 import co.za.ecommerce.dto.api.ResetPwdDTOApiResource;
+import co.za.ecommerce.dto.api.UserListDTOApiResource;
 import co.za.ecommerce.dto.api.UsersListApiResource;
+import co.za.ecommerce.model.AccountStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,6 +46,51 @@ public class AdminUserAPIImpl extends API implements AdminUserAPI {
                         .timestamp(now())
                         .data(userService.getAllUsers(page, size, sortBy, sortOrder, search, status))
                         .message("All users retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @GetMapping("/{id}")
+    public ResponseEntity<UserListDTOApiResource> getUserById(@PathVariable ObjectId id) {
+        log.info("ResponseEntity<UserListDTOApiResource> getUserById(@PathVariable ObjectId id)");
+        return ResponseEntity.ok(
+                UserListDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(userService.getUserById(id))
+                        .message("User retrieved.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PatchMapping("/{id}/suspend")
+    public ResponseEntity<UserListDTOApiResource> suspendUser(@PathVariable ObjectId id) {
+        log.info("ResponseEntity<UserListDTOApiResource> suspendUser(@PathVariable ObjectId id)");
+        return ResponseEntity.ok(
+                UserListDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(userService.updateUserStatus(id, AccountStatus.SUSPENDED))
+                        .message("User suspended.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PatchMapping("/{id}/unsuspend")
+    public ResponseEntity<UserListDTOApiResource> unsuspendUser(@PathVariable ObjectId id) {
+        log.info("ResponseEntity<UserListDTOApiResource> unsuspendUser(@PathVariable ObjectId id)");
+        return ResponseEntity.ok(
+                UserListDTOApiResource.builder()
+                        .timestamp(now())
+                        .data(userService.updateUserStatus(id, AccountStatus.ACTIVE))
+                        .message("User reactivated.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

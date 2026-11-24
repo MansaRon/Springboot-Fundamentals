@@ -1,6 +1,7 @@
 package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.user.*;
+import co.za.ecommerce.model.AccountStatus;
 import co.za.ecommerce.model.RefreshToken;
 import co.za.ecommerce.model.User;
 import org.bson.types.ObjectId;
@@ -8,6 +9,8 @@ import org.bson.types.ObjectId;
 public interface UserService {
     User createUser(UserCreateDTO userCreateDTO);
     GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir, String search, String status);
+    UserListDTO getUserById(ObjectId userId);
+    UserListDTO updateUserStatus(ObjectId userId, AccountStatus status);
     UserDTO loginUser(LoginDTO loginDTO);
     UserDTO activateUserOTP(String phoneNum, String otp);
     ResetPwdDTO updatePassword(UpdatePasswordDTO updatePasswordDTO);

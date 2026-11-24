@@ -2,6 +2,7 @@ package co.za.ecommerce.api;
 
 import co.za.ecommerce.dto.GlobalApiErrorResponse;
 import co.za.ecommerce.dto.api.ResetPwdDTOApiResource;
+import co.za.ecommerce.dto.api.UserListDTOApiResource;
 import co.za.ecommerce.dto.api.UsersListApiResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -48,4 +49,52 @@ public interface AdminUserAPI {
                             schema = @Schema(implementation = GlobalApiErrorResponse.class)))
     })
     ResponseEntity<ResetPwdDTOApiResource> resetPassword(@PathVariable ObjectId id);
+
+    @Operation(tags = "Admin User", summary = "Get a single user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User retrieved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserListDTOApiResource.class))),
+            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<UserListDTOApiResource> getUserById(@PathVariable ObjectId id);
+
+    @Operation(tags = "Admin User", summary = "Suspend a user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User suspended",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserListDTOApiResource.class))),
+            @ApiResponse(responseCode = "400", description = "User cannot be suspended (awaiting confirmation)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<UserListDTOApiResource> suspendUser(@PathVariable ObjectId id);
+
+    @Operation(tags = "Admin User", summary = "Unsuspend (reactivate) a user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User reactivated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserListDTOApiResource.class))),
+            @ApiResponse(responseCode = "400", description = "User cannot be reactivated (awaiting confirmation)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Authorisation invalid",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<UserListDTOApiResource> unsuspendUser(@PathVariable ObjectId id);
 }
