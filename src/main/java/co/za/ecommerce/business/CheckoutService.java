@@ -14,6 +14,8 @@ public interface CheckoutService {
     CheckoutDTO getCheckoutByCartId(ObjectId cartId);
     List<CheckoutDTO> getCheckoutsByStatus(String status);
     CheckoutDTO updateCheckout(ObjectId checkoutId, CheckoutDTO checkoutDTO);
+    CheckoutDTO applyCoupon(ObjectId checkoutId, String code);
+    CheckoutDTO removeCoupon(ObjectId checkoutId);
     void cancelCheckout(ObjectId checkoutId);
     CheckoutDTO deleteCheckoutByUserId(ObjectId userId);
     OrderDTO confirmCheckout(ObjectId checkoutId);

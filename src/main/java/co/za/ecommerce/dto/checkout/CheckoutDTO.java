@@ -31,6 +31,7 @@ public class CheckoutDTO extends EntityDTO {
     private List<CartItemsDTO> items;
     private double subtotal;
     private double discount;
+    private String couponCode;
     private double tax;
     private double shippingCost;
     private double totalAmount;

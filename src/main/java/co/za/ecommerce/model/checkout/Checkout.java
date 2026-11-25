@@ -59,6 +59,12 @@ public class Checkout extends Entity {
     private double discount;
 
     /**
+     * The coupon code applied to this checkout, if any. Drives {@link #discount} and is
+     * redeemed (usage incremented) once the order is confirmed.
+     */
+    private String couponCode;
+
+    /**
      * Tax amount applied to the order.
      */
     @PositiveOrZero

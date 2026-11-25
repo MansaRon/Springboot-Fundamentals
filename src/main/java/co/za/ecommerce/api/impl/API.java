@@ -40,4 +40,7 @@ public abstract class API {
 
     @Autowired
     protected LookupService lookupService;
+
+    @Autowired
+    protected CouponService couponService;
 }

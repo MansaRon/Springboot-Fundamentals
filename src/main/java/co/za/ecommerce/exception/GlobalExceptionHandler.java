@@ -77,6 +77,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
     }
 
+    @ExceptionHandler(CouponException.class)
+    public ResponseEntity<GlobalApiErrorResponse> handleCouponException(
+            final CouponException ex, final HttpServletRequest request) {
+        String cid = cid(request);
+        log.warn("[{}] CouponException: {}", cid, ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), path(request), cid);
+    }
+
     @ExceptionHandler(WishlistException.class)
     public ResponseEntity<GlobalApiErrorResponse> handleWishlistException(
             final WishlistException ex, final HttpServletRequest request) {
