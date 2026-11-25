@@ -4,6 +4,7 @@ import co.za.ecommerce.business.*;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
+import co.za.ecommerce.dto.coupon.CouponValidationDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.PaymentException;
@@ -16,7 +17,6 @@ import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.CheckoutStatus;
 import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
-import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.ProductRepository;
@@ -219,6 +219,21 @@ public class CheckoutServiceImpl implements CheckoutService {
         recalculateTotals(checkout);
 
         return CheckoutMapper.toDTO(checkoutRepository.save(checkout));
+    }
+
+    @Override
+    public CouponValidationDTO validateCoupon(ObjectId checkoutId, String code) {
+        Checkout checkout = checkoutRepository.findById(checkoutId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(), "Checkout not found",
+                        HttpStatus.NOT_FOUND.value()));
+
+        double subtotal = checkout.getItems().stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
+
+        // Read-only preview — does not touch the checkout.
+        return couponService.previewForSubtotal(code, subtotal);
     }
 
     @Override

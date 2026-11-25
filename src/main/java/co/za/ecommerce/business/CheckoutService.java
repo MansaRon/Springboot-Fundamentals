@@ -2,6 +2,7 @@ package co.za.ecommerce.business;
 
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
+import co.za.ecommerce.dto.coupon.CouponValidationDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import org.bson.types.ObjectId;
 
@@ -16,6 +17,7 @@ public interface CheckoutService {
     CheckoutDTO updateCheckout(ObjectId checkoutId, CheckoutDTO checkoutDTO);
     CheckoutDTO applyCoupon(ObjectId checkoutId, String code);
     CheckoutDTO removeCoupon(ObjectId checkoutId);
+    CouponValidationDTO validateCoupon(ObjectId checkoutId, String code);
     void cancelCheckout(ObjectId checkoutId);
     CheckoutDTO deleteCheckoutByUserId(ObjectId userId);
     OrderDTO confirmCheckout(ObjectId checkoutId);

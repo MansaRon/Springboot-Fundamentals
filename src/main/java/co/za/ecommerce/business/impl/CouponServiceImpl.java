@@ -2,11 +2,13 @@ package co.za.ecommerce.business.impl;
 
 import co.za.ecommerce.business.CouponService;
 import co.za.ecommerce.dto.coupon.CouponDTO;
+import co.za.ecommerce.dto.coupon.CouponValidationDTO;
 import co.za.ecommerce.exception.CouponException;
 import co.za.ecommerce.mapper.CouponMapper;
 import co.za.ecommerce.model.Coupon;
 import co.za.ecommerce.repository.CouponRepository;
 import co.za.ecommerce.utils.DateUtil;
+import co.za.ecommerce.utils.ValueUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -115,6 +117,26 @@ public class CouponServiceImpl implements CouponService {
                     coupon.getMinSpend()));
         }
         return coupon;
+    }
+
+    @Override
+    public CouponValidationDTO previewForSubtotal(String code, double subtotal) {
+        try {
+            Coupon coupon = validateForSubtotal(code, subtotal);
+            double discount = ValueUtil.round(Math.min(coupon.getAmount(), subtotal), 2);
+            return CouponValidationDTO.builder()
+                    .valid(true)
+                    .code(coupon.getCode())
+                    .discountAmount(discount)
+                    .build();
+        } catch (CouponException e) {
+            return CouponValidationDTO.builder()
+                    .valid(false)
+                    .code(code != null ? code.trim().toUpperCase() : null)
+                    .discountAmount(0)
+                    .reason(e.getMessage())
+                    .build();
+        }
     }
 
     @Override

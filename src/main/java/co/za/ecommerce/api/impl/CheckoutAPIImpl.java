@@ -5,6 +5,7 @@ import co.za.ecommerce.api.CheckoutAPI;
 import co.za.ecommerce.dto.api.ApiResource;
 import co.za.ecommerce.dto.api.CheckoutDTOApiResource;
 import co.za.ecommerce.dto.api.DeliveryOptionsApiResource;
+import co.za.ecommerce.dto.api.CouponValidationApiResource;
 import co.za.ecommerce.dto.api.OrderDTOApiResource;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.coupon.ApplyCouponRequest;
@@ -138,6 +139,25 @@ public class CheckoutAPIImpl extends API implements CheckoutAPI {
                         .data(checkoutService.applyCoupon(checkoutId, request.getCode()))
                         .dataList(new ArrayList<>())
                         .message("Coupon applied.")
+                        .status(String.valueOf(HttpStatus.OK))
+                        .statusCode(HttpStatus.OK.value())
+                        .build()
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PostMapping("/{checkoutId}/validate-coupon")
+    public ResponseEntity<CouponValidationApiResource> validateCoupon(
+            @PathVariable ObjectId checkoutId,
+            @Valid @RequestBody ApplyCouponRequest request) {
+        log.info("ResponseEntity<CouponValidationApiResource> validateCoupon(@PathVariable ObjectId checkoutId)");
+        var result = checkoutService.validateCoupon(checkoutId, request.getCode());
+        return ResponseEntity.ok(
+                CouponValidationApiResource.builder()
+                        .timestamp(Instant.now())
+                        .data(result)
+                        .message(result.isValid() ? "Coupon is valid." : "Coupon is not valid.")
                         .status(String.valueOf(HttpStatus.OK))
                         .statusCode(HttpStatus.OK.value())
                         .build()

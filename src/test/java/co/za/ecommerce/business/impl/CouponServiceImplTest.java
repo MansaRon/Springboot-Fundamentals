@@ -113,6 +113,38 @@ class CouponServiceImplTest {
     }
 
     @Nested
+    @DisplayName("previewForSubtotal")
+    class Preview {
+
+        @Test
+        @DisplayName("returns valid with the would-be discount")
+        void validPreview() {
+            when(couponRepository.findByCodeIgnoreCase("SAVE50"))
+                    .thenReturn(Optional.of(coupon(50, 200, 100, 0, true, false)));
+
+            var result = couponService.previewForSubtotal("save50", 250);
+
+            assertThat(result.isValid()).isTrue();
+            assertThat(result.getCode()).isEqualTo("SAVE50");
+            assertThat(result.getDiscountAmount()).isEqualTo(50.0);
+            assertThat(result.getReason()).isNull();
+        }
+
+        @Test
+        @DisplayName("returns invalid with a reason instead of throwing")
+        void invalidPreview() {
+            when(couponRepository.findByCodeIgnoreCase(any()))
+                    .thenReturn(Optional.of(coupon(50, 500, 100, 0, true, false)));
+
+            var result = couponService.previewForSubtotal("SAVE50", 150);
+
+            assertThat(result.isValid()).isFalse();
+            assertThat(result.getDiscountAmount()).isZero();
+            assertThat(result.getReason()).contains("minimum spend");
+        }
+    }
+
+    @Nested
     @DisplayName("redeem")
     class Redeem {
 
