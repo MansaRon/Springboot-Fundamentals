@@ -284,7 +284,7 @@ public interface OrderAPI {
                                     @Schema(implementation = GlobalApiErrorResponse.class))
                     })
     })
-    ResponseEntity<OrderDTOAllApiResource> getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
+    ResponseEntity<OrderDTOAllApiResource> getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder, String search, String status);
 
     @Operation(tags = "Order", summary = "Get orders by status")
     @ApiResponses({

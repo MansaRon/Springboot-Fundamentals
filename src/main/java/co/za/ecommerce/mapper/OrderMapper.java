@@ -1,6 +1,7 @@
 package co.za.ecommerce.mapper;
 
 import co.za.ecommerce.dto.order.*;
+import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.User;
 import co.za.ecommerce.model.order.Address;
 import co.za.ecommerce.model.order.Order;
@@ -125,14 +126,24 @@ public class OrderMapper {
         dto.setId(orderItems.getId() != null ? orderItems.getId().toHexString() : null);
         dto.setCreatedAt(orderItems.getCreatedAt());
         dto.setUpdatedAt(orderItems.getUpdatedAt());
-        dto.setProductTitle(orderItems.getProduct().getTitle());
-        dto.setImageUrls(orderItems.getProduct().getImageUrls());
+        // Prefer the snapshot captured on the item at order time; fall back to the live
+        // product (a @DBRef) for older orders that predate the snapshot. A deleted product
+        // resolves to null, so a snapshot-less item shows a placeholder.
+        Product product = orderItems.getProduct();
+        String title = orderItems.getProductTitle() != null
+                ? orderItems.getProductTitle()
+                : (product != null ? product.getTitle() : "[Deleted product]");
+        List<String> images = orderItems.getImageUrls() != null
+                ? orderItems.getImageUrls()
+                : (product != null ? product.getImageUrls() : null);
+        dto.setProductTitle(title);
+        dto.setImageUrls(images);
+        dto.setProductId(product != null && product.getId() != null ? product.getId().toHexString() : null);
         dto.setQuantity(orderItems.getQuantity());
         dto.setUnitPrice(orderItems.getUnitPrice());
         dto.setTotalPrice(orderItems.getTotalPrice());
         dto.setDiscount(orderItems.getDiscount());
         dto.setTax(orderItems.getTax());
-        dto.setProductId(String.valueOf(orderItems.getProduct().getId()));
 
         return dto;
     }

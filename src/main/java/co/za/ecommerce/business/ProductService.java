@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ProductService {
     ProductDTO addProduct(ProductDTO productDTO, List<MultipartFile> imageFile);
-    GetAllProductsDTO getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir);
+    GetAllProductsDTO getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir, String search, String category);
     ProductDTO getProduct(String id);
     // category
     GetAllProductsDTO getProductByCategory(String category, int pageNo, int pageSize, String sortBy, String sortDir);

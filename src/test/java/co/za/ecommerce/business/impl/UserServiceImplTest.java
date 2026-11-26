@@ -559,4 +559,125 @@ class UserServiceImplTest {
                     .hasMessageContaining("Cannot remove the last role");
         }
     }
+
+    @Nested
+    @DisplayName("getUserById / updateUserStatus")
+    class AdminUserManagement {
+
+        @Test
+        @DisplayName("getUserById returns the user")
+        void getUserByIdReturnsUser() {
+            var modelMapper = mock(org.modelmapper.ModelMapper.class);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(User.class), eq(UserListDTO.class))).thenReturn(new UserListDTO());
+
+            assertThat(userService.getUserById(userId)).isNotNull();
+        }
+
+        @Test
+        @DisplayName("getUserById throws 404 when missing")
+        void getUserByIdThrowsWhenNotFound() {
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.getUserById(userId))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("User not found");
+        }
+
+        @Test
+        @DisplayName("suspend sets status to SUSPENDED")
+        void suspendSetsStatusToSuspended() {
+            var modelMapper = mock(org.modelmapper.ModelMapper.class);
+            user.setStatus(AccountStatus.ACTIVE);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(User.class), eq(UserListDTO.class))).thenReturn(new UserListDTO());
+
+            userService.updateUserStatus(userId, AccountStatus.SUSPENDED);
+
+            var captor = org.mockito.ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getStatus()).isEqualTo(AccountStatus.SUSPENDED);
+        }
+
+        @Test
+        @DisplayName("unsuspend sets status to ACTIVE")
+        void unsuspendSetsStatusToActive() {
+            var modelMapper = mock(org.modelmapper.ModelMapper.class);
+            user.setStatus(AccountStatus.SUSPENDED);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(User.class), eq(UserListDTO.class))).thenReturn(new UserListDTO());
+
+            userService.updateUserStatus(userId, AccountStatus.ACTIVE);
+
+            var captor = org.mockito.ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getStatus()).isEqualTo(AccountStatus.ACTIVE);
+        }
+
+        @Test
+        @DisplayName("rejects status change for a user awaiting confirmation")
+        void rejectsAwaitingConfirmation() {
+            user.setStatus(AccountStatus.AWAITING_CONFIRMATION);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.updateUserStatus(userId, AccountStatus.SUSPENDED))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("awaiting confirmation");
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @org.junit.jupiter.api.AfterEach
+        void clearSecurityContext() {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        private void authenticateWith(String... authorities) {
+            var granted = java.util.Arrays.stream(authorities)
+                    .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                    .toList();
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                            "admin", null, granted));
+        }
+
+        @Test
+        @DisplayName("a non-SUPER admin cannot suspend another admin")
+        void nonSuperCannotSuspendAdmin() {
+            user.setRoles(new HashSet<>(Set.of("ROLE_ADMIN")));
+            user.setStatus(AccountStatus.ACTIVE);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            authenticateWith("ROLE_ADMIN");
+
+            assertThatThrownBy(() -> userService.updateUserStatus(userId, AccountStatus.SUSPENDED))
+                    .isInstanceOf(ClientException.class)
+                    .hasMessageContaining("SUPER admin");
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("a SUPER admin can suspend another admin")
+        void superCanSuspendAdmin() {
+            var modelMapper = mock(org.modelmapper.ModelMapper.class);
+            user.setRoles(new HashSet<>(Set.of("ROLE_ADMIN")));
+            user.setStatus(AccountStatus.ACTIVE);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.mapObject()).thenReturn(modelMapper);
+            when(modelMapper.map(any(User.class), eq(UserListDTO.class))).thenReturn(new UserListDTO());
+            authenticateWith("ROLE_SUPER");
+
+            userService.updateUserStatus(userId, AccountStatus.SUSPENDED);
+
+            var captor = org.mockito.ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getStatus()).isEqualTo(AccountStatus.SUSPENDED);
+        }
+    }
 }

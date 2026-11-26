@@ -72,6 +72,8 @@ class CheckoutServiceImplTest {
     private ModelMapper modelMapper;
     @Mock
     private co.za.ecommerce.business.EmailService emailService;
+    @Mock
+    private co.za.ecommerce.business.CouponService couponService;
     @InjectMocks
     private CheckoutServiceImpl checkoutService;
 

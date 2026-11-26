@@ -9,6 +9,8 @@ import co.za.ecommerce.exception.ProductException;
 import co.za.ecommerce.mapper.ObjectMapper;
 import co.za.ecommerce.model.Product;
 import co.za.ecommerce.model.Rating;
+import co.za.ecommerce.model.lookup.LookupType;
+import co.za.ecommerce.repository.LookupValueRepository;
 import co.za.ecommerce.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -38,18 +40,47 @@ public class ProductServiceImpl implements ProductService {
     private final ObjectMapper objectMapper;
     private final ProductRepository productRepository;
     private final S3Service s3Service;
+    private final LookupValueRepository lookupValueRepository;
 
     public ProductServiceImpl(ObjectMapper objectMapper,
                               ProductRepository productRepository,
-                              S3Service s3Service) {
+                              S3Service s3Service,
+                              LookupValueRepository lookupValueRepository) {
         this.objectMapper = objectMapper;
         this.productRepository = productRepository;
         this.s3Service = s3Service;
+        this.lookupValueRepository = lookupValueRepository;
+    }
+
+    /**
+     * Validates a product category against the admin-managed CATEGORY lookup list.
+     * Soft enforcement: if no active CATEGORY values are configured yet, any category is
+     * allowed (so creation isn't blocked before categories are seeded). Once categories
+     * exist, the value must match one of their codes (case-insensitive).
+     */
+    private void validateCategory(String category) {
+        List<co.za.ecommerce.model.lookup.LookupValue> categories =
+                lookupValueRepository.findByTypeAndActiveTrueOrderBySortOrderAsc(LookupType.CATEGORY);
+        if (categories.isEmpty()) {
+            return;
+        }
+        boolean valid = categories.stream()
+                .anyMatch(c -> c.getCode().equalsIgnoreCase(category));
+        if (!valid) {
+            String allowed = categories.stream()
+                    .map(co.za.ecommerce.model.lookup.LookupValue::getCode)
+                    .collect(Collectors.joining(", "));
+            throw new ProductException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    String.format("Invalid category '%s'. Allowed categories: %s", category, allowed),
+                    HttpStatus.BAD_REQUEST.value());
+        }
     }
 
     @Override
     @CacheEvict(value = "product-list", allEntries = true)
     public ProductDTO addProduct(ProductDTO productDTO, List<MultipartFile> imageFiles) {
+        validateCategory(productDTO.getCategory());
         List<String> imageUrls = uploadImages(imageFiles);
         Product product = Product.builder()
                 .createdAt(now())
@@ -70,16 +101,31 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Cacheable(value = "product-list", key = "{#pageNo, #pageSize, #sortBy, #sortDir}")
+    @Cacheable(value = "product-list", key = "{#pageNo, #pageSize, #sortBy, #sortDir, #search, #category}")
     public GetAllProductsDTO getAllPosts(int pageNo,
                                          int pageSize,
                                          String sortBy,
-                                         String sortDir) {
+                                         String sortDir,
+                                         String search,
+                                         String category) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        boolean hasSearch = search != null && !search.isBlank();
+        boolean hasCategory = category != null && !category.isBlank();
+
+        if (hasSearch || hasCategory) {
+            // Filtered catalog view: an empty result is valid (not an error).
+            Page<Product> filtered = productRepository.searchProducts(
+                    hasSearch ? search.trim() : null,
+                    hasCategory ? category.trim() : null,
+                    pageable);
+            return buildGetAllProductsDTO(filtered);
+        }
+
         Page<Product> getProducts = productRepository.findAll(pageable);
 
         if (getProducts.isEmpty()) {
@@ -96,7 +142,17 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Cacheable(value = "products", key = "#id")
     public ProductDTO getProduct(String id) {
-        return objectMapper.mapObject().map(findProductById(id), ProductDTO.class);
+        ProductDTO product = objectMapper.mapObject().map(findProductById(id), ProductDTO.class);
+
+        // Public view: exclude admin-hidden reviews (admins see all via the admin reviews endpoint).
+        if (product.getReviews() != null) {
+            product.setReviews(product.getReviews()
+                    .stream()
+                    .filter(review -> !review.isHidden())
+                    .collect(Collectors.toList()));
+        }
+
+        return product;
     }
 
     @Override
@@ -179,6 +235,7 @@ public class ProductServiceImpl implements ProductService {
         List<Product> productsToSave = new ArrayList<>();
         for (int i = 0; i < productDTOList.size(); i++) {
             ProductDTO productDTO = productDTOList.get(i);
+            validateCategory(productDTO.getCategory());
             List<MultipartFile> productImages = imageFiles.subList(
                     i * imagesPerProduct,
                     (i + 1) * imagesPerProduct
@@ -216,6 +273,11 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO updateProduct(String id, ProductDTO productDTO, List<MultipartFile> imageFiles) {
         Product productDB = findProductById(id);
 
+        // Only enforce when the admin is actually changing the category.
+        if (productDTO.getCategory() != null && !productDTO.getCategory().isBlank()) {
+            validateCategory(productDTO.getCategory());
+        }
+
         productDB.setId(productDB.getId());
         productDB.setUpdatedAt(now());
         productDB.setTitle(defaultIfNullOrEmpty(productDTO.getTitle(), productDB.getTitle()));
@@ -224,7 +286,9 @@ public class ProductServiceImpl implements ProductService {
         productDB.setPrice(defaultIfNullOrZero(productDTO.getPrice(), productDB.getPrice()));
         productDB.setQuantity(defaultIfNullOrZero(productDTO.getQuantity(), productDB.getQuantity()));
         productDB.setCategory(defaultIfNullOrEmpty(productDTO.getCategory(), productDB.getCategory()));
-        productDB.setReviews(mapToRating(productDTO.getReviews()));
+        if (productDTO.getReviews() != null) {
+            productDB.setReviews(mapToRating(productDTO.getReviews()));
+        }
 
         if (imageFiles != null && !imageFiles.isEmpty()) {
             if (!productDB.getImageUrls().isEmpty()) {

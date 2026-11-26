@@ -13,4 +13,13 @@ public interface LookupValueRepository extends MongoRepository<LookupValue, Obje
 
     /** Active values for a type, ordered for display. */
     List<LookupValue> findByTypeAndActiveTrueOrderBySortOrderAsc(LookupType type);
+
+    /** All values for a type (active and inactive) — for admin management. */
+    List<LookupValue> findByTypeOrderBySortOrderAsc(LookupType type);
+
+    /** Whether any value (active or not) exists for a type — used to make seeding idempotent per type. */
+    boolean existsByType(LookupType type);
+
+    /** Duplicate guard: a value with the same code already exists within the type (case-insensitive). */
+    boolean existsByTypeAndCodeIgnoreCase(LookupType type, String code);
 }

@@ -41,6 +41,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -182,18 +183,46 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public GetAllOrdersDTO getAllOrders(int pageNo, int pageSize, String sortBy, String sortDir) {
-        log.info("Fetching all orders (admin) with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
-                pageNo, pageSize, sortBy, sortDir);
+    public GetAllOrdersDTO getAllOrders(int pageNo, int pageSize, String sortBy, String sortDir, String search, String status) {
+        log.info("Fetching all orders (admin) with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}, search: {}, status: {}",
+                pageNo, pageSize, sortBy, sortDir, search, status);
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<Order> orders = orderRepository.findByDeletedFalse(pageable);
+
+        boolean hasSearch = search != null && !search.isBlank();
+        String term = hasSearch ? search.trim() : null;
+        OrderStatus orderStatus = parseStatus(status);
+
+        Page<Order> orders;
+        if (hasSearch && orderStatus != null) {
+            orders = orderRepository.searchActiveOrdersByStatus(term, orderStatus, pageable);
+        } else if (hasSearch) {
+            orders = orderRepository.searchActiveOrders(term, pageable);
+        } else if (orderStatus != null) {
+            orders = orderRepository.findActiveByStatus(orderStatus, pageable);
+        } else {
+            orders = orderRepository.findByDeletedFalse(pageable);
+        }
 
         return buildGetAllOrdersDTO(orders);
+    }
+
+    /** Parses the optional status filter; null/blank means "no status filter". */
+    private OrderStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return OrderStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new OrderException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    String.format("Invalid status '%s'. Valid values: %s",
+                            status, Arrays.toString(OrderStatus.values())),
+                    HttpStatus.BAD_REQUEST.value());
+        }
     }
 
     private GetAllOrdersDTO buildGetAllOrdersDTO(Page<Order> page) {
@@ -355,6 +384,8 @@ public class OrderServiceImpl implements OrderService {
                             .createdAt(now())
                             .updatedAt(now())
                             .product(item.getProduct())
+                            .productTitle(item.getProduct().getTitle())
+                            .imageUrls(item.getProduct().getImageUrls())
                             .quantity(item.getQuantity())
                             .unitPrice(unitPrice)
                             .totalPrice(ValueUtil.round(unitPrice * item.getQuantity(), 2))
@@ -754,6 +785,8 @@ public class OrderServiceImpl implements OrderService {
                         .createdAt(DateUtil.now())
                         .updatedAt(DateUtil.now())
                         .product(cartItem.getProduct())
+                        .productTitle(cartItem.getProduct().getTitle())
+                        .imageUrls(cartItem.getProduct().getImageUrls())
                         .quantity(cartItem.getQuantity())
                         .unitPrice(cartItem.getProduct().getPrice())
                         .totalPrice(cartItem.getProductPrice())

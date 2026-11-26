@@ -20,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -62,6 +64,37 @@ class AdminLookupAPIImplTest {
                 .active(true)
                 .sortOrder(2)
                 .build();
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/admin/lookup/{type}")
+    class GetAllByType {
+        @Test
+        @DisplayName("shouldReturnActiveAndInactiveValues")
+        void shouldReturnActiveAndInactiveValues() throws Exception {
+            LookupValueDTO active = LookupValueDTO.builder()
+                    .type(LookupType.CATEGORY).code("APPAREL").label("Apparel").active(true).sortOrder(1).build();
+            LookupValueDTO inactive = LookupValueDTO.builder()
+                    .type(LookupType.CATEGORY).code("CLEARANCE").label("Clearance").active(false).sortOrder(2).build();
+            when(lookupService.getAllByType(LookupType.CATEGORY)).thenReturn(List.of(active, inactive));
+
+            mockMvc.perform(get("/api/v1/admin/lookup/{type}", "CATEGORY"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(2))
+                    .andExpect(jsonPath("$.data[1].code").value("CLEARANCE"))
+                    .andExpect(jsonPath("$.data[1].active").value(false));
+
+            verify(lookupService).getAllByType(LookupType.CATEGORY);
+        }
+
+        @Test
+        @DisplayName("shouldReturn400WhenTypeInvalid")
+        void shouldReturn400WhenTypeInvalid() throws Exception {
+            mockMvc.perform(get("/api/v1/admin/lookup/{type}", "NONSENSE"))
+                    .andExpect(status().isBadRequest());
+
+            verify(lookupService, never()).getAllByType(any());
+        }
     }
 
     @Nested
@@ -111,6 +144,20 @@ class AdminLookupAPIImplTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Lookup value updated."))
                     .andExpect(jsonPath("$.data.code").value("EXPRESS"));
+        }
+
+        @Test
+        @DisplayName("shouldAcceptPartialBodyWithoutRequiredFields")
+        void shouldAcceptPartialBodyWithoutRequiredFields() throws Exception {
+            when(lookupService.update(eq(new org.bson.types.ObjectId(LOOKUP_ID)), any(LookupValueDTO.class)))
+                    .thenReturn(sampleResponse());
+
+            // Body omits type/code/label — must NOT be rejected (partial update).
+            mockMvc.perform(put("/api/v1/admin/lookup/{id}", LOOKUP_ID)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"active\":false}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Lookup value updated."));
         }
 
         @Test

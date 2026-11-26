@@ -24,10 +24,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -83,18 +86,51 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir) {
-        log.info("Fetching users with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}",
-                pageNo, pageSize, sortBy, sortDir);
+    public GetAllUsersDTO getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir, String search, String status) {
+        log.info("Fetching users with pageNo: {}, pageSize: {}, sortBy: {}, sortDir: {}, search: {}, status: {}",
+                pageNo, pageSize, sortBy, sortDir, search, status);
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<User> users = userRepository.findAll(pageable);
+
+        boolean hasSearch = search != null && !search.isBlank();
+        String term = hasSearch ? search.trim() : null;
+        AccountStatus accountStatus = parseStatus(status);
+
+        Page<User> users;
+        if (hasSearch && accountStatus != null) {
+            users = userRepository.searchUsersByStatus(term, accountStatus, pageable);
+        } else if (hasSearch) {
+            users = userRepository.searchUsers(term, pageable);
+        } else if (accountStatus != null) {
+            users = userRepository.findByStatus(accountStatus, pageable);
+        } else {
+            users = userRepository.findAll(pageable);
+        }
 
         return buildGetAllUsersDTO(users);
+    }
+
+    /** Parses the optional status filter; null/blank means "no status filter". */
+    private AccountStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return AccountStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ClientException(HttpStatus.BAD_REQUEST,
+                    String.format("Invalid status '%s'. Valid values: %s",
+                            status, Arrays.toString(AccountStatus.values())));
+        }
+    }
+
+    /** Whether the currently authenticated caller holds the given authority (e.g. "ROLE_SUPER"). */
+    private boolean callerHasRole(String role) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> role.equals(a.getAuthority()));
     }
 
     private GetAllUsersDTO buildGetAllUsersDTO(Page<User> page) {
@@ -111,6 +147,41 @@ public class UserServiceImpl implements UserService {
                 .totalPages(page.getTotalPages())
                 .last(page.isLast())
                 .build();
+    }
+
+    @Override
+    public UserListDTO getUserById(ObjectId userId) {
+        log.info("Admin fetching user {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ClientException(HttpStatus.NOT_FOUND, "User not found."));
+        return objectMapper.mapObject().map(user, UserListDTO.class);
+    }
+
+    @Override
+    public UserListDTO updateUserStatus(ObjectId userId, AccountStatus status) {
+        log.info("Admin updating status of user {} to {}", userId, status);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ClientException(HttpStatus.NOT_FOUND, "User not found."));
+
+        // Only a SUPER admin may change the status of another administrator. A regular
+        // admin can suspend/activate normal users but not fellow admins.
+        boolean targetIsAdmin = user.getRoles() != null && user.getRoles().contains("ROLE_ADMIN");
+        if (targetIsAdmin && !callerHasRole("ROLE_SUPER")) {
+            throw new ClientException(HttpStatus.FORBIDDEN,
+                    "Only a SUPER admin can suspend or reactivate an administrator.");
+        }
+
+        // Guard: a user awaiting confirmation hasn't completed sign-up — suspend/activate
+        // doesn't apply until they're a real active account.
+        if (user.getStatus() == AccountStatus.AWAITING_CONFIRMATION) {
+            throw new ClientException(HttpStatus.BAD_REQUEST,
+                    "User is awaiting confirmation and cannot be suspended or activated.");
+        }
+
+        user.setStatus(status);
+        user.setUpdatedAt(DateUtil.now());
+        User saved = userRepository.save(user);
+        return objectMapper.mapObject().map(saved, UserListDTO.class);
     }
 
     @Override

@@ -28,6 +28,7 @@ public class CheckoutMapper {
 
         dto.setSubtotal(checkout.getSubtotal());
         dto.setDiscount(checkout.getDiscount());
+        dto.setCouponCode(checkout.getCouponCode());
         dto.setTax(checkout.getTax());
         dto.setShippingCost(checkout.getShippingCost());
         dto.setTotalAmount(checkout.getTotalAmount());

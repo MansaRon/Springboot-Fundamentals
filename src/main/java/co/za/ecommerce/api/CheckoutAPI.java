@@ -227,6 +227,45 @@ public interface CheckoutAPI {
     })
     ResponseEntity<CheckoutDTOApiResource> updateCheckout(@PathVariable ObjectId userId, @Valid @RequestBody CheckoutDTO checkoutDTO);
 
+    @Operation(tags = "Checkout", summary = "Apply a coupon code to the checkout")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Coupon applied",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CheckoutDTOApiResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid/expired/exhausted coupon or min spend not met",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Checkout not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<CheckoutDTOApiResource> applyCoupon(@PathVariable ObjectId checkoutId,
+                                                       @Valid @RequestBody co.za.ecommerce.dto.coupon.ApplyCouponRequest request);
+
+    @Operation(tags = "Checkout", summary = "Remove the applied coupon from the checkout")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Coupon removed",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CheckoutDTOApiResource.class))),
+            @ApiResponse(responseCode = "404", description = "Checkout not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<CheckoutDTOApiResource> removeCoupon(@PathVariable ObjectId checkoutId);
+
+    @Operation(tags = "Checkout", summary = "Validate (preview) a coupon code against the checkout without applying it")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Validation result (valid flag + would-be discount)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = co.za.ecommerce.dto.api.CouponValidationApiResource.class))),
+            @ApiResponse(responseCode = "404", description = "Checkout not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = GlobalApiErrorResponse.class)))
+    })
+    ResponseEntity<co.za.ecommerce.dto.api.CouponValidationApiResource> validateCoupon(
+            @PathVariable ObjectId checkoutId,
+            @Valid @RequestBody co.za.ecommerce.dto.coupon.ApplyCouponRequest request);
+
     @Operation(tags = "Checkout", summary = "Order placed successfully")
     @ApiResponses({
             @ApiResponse(

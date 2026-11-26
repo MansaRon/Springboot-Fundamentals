@@ -135,7 +135,7 @@ class ProductApIImplTest {
         @Test
         @DisplayName("shouldReturn200WithProductListWhenProductsExist")
         void shouldReturn200WithProductListWhenProductsExist() throws Exception {
-            when(productService.getAllPosts(anyInt(), anyInt(), anyString(), anyString()))
+            when(productService.getAllPosts(anyInt(), anyInt(), anyString(), anyString(), any(), any()))
                     .thenReturn(getAllProductsDTO);
 
             mockMvc.perform(get("/api/v1/products")
@@ -152,23 +152,23 @@ class ProductApIImplTest {
         @Test
         @DisplayName("shouldPassCustomPaginationParamsToService")
         void shouldPassCustomPaginationParamsToService() throws Exception {
-            when(productService.getAllPosts(eq(2), eq(5), eq("price"), eq("desc")))
+            when(productService.getAllPosts(eq(2), eq(5), eq("price"), eq("desc"), any(), any()))
                     .thenReturn(getAllProductsDTO);
 
             mockMvc.perform(get("/api/v1/products")
-                            .param("pageNumber", "2")
-                            .param("pageSize", "5")
+                            .param("page", "2")
+                            .param("size", "5")
                             .param("sortBy", "price")
                             .param("sortOrder", "desc"))
                     .andExpect(status().isOk());
 
-            verify(productService).getAllPosts(eq(2), eq(5), eq("price"), eq("desc"));
+            verify(productService).getAllPosts(eq(2), eq(5), eq("price"), eq("desc"), any(), any());
         }
 
         @Test
         @DisplayName("shouldReturn400WhenNoProductsFound")
         void shouldReturn400WhenNoProductsFound() throws Exception {
-            when(productService.getAllPosts(anyInt(), anyInt(), anyString(), anyString()))
+            when(productService.getAllPosts(anyInt(), anyInt(), anyString(), anyString(), any(), any()))
                     .thenThrow(new ProductException(
                             HttpStatus.BAD_REQUEST.toString(),
                             "No products found.",

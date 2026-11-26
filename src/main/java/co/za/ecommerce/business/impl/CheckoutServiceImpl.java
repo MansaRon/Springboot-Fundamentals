@@ -4,6 +4,7 @@ import co.za.ecommerce.business.*;
 import co.za.ecommerce.dto.PaymentResultDTO;
 import co.za.ecommerce.dto.checkout.CheckoutDTO;
 import co.za.ecommerce.dto.checkout.DeliveryOptionDTO;
+import co.za.ecommerce.dto.coupon.CouponValidationDTO;
 import co.za.ecommerce.dto.order.OrderDTO;
 import co.za.ecommerce.exception.CheckoutException;
 import co.za.ecommerce.exception.PaymentException;
@@ -16,7 +17,6 @@ import co.za.ecommerce.model.checkout.Checkout;
 import co.za.ecommerce.model.checkout.CheckoutStatus;
 import co.za.ecommerce.model.checkout.DeliverMethod;
 import co.za.ecommerce.model.checkout.PaymentMethod;
-import co.za.ecommerce.model.order.*;
 import co.za.ecommerce.repository.CartRepository;
 import co.za.ecommerce.repository.CheckoutRepository;
 import co.za.ecommerce.repository.ProductRepository;
@@ -50,6 +50,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final OrderService orderService;
     private final CartService cartService;
     private final EmailService emailService;
+    private final CouponService couponService;
 
     @Override
     @Transactional
@@ -190,6 +191,66 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
+    public CheckoutDTO applyCoupon(ObjectId checkoutId, String code) {
+        Checkout checkout = checkoutRepository.findById(checkoutId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(), "Checkout not found",
+                        HttpStatus.NOT_FOUND.value()));
+
+        if (!CheckoutStatus.PENDING.equals(checkout.getStatus())
+                && !CheckoutStatus.FAILED.equals(checkout.getStatus())) {
+            throw new CheckoutException(
+                    HttpStatus.BAD_REQUEST.toString(),
+                    "Cannot apply a coupon to a " + checkout.getStatus().name().toLowerCase() + " checkout.",
+                    HttpStatus.BAD_REQUEST.value());
+        }
+
+        double subtotal = checkout.getItems().stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
+
+        // Validates active/expiry/usage-limit/min-spend; throws CouponException otherwise.
+        var coupon = couponService.validateForSubtotal(code, subtotal);
+
+        // A coupon can't discount more than the goods subtotal (keeps the total non-negative).
+        double discount = Math.min(coupon.getAmount(), subtotal);
+        checkout.setDiscount(ValueUtil.round(discount, 2));
+        checkout.setCouponCode(coupon.getCode());
+        recalculateTotals(checkout);
+
+        return CheckoutMapper.toDTO(checkoutRepository.save(checkout));
+    }
+
+    @Override
+    public CouponValidationDTO validateCoupon(ObjectId checkoutId, String code) {
+        Checkout checkout = checkoutRepository.findById(checkoutId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(), "Checkout not found",
+                        HttpStatus.NOT_FOUND.value()));
+
+        double subtotal = checkout.getItems().stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
+
+        // Read-only preview — does not touch the checkout.
+        return couponService.previewForSubtotal(code, subtotal);
+    }
+
+    @Override
+    public CheckoutDTO removeCoupon(ObjectId checkoutId) {
+        Checkout checkout = checkoutRepository.findById(checkoutId)
+                .orElseThrow(() -> new CheckoutException(
+                        HttpStatus.NOT_FOUND.toString(), "Checkout not found",
+                        HttpStatus.NOT_FOUND.value()));
+
+        checkout.setCouponCode(null);
+        checkout.setDiscount(0);
+        recalculateTotals(checkout);
+
+        return CheckoutMapper.toDTO(checkoutRepository.save(checkout));
+    }
+
+    @Override
     public void cancelCheckout(ObjectId checkoutId) {
         Checkout checkout = checkoutRepository.findById(checkoutId).orElseThrow(() -> new CheckoutException(
                         HttpStatus.NOT_FOUND.toString(),
@@ -273,6 +334,9 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             log.info("Payment successful! Creating order for checkout: {}", checkoutId);
             OrderDTO order = orderService.createOrderFromCheckout(checkout, paymentResult);
+
+            // Record the coupon redemption now that the order is placed (global usage count).
+            couponService.redeem(checkout.getCouponCode());
 
             checkout.setStatus(CheckoutStatus.COMPLETED);
             checkout.setUpdatedAt(now());
