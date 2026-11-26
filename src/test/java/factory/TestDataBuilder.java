@@ -67,36 +67,6 @@ public class TestDataBuilder {
                 .build();
     }
 
-    public static Product buildOutOfStockProduct() {
-        return Product.builder()
-                .id(new ObjectId())
-                .title("Sold Out Hoodie")
-                .description("Out of stock product")
-                .category("Clothing")
-                .price(49.99)
-                .rate("4.5")
-                .quantity(0)
-                .imageUrls(new ArrayList<>())
-                .createdAt(DateUtil.now())
-                .updatedAt(DateUtil.now())
-                .build();
-    }
-
-    public static Product buildLowStockProduct(int quantity) {
-        return Product.builder()
-                .id(new ObjectId())
-                .title("Low Stock Hoodie")
-                .description("Limited stock product")
-                .category("Clothing")
-                .price(49.99)
-                .rate("4.5")
-                .quantity(quantity)
-                .imageUrls(new ArrayList<>())
-                .createdAt(DateUtil.now())
-                .updatedAt(DateUtil.now())
-                .build();
-    }
-
     public static CartItems buildCartItem(Product product) {
         return buildCartItem(product, 2);
     }
@@ -171,12 +141,6 @@ public class TestDataBuilder {
         return checkout;
     }
 
-    public static Checkout buildCheckoutWithStatus(User user, Cart cart, CheckoutStatus status) {
-        Checkout checkout = buildPendingCheckout(user, cart);
-        checkout.setStatus(status);
-        return checkout;
-    }
-
     public static Order buildOrder(User user) {
         return Order.builder()
                 .id(new ObjectId())
@@ -197,11 +161,5 @@ public class TestDataBuilder {
                 .createdAt(DateUtil.now())
                 .updatedAt(DateUtil.now())
                 .build();
-    }
-
-    public static Order buildOrderWithStatus(User user, OrderStatus status) {
-        Order order = buildOrder(user);
-        order.setOrderStatus(status);
-        return order;
     }
 }
